@@ -29,10 +29,14 @@ import (
 // nothing to disk.
 //
 // A resource goes to the client, which shows it, saves it or puts it in the
-// conversation, rather than straight into the model's context, so it is
-// bounded by what a client takes in one message, MM_MCP_RESOURCE_MAX_MB, and
-// what the server holds while it converts a file,
-// MM_MCP_RESOURCE_DOWNLOAD_MAX_MB, rather than by read_file's limits.
+// conversation, rather than straight into the model's context, so read_file's
+// limits do not bound it. MCP sends a resource whole, in one message, and a
+// client refuses a message past its own limit by dropping the request or the
+// whole session, so the message is capped, MM_MCP_RESOURCE_MAX_MB, 10 MiB by
+// default, and refused here first with a way to read the file instead. The
+// file downloaded is bounded by nothing by default but Mattermost's own upload
+// limit: on the person's machine the memory is theirs, and a server others
+// share sets MM_MCP_RESOURCE_DOWNLOAD_MAX_MB.
 
 // ResourceSpec is a resource template mm-mcp offers, with the operations
 // reading a resource and completing the template's argument call, accounted
@@ -97,9 +101,7 @@ func fileResourceSpec() ResourceSpec {
 				URITemplate: fileResource(serverAddress(cfg), "{"+fileArgument+"}"),
 				Description: "A file attached to a post, converted as read_file converts it: text, the text of a Word, PowerPoint or Excel " +
 					"file, and an archive's listing as text; an image as an image, scaled as read_file scales it; a PDF, audio, video " +
-					fmt.Sprintf("or any other file as itself. A resource is read whole, up to %s as sent, from a file of up to %s; ",
-						sizeOf(cfg.ResourceBytes()), sizeOf(cfg.ResourceDownloadBytes())) +
-					"read_file reads a longer text in windows.",
+					"or any other file as itself. A resource is read whole" + resourceBounds(cfg) + "; read_file reads a long text in windows.",
 			}
 		},
 		Read: readFileResource,
@@ -152,6 +154,21 @@ func fileResourceSpec() ResourceSpec {
 // maxCompletions is the most values MCP lets one completion hold.
 const maxCompletions = 100
 
+// resourceBounds says what bounds a resource on a server configured so.
+func resourceBounds(cfg config.Config) string {
+	var bounds []string
+	if most := cfg.ResourceBytes(); most > 0 {
+		bounds = append(bounds, "in one message of up to "+sizeOf(most))
+	}
+	if download := cfg.ResourceDownloadBytes(); download > 0 {
+		bounds = append(bounds, "from a file of up to "+sizeOf(download))
+	}
+	if len(bounds) == 0 {
+		return ""
+	}
+	return ", " + strings.Join(bounds, ", ")
+}
+
 // serverAddress is the configured server's address.
 func serverAddress(cfg config.Config) *url.URL {
 	server, err := url.Parse(strings.TrimRight(cfg.URL, "/"))
@@ -186,11 +203,10 @@ func readFileResource(clientFor ClientFor, cfg config.Config) mcp.ResourceHandle
 		if err != nil {
 			return nil, err
 		}
-		contents, err := wholeFile(ctx, client, info, cfg)
+		contents, err := wholeFile(ctx, client, info, cfg, uri)
 		if err != nil {
 			return nil, err
 		}
-		contents.URI = uri
 		return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{contents}}, nil
 	}
 }
@@ -199,14 +215,15 @@ func readFileResource(clientFor ClientFor, cfg config.Config) mcp.ResourceHandle
 const plainText = "text/plain; charset=utf-8"
 
 // wholeFile is a file as a resource: converted as read_file converts it, and
-// returned whole, as a resource is read. A file larger than a resource read
-// downloads is refused before it is fetched, and one whose resource would be
-// larger as sent than a resource holds, or whose text was cut short, is
-// refused with what reads it instead.
-func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileInfo, cfg config.Config) (*mcp.ResourceContents, error) {
+// returned whole, as a resource is read. Where the server is given caps, a
+// file larger than a resource read downloads is refused before it is fetched,
+// and one whose message would be larger than a resource is sent in is
+// refused after; a text the conversion cut short always is. Each refusal says
+// what reads the file instead.
+func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileInfo, cfg config.Config, uri string) (*mcp.ResourceContents, error) {
 	opens := client.Permalink(info.PostId)
 	instead := "read_file reads a text in windows, and save_file saves a file, and the person can open it from its post: " + opens
-	if download := cfg.ResourceDownloadBytes(); info.Size > download {
+	if download := cfg.ResourceDownloadBytes(); download > 0 && info.Size > download {
 		return nil, fmt.Errorf("%s is %s, more than the %s a resource is read from (%s); %s",
 			info.Name, sizeOf(info.Size), sizeOf(download), config.EnvResourceDownloadMaxMB, instead)
 	}
@@ -246,11 +263,25 @@ func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileI
 		// returns only when small.
 		contents = &mcp.ResourceContents{MIMEType: cmp.Or(view.MIMEType, info.MimeType, "application/octet-stream"), Blob: data}
 	}
-	if sent, most := sentSize(contents), cfg.ResourceBytes(); sent > most {
-		return nil, fmt.Errorf("%s is %s as sent, more than the %s a resource holds (%s); %s",
-			info.Name, sizeOf(sent), sizeOf(most), config.EnvResourceMaxMB, instead)
+	contents.URI = uri
+	if most := cfg.ResourceBytes(); most > 0 {
+		if sent := messageSize(contents); sent > most {
+			return nil, fmt.Errorf("%s is %s as one message, more than the %s a resource is sent in (%s); %s",
+				info.Name, sizeOf(sent), sizeOf(most), config.EnvResourceMaxMB, instead)
+		}
 	}
 	return contents, nil
+}
+
+// messageEnvelope is more than the rest of the message a resource's contents
+// are sent in takes: the JSON-RPC response around them, its id, and the
+// contents' own field names.
+const messageEnvelope = 256
+
+// messageSize is about how large the message that answers a read with
+// contents is, never less: what a client's limit on one message measures.
+func messageSize(contents *mcp.ResourceContents) int64 {
+	return sentSize(contents) + int64(len(contents.URI)+len(contents.MIMEType)) + messageEnvelope
 }
 
 // sentSize is about how large contents are as sent, never less: a blob as its

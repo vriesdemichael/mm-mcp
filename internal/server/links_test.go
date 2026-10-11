@@ -310,3 +310,29 @@ func TestAResourceIsMeasuredAsItIsSent(t *testing.T) {
 		}
 	}
 }
+
+// A resource's message is measured never smaller than the JSON-RPC response
+// that carries it, which is what a client's limit on one message measures.
+func TestAResourcesMessageIsMeasuredWhole(t *testing.T) {
+	t.Parallel()
+	for _, contents := range []*mcp.ResourceContents{
+		{URI: "mattermost://chat.example.com:8065/sub/files/" + someID, MIMEType: "application/octet-stream", Blob: make([]byte, 1000)},
+		{URI: "mattermost://h/files/" + someID, MIMEType: "text/plain; charset=utf-8", Text: "<a & \"b\">\n\x01é"},
+		{URI: "mattermost://h/files/" + someID, MIMEType: "text/plain", Blob: []byte{}},
+	} {
+		wire, err := json.Marshal(map[string]any{
+			"jsonrpc": "2.0", "id": int64(1<<63 - 1),
+			// With every field the SDK fills in at its longest.
+			"result": &mcp.ReadResourceResult{
+				Contents:  []*mcp.ResourceContents{contents},
+				Cacheable: mcp.Cacheable{TTLMs: 1<<31 - 1, CacheScope: "private"},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := messageSize(contents); got < int64(len(wire)) {
+			t.Errorf("%s: measured %d, the message is %d", contents.MIMEType, got, len(wire))
+		}
+	}
+}
