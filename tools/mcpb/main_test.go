@@ -145,7 +145,6 @@ func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) 
 		"MM_MCP_DOWNLOAD_DIR":                           {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_CA_FILE":                                {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_RESOURCE_MAX_MB":                        {"isRequired": false, "isSecret": false, "format": "number", "default": "10"},
-		"MM_MCP_RESOURCE_DOWNLOAD_MAX_MB":               {"isRequired": false, "isSecret": false, "format": "number"},
 	}
 	for _, pkg := range document.Packages {
 		if len(pkg.EnvironmentVariables) != len(want) {

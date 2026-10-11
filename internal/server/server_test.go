@@ -140,14 +140,14 @@ func TestOnlyAFilesArgumentIsCompleted(t *testing.T) {
 	}
 }
 
-// A resource is bounded only where the server is given caps, and its
-// template says by what (ADR-029).
+// A resource's message is capped unless the server is told otherwise, and its
+// template says by how much (ADR-029).
 func TestAResourceTemplateSaysWhatBoundsIt(t *testing.T) {
 	t.Parallel()
 	for cfg, want := range map[*config.Config]string{
 		&readOnlyConfig: "A resource is read whole, in one message of up to 10.0 MiB; read_file",
-		{URL: "https://chat.example.com", Token: "t", ResourceMaxMB: 4, ResourceDownloadMaxMB: 20}: "A resource is read whole, in one message of up to 4.0 MiB, from a file of up to 20.0 MiB; read_file",
-		{URL: "https://chat.example.com", Token: "t", ResourceMaxMB: -1}:                           "A resource is read whole; read_file",
+		{URL: "https://chat.example.com", Token: "t", ResourceMaxMB: 4}:  "A resource is read whole, in one message of up to 4.0 MiB; read_file",
+		{URL: "https://chat.example.com", Token: "t", ResourceMaxMB: -1}: "A resource is read whole; read_file",
 	} {
 		result, err := connect(t, *cfg).ListResourceTemplates(t.Context(), nil)
 		if err != nil {

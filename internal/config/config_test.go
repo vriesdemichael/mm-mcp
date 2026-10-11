@@ -207,30 +207,25 @@ func TestAPlaceholderTheClientLeftIsReadAsUnset(t *testing.T) {
 	}
 }
 
-func TestAResourceMessageIsCappedByDefaultAndItsDownloadIsNot(t *testing.T) {
+func TestAResourceMessageIsCappedByDefault(t *testing.T) {
 	t.Parallel()
 	cfg, err := config.FromEnv(testsupport.Env(valid()))
-	if err != nil || cfg.ResourceDownloadBytes() != 0 || cfg.ResourceBytes() != 10<<20 {
-		t.Fatalf("by default: %d, %d, %v", cfg.ResourceDownloadBytes(), cfg.ResourceBytes(), err)
+	if err != nil || cfg.ResourceBytes() != 10<<20 {
+		t.Fatalf("by default: %d, %v", cfg.ResourceBytes(), err)
 	}
-	if zero := (config.Config{}); zero.ResourceDownloadBytes() != 0 || zero.ResourceBytes() != 10<<20 {
-		t.Errorf("a Config made without the environment: %d, %d", zero.ResourceDownloadBytes(), zero.ResourceBytes())
+	if zero := (config.Config{}); zero.ResourceBytes() != 10<<20 {
+		t.Errorf("a Config made without the environment: %d", zero.ResourceBytes())
 	}
 	env := valid()
-	env[config.EnvResourceDownloadMaxMB] = " 5000 "
-	env[config.EnvResourceMaxMB] = "4.0"
-	if cfg, err = config.FromEnv(testsupport.Env(env)); err != nil || cfg.ResourceDownloadBytes() != 5000<<20 || cfg.ResourceBytes() != 4<<20 {
-		t.Fatalf("as set: %d, %d, %v", cfg.ResourceDownloadBytes(), cfg.ResourceBytes(), err)
+	for raw, want := range map[string]int64{" 5000 ": 5000 << 20, "4.0": 4 << 20, "0": 0} {
+		env[config.EnvResourceMaxMB] = raw
+		if cfg, err = config.FromEnv(testsupport.Env(env)); err != nil || cfg.ResourceBytes() != want {
+			t.Errorf("%q: %d, %v", raw, cfg.ResourceBytes(), err)
+		}
 	}
-	env[config.EnvResourceMaxMB] = "0"
-	if cfg, err = config.FromEnv(testsupport.Env(env)); err != nil || cfg.ResourceBytes() != 0 {
-		t.Fatalf("0: %d, %v", cfg.ResourceBytes(), err)
-	}
-	for _, name := range []string{config.EnvResourceDownloadMaxMB, config.EnvResourceMaxMB} {
-		for _, wrong := range []string{"-1", "16MB", "1.5", "NaN", "Inf", "1e400", "9e15"} {
-			if _, err := config.FromEnv(testsupport.Env(with(name, wrong))); err == nil || !strings.Contains(err.Error(), name) {
-				t.Errorf("%s=%s: %v", name, wrong, err)
-			}
+	for _, wrong := range []string{"-1", "16MB", "1.5", "NaN", "Inf", "1e400", "9e15"} {
+		if _, err := config.FromEnv(testsupport.Env(with(config.EnvResourceMaxMB, wrong))); err == nil || !strings.Contains(err.Error(), config.EnvResourceMaxMB) {
+			t.Errorf("%s: %v", wrong, err)
 		}
 	}
 }

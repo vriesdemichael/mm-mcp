@@ -336,3 +336,26 @@ func TestAResourcesMessageIsMeasuredWhole(t *testing.T) {
 		}
 	}
 }
+
+// Mattermost's own limit on a file bounds what a resource read downloads: a
+// file past it is refused, saying it is Mattermost's limit, and a limit
+// Mattermost does not state bounds nothing (ADR-029).
+func TestAFileLargerThanMattermostTakesIsRefused(t *testing.T) {
+	t.Parallel()
+	for raw, want := range map[string]int64{"104857600": 100 << 20, "1": 1, "": 0, "0": 0, "-1": 0, "100MB": 0} {
+		if got := maxFileSize(map[string]string{"MaxFileSize": raw}); got != want {
+			t.Errorf("%q: got %d, want %d", raw, got, want)
+		}
+	}
+	file := &model.FileInfo{Name: "report.bin", Size: 120 << 20}
+	err := withinUploadLimit(file, 100<<20, "save_file saves it")
+	if err == nil || !strings.HasPrefix(err.Error(), "report.bin is 120.0 MiB, more than the 100.0 MiB Mattermost now takes in one file, its Maximum File Size") ||
+		!strings.HasSuffix(err.Error(), "; save_file saves it") {
+		t.Errorf("past the limit: %v", err)
+	}
+	for _, limit := range []int64{120 << 20, 0} {
+		if err := withinUploadLimit(file, limit, ""); err != nil {
+			t.Errorf("within %d: %v", limit, err)
+		}
+	}
+}

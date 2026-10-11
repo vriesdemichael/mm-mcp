@@ -109,24 +109,18 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 		t.Errorf("after the refusal, the text file reads %q", got.Text)
 	}
 
-	// Given caps, a server refuses a file larger than a resource is read from
-	// before it is fetched, and one whose message is larger than a resource is
-	// sent in after; each refusal says what reads it instead.
-	bounded := mcpWith(t, config.Config{URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, ResourceDownloadMaxMB: 2, ResourceMaxMB: 1}, nil)
-	for _, refused := range []struct {
-		id, says string
-		fetched  int
-	}{
-		{longID, "long.log is 3.8 MiB, more than the 2.0 MiB a resource is read from (MM_MCP_RESOURCE_DOWNLOAD_MAX_MB)", 0},
-		{middleID, "middle.bin is 1.3 MiB as one message, more than the 1.0 MiB a resource is sent in (MM_MCP_RESOURCE_MAX_MB)", 1},
-	} {
-		_, err := readResource(t, bounded, "file", liveFile(refused.id))
-		if err == nil || !strings.Contains(err.Error(), refused.says) || !strings.Contains(err.Error(), "read_file reads a text in windows, and save_file saves a file") {
-			t.Errorf("%s: %v", refused.says, err)
-		}
-		if fetched := reachedLast(t, bounded, "GetFile"); fetched != refused.fetched {
-			t.Errorf("%s: fetched %d times, want %d", refused.says, fetched, refused.fetched)
-		}
+	// A file larger than Mattermost takes is refused before it is fetched,
+	// so Mattermost's limit is read first, and a file within it is fetched.
+	// Given a smaller cap on a message, a server refuses a message larger than
+	// that after; the refusal says what reads the file instead.
+	bounded := mcpWith(t, config.Config{URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, ResourceMaxMB: 1}, nil)
+	_, err := readResource(t, bounded, "file", liveFile(middleID))
+	if err == nil || !strings.Contains(err.Error(), "middle.bin is 1.3 MiB as one message, more than the 1.0 MiB a resource is sent in (MM_MCP_RESOURCE_MAX_MB)") ||
+		!strings.Contains(err.Error(), "read_file reads a text in windows, and save_file saves a file") {
+		t.Errorf("a 1 MiB file in a 1 MiB message: %v", err)
+	}
+	if reached := lastReached(t, bounded); !slices.Equal(reached, []string{"GetFileInfo", "GetClientConfig", "GetFile"}) {
+		t.Errorf("the read reached %v", reached)
 	}
 
 	// A listing cut short is not the archive's, and a resource is the whole.
@@ -134,7 +128,7 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 		t.Errorf("an archive listed in part: %v", err)
 	}
 	// A file nobody has is not found.
-	_, err := readResource(t, session, "file", liveFile("abcdefghijklmnopqrstuvwxyz"))
+	_, err = readResource(t, session, "file", liveFile("abcdefghijklmnopqrstuvwxyz"))
 	var refused *jsonrpc.Error
 	if !errors.As(err, &refused) || refused.Code != jsonrpc.CodeInvalidParams || refused.Message != "Resource not found" {
 		t.Errorf("a file nobody has: %v", err)
