@@ -206,3 +206,27 @@ func TestAPlaceholderTheClientLeftIsReadAsUnset(t *testing.T) {
 		t.Fatalf("got %v, %v", cfg, err)
 	}
 }
+
+func TestAResourceIsBoundedByDefaultAndAsConfigured(t *testing.T) {
+	t.Parallel()
+	cfg, err := config.FromEnv(testsupport.Env(valid()))
+	if err != nil || cfg.ResourceDownloadBytes() != 200<<20 || cfg.ResourceBytes() != 16<<20 {
+		t.Fatalf("by default: %d, %d, %v", cfg.ResourceDownloadBytes(), cfg.ResourceBytes(), err)
+	}
+	if zero := (config.Config{}); zero.ResourceDownloadBytes() != 200<<20 || zero.ResourceBytes() != 16<<20 {
+		t.Errorf("a Config made without the environment: %d, %d", zero.ResourceDownloadBytes(), zero.ResourceBytes())
+	}
+	env := valid()
+	env[config.EnvResourceDownloadMaxMB] = " 500 "
+	env[config.EnvResourceMaxMB] = "4.0"
+	if cfg, err = config.FromEnv(testsupport.Env(env)); err != nil || cfg.ResourceDownloadBytes() != 500<<20 || cfg.ResourceBytes() != 4<<20 {
+		t.Fatalf("as set: %d, %d, %v", cfg.ResourceDownloadBytes(), cfg.ResourceBytes(), err)
+	}
+	for _, name := range []string{config.EnvResourceDownloadMaxMB, config.EnvResourceMaxMB} {
+		for _, wrong := range []string{"0", "-1", "16MB", "1.5", "2049", "NaN", "Inf", "1e400"} {
+			if _, err := config.FromEnv(testsupport.Env(with(name, wrong))); err == nil || !strings.Contains(err.Error(), name) {
+				t.Errorf("%s=%s: %v", name, wrong, err)
+			}
+		}
+	}
+}

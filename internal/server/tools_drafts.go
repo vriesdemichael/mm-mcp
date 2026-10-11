@@ -167,7 +167,11 @@ func saveDraftSpec() Spec {
 				if err != nil {
 					return nil, Draft{}, err
 				}
-				checked, err := checkMessage(ctx, client, input.Message, place(channel, self.Id, nil), func(ctx context.Context) (int64, error) {
+				groups, err := groupNames(ctx, client, []*model.Channel{channel}, self.Id)
+				if err != nil {
+					return nil, Draft{}, err
+				}
+				checked, err := checkMessage(ctx, client, input.Message, place(channel, self.Id, nil, groups[channel.Id]), func(ctx context.Context) (int64, error) {
 					stats, err := client.ChannelStats(ctx, channelID)
 					if err != nil {
 						return 0, err
@@ -430,10 +434,15 @@ func deleteDraftSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_draft", draft.Message); err != nil {
 						return nil, Draft{}, err
 					}
+					// Named before it goes, as the question named it.
+					described, err := describeDrafts(ctx, client, []*model.Draft{draft})
+					if err != nil {
+						return nil, Draft{}, err
+					}
 					if err := client.DeleteDraft(ctx, self.Id, draft.ChannelId, draft.RootId); err != nil {
 						return nil, Draft{}, err
 					}
-					return nil, Draft{ChannelID: draft.ChannelId, RootID: draft.RootId, Message: draft.Message}, nil
+					return nil, described[0], nil
 				})
 		},
 	)

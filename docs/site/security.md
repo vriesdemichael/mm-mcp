@@ -22,8 +22,9 @@ there to the provider of the model that application uses. Those results can
 include messages from public and private channels, direct messages, and the
 content of attached files up to 64 MiB, as text or as images. An attached file
 is also offered as an MCP resource, which the application reads when it, or the
-person, chooses, and may pass on to the model as it passes a tool's result; a
-resource holds nothing `read_file` cannot read. A link given to a tool is read
+person, chooses, and may pass on to the model as it passes a tool's result: a
+file of up to 200 MiB, converted as `read_file` converts it, up to 16 MiB as
+sent, both set in [Configuration](configuration.md). A link given to a tool is read
 for the names in it, never fetched, and one to another server is refused.
 
 **Anything the agent reads in Mattermost is therefore disclosed to the model's

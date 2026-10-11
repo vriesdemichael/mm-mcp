@@ -3,11 +3,13 @@ package server
 import (
 	"cmp"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"reflect"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -25,6 +27,12 @@ import (
 // it converts the file as read_file does. read_file and save_file stay: in
 // many clients only the person can open a resource, and a resource writes
 // nothing to disk.
+//
+// A resource goes to the client, which shows it, saves it or puts it in the
+// conversation, rather than straight into the model's context, so it is
+// bounded by what a client takes in one message, MM_MCP_RESOURCE_MAX_MB, and
+// what the server holds while it converts a file,
+// MM_MCP_RESOURCE_DOWNLOAD_MAX_MB, rather than by read_file's limits.
 
 // ResourceSpec is a resource template mm-mcp offers, with the operations
 // reading a resource and completing the template's argument call, accounted
@@ -32,10 +40,10 @@ import (
 type ResourceSpec struct {
 	// Name is the template's name.
 	Name string
-	// Template is the template a server for the Mattermost at an address lists.
-	Template func(address string) *mcp.ResourceTemplate
+	// Template is the template a server configured so lists.
+	Template func(cfg config.Config) *mcp.ResourceTemplate
 	// Read reads one resource of the template.
-	Read func(clientFor ClientFor, address string) mcp.ResourceHandler
+	Read func(clientFor ClientFor, cfg config.Config) mcp.ResourceHandler
 	// Uses is every operation reading a resource calls.
 	Uses []Use
 	// Complete suggests values of the template's argument from what the
@@ -82,18 +90,16 @@ const fileArgument = "file_id"
 func fileResourceSpec() ResourceSpec {
 	return ResourceSpec{
 		Name: "file",
-		Template: func(address string) *mcp.ResourceTemplate {
-			server, err := url.Parse(strings.TrimRight(address, "/"))
-			if err != nil {
-				panic(fmt.Sprintf("the server's address %q: %v", address, err))
-			}
+		Template: func(cfg config.Config) *mcp.ResourceTemplate {
 			return &mcp.ResourceTemplate{
 				Name:        "file",
 				Title:       "Mattermost file",
-				URITemplate: fileResource(server, "{"+fileArgument+"}"),
+				URITemplate: fileResource(serverAddress(cfg), "{"+fileArgument+"}"),
 				Description: "A file attached to a post, converted as read_file converts it: text, the text of a Word, PowerPoint or Excel " +
 					"file, and an archive's listing as text; an image as an image, scaled as read_file scales it; a PDF, audio, video " +
-					fmt.Sprintf("or any other file as itself. A resource is read whole, up to %s; read_file reads a longer text in windows.", sizeOf(fileview.MediaBytes)),
+					fmt.Sprintf("or any other file as itself. A resource is read whole, up to %s as sent, from a file of up to %s; ",
+						sizeOf(cfg.ResourceBytes()), sizeOf(cfg.ResourceDownloadBytes())) +
+					"read_file reads a longer text in windows.",
 			}
 		},
 		Read: readFileResource,
@@ -146,15 +152,21 @@ func fileResourceSpec() ResourceSpec {
 // maxCompletions is the most values MCP lets one completion hold.
 const maxCompletions = 100
 
+// serverAddress is the configured server's address.
+func serverAddress(cfg config.Config) *url.URL {
+	server, err := url.Parse(strings.TrimRight(cfg.URL, "/"))
+	if err != nil {
+		panic(fmt.Sprintf("the server's address %q: %v", cfg.URL, err))
+	}
+	return server
+}
+
 // readFileResource reads a file's resource: the file, converted as read_file
 // converts it, whole.
-func readFileResource(clientFor ClientFor, address string) mcp.ResourceHandler {
+func readFileResource(clientFor ClientFor, cfg config.Config) mcp.ResourceHandler {
+	server := serverAddress(cfg)
 	return func(ctx context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		uri := request.Params.URI
-		server, err := url.Parse(strings.TrimRight(address, "/"))
-		if err != nil {
-			return nil, err
-		}
 		given, err := url.Parse(uri)
 		if err != nil {
 			return nil, mcp.ResourceNotFoundError(uri)
@@ -174,7 +186,7 @@ func readFileResource(clientFor ClientFor, address string) mcp.ResourceHandler {
 		if err != nil {
 			return nil, err
 		}
-		contents, err := wholeFile(ctx, client, info)
+		contents, err := wholeFile(ctx, client, info, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -187,14 +199,16 @@ func readFileResource(clientFor ClientFor, address string) mcp.ResourceHandler {
 const plainText = "text/plain; charset=utf-8"
 
 // wholeFile is a file as a resource: converted as read_file converts it, and
-// returned whole, which a resource is read, up to the most read_file returns
-// in one piece of content. A file past that, or past what read_file reads at
-// all, is refused with what reads it instead.
-func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileInfo) (*mcp.ResourceContents, error) {
+// returned whole, as a resource is read. A file larger than a resource read
+// downloads is refused before it is fetched, and one whose resource would be
+// larger as sent than a resource holds, or whose text was cut short, is
+// refused with what reads it instead.
+func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileInfo, cfg config.Config) (*mcp.ResourceContents, error) {
 	opens := client.Permalink(info.PostId)
-	if info.Size > fileview.MaxFileBytes {
-		return nil, fmt.Errorf("%s is %s, more than the %s a file is read up to; save_file saves it, and the person can open it from its post: %s",
-			info.Name, sizeOf(info.Size), sizeOf(fileview.MaxFileBytes), opens)
+	instead := "read_file reads a text in windows, and save_file saves a file, and the person can open it from its post: " + opens
+	if download := cfg.ResourceDownloadBytes(); info.Size > download {
+		return nil, fmt.Errorf("%s is %s, more than the %s a resource is read from (%s); %s",
+			info.Name, sizeOf(info.Size), sizeOf(download), config.EnvResourceDownloadMaxMB, instead)
 	}
 	data, err := client.File(ctx, info.Id)
 	if err != nil {
@@ -204,38 +218,62 @@ func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileI
 	if err != nil {
 		return nil, err
 	}
-	tooLarge := func(what string, size int) error {
-		return fmt.Errorf("%s is %s, more than the %s a resource holds; %s, and the person can open it from its post: %s",
-			what, sizeOf(int64(size)), sizeOf(fileview.MediaBytes), "read_file reads a text in windows, and save_file saves a file", opens)
-	}
+	var contents *mcp.ResourceContents
 	isPDF := view.MIMEType == pdfType || info.MimeType == pdfType
 	switch {
-	case isPDF && len(data) <= fileview.MediaBytes:
+	case isPDF:
 		// A PDF is the client's to convert, as read_file leaves it.
-		return &mcp.ResourceContents{MIMEType: pdfType, Blob: data}, nil
+		contents = &mcp.ResourceContents{MIMEType: pdfType, Blob: data}
 	case view.Window != nil:
-		if len(view.Whole) > fileview.MediaBytes {
-			return nil, tooLarge("the text of "+info.Name, len(view.Whole))
+		if view.Partial {
+			return nil, fmt.Errorf("the text of %s stops short of what the file holds, as read_file's header for it says, and a resource is the whole of it; %s",
+				info.Name, instead)
 		}
 		mimeType := plainText
 		if view.Kind == fileview.KindText && view.MIMEType != "" {
 			mimeType = view.MIMEType
 		}
+		contents = &mcp.ResourceContents{MIMEType: mimeType, Text: view.Whole}
 		if view.Whole == "" {
 			// Text resource contents must hold text, and an empty one would be
 			// left out of the answer altogether.
-			return &mcp.ResourceContents{MIMEType: mimeType, Blob: []byte{}}, nil
+			contents = &mcp.ResourceContents{MIMEType: mimeType, Blob: []byte{}}
 		}
-		return &mcp.ResourceContents{MIMEType: mimeType, Text: view.Whole}, nil
 	case view.Image != nil:
-		return &mcp.ResourceContents{MIMEType: view.Image.MIMEType, Blob: view.Image.Data}, nil
-	case view.Media != nil:
-		return &mcp.ResourceContents{MIMEType: view.Media.MIMEType, Blob: view.Media.Data}, nil
-	case len(data) <= fileview.MediaBytes:
-		mimeType := cmp.Or(view.MIMEType, info.MimeType, "application/octet-stream")
-		return &mcp.ResourceContents{MIMEType: mimeType, Blob: data}, nil
+		contents = &mcp.ResourceContents{MIMEType: view.Image.MIMEType, Blob: view.Image.Data}
+	default:
+		// Audio, video and any other file as its bytes, which read_file
+		// returns only when small.
+		contents = &mcp.ResourceContents{MIMEType: cmp.Or(view.MIMEType, info.MimeType, "application/octet-stream"), Blob: data}
 	}
-	return nil, tooLarge(info.Name, len(data))
+	if sent, most := sentSize(contents), cfg.ResourceBytes(); sent > most {
+		return nil, fmt.Errorf("%s is %s as sent, more than the %s a resource holds (%s); %s",
+			info.Name, sizeOf(sent), sizeOf(most), config.EnvResourceMaxMB, instead)
+	}
+	return contents, nil
+}
+
+// sentSize is about how large contents are as sent, never less: a blob as its
+// base64, and text with what JSON escapes in it, counting every escape as
+// Go's encoder writes the longest, \u0000.
+func sentSize(contents *mcp.ResourceContents) int64 {
+	if contents.Text == "" {
+		return int64(base64.StdEncoding.EncodedLen(len(contents.Blob)))
+	}
+	size := int64(0)
+	for _, r := range contents.Text {
+		switch {
+		case r == utf8.RuneError:
+			size += 6
+		case r < 0x20, r == '<', r == '>', r == '&', r == '\u2028', r == '\u2029':
+			size += 6
+		case r == '"', r == '\\':
+			size += 2
+		default:
+			size += int64(utf8.RuneLen(r))
+		}
+	}
+	return size
 }
 
 // sizeOf is a size in bytes as a person reads it.
@@ -252,7 +290,7 @@ func sizeOf(size int64) string {
 // completion is the server's answer to a request to complete an argument:
 // the template the request names suggests values; any other reference has
 // none.
-func completion(clientFor ClientFor, address string, resources []ResourceSpec) func(context.Context, *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
+func completion(clientFor ClientFor, cfg config.Config, resources []ResourceSpec) func(context.Context, *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
 	return func(ctx context.Context, request *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
 		none := &mcp.CompleteResult{Completion: mcp.CompletionResultDetails{Values: []string{}}}
 		ref := request.Params.Ref
@@ -260,7 +298,7 @@ func completion(clientFor ClientFor, address string, resources []ResourceSpec) f
 			return none, nil
 		}
 		for _, resource := range resources {
-			if resource.Complete == nil || resource.Template(address).URITemplate != ref.URI {
+			if resource.Complete == nil || resource.Template(cfg).URITemplate != ref.URI {
 				continue
 			}
 			client, err := clientFor(ctx, request)
@@ -280,7 +318,7 @@ func completion(clientFor ClientFor, address string, resources []ResourceSpec) f
 // registerResources adds every resource template to a server.
 func registerResources(server *mcp.Server, clientFor ClientFor, cfg config.Config, resources []ResourceSpec) {
 	for _, resource := range resources {
-		server.AddResourceTemplate(resource.Template(cfg.URL), resource.Read(clientFor, cfg.URL))
+		server.AddResourceTemplate(resource.Template(cfg), resource.Read(clientFor, cfg))
 	}
 }
 

@@ -122,11 +122,12 @@ func readOffice(request Request, size int64, document *officeDocument, family of
 	}
 
 	return lines(request, KindDocument, family.mimeType, size, linedText{
-		what:   "text extracted from " + family.name,
-		layout: family.layout,
-		noun:   "text",
-		empty:  "text extracted from " + family.name + ", which has none.",
-		note:   note,
+		what:    "text extracted from " + family.name,
+		layout:  family.layout,
+		noun:    "text",
+		empty:   "text extracted from " + family.name + ", which has none.",
+		note:    note,
+		partial: document.full || document.cut,
 	}, document.text.String())
 }
 

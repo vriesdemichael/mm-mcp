@@ -264,6 +264,9 @@ func TestTheTextOfALargeDocumentStopsAndSaysSo(t *testing.T) {
 	if !strings.Contains(view.Text, "The text stops at 8.0 MiB; the rest of the document is not included.") {
 		t.Errorf("the header does not say the text stops: %.300q", view.Text)
 	}
+	if !view.Partial {
+		t.Error("a text cut short is not marked partial")
+	}
 
 	archive, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
 	if err != nil {
@@ -278,8 +281,8 @@ func TestTheTextOfALargeDocumentStopsAndSaysSo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readOffice: %v", err)
 	}
-	if cut.Kind != KindDocument || !strings.Contains(cut.Text, "The text stops after 128.0 MiB of the document's XML") {
-		t.Errorf("a document past the XML budget: %s %.300q", cut.Kind, cut.Text)
+	if cut.Kind != KindDocument || !cut.Partial || !strings.Contains(cut.Text, "The text stops after 128.0 MiB of the document's XML") {
+		t.Errorf("a document past the XML budget: %s %t %.300q", cut.Kind, cut.Partial, cut.Text)
 	}
 }
 

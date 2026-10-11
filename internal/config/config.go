@@ -7,8 +7,10 @@ package config
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -23,12 +25,32 @@ const (
 	EnvMarkAIGenerated                 = "MM_MCP_MARK_AI_GENERATED"
 	EnvBlockExternalNetwork            = "MM_MCP_BLOCK_EXTERNAL_NETWORK"
 	EnvCAFile                          = "MM_MCP_CA_FILE"
+	EnvResourceDownloadMaxMB           = "MM_MCP_RESOURCE_DOWNLOAD_MAX_MB"
+	EnvResourceMaxMB                   = "MM_MCP_RESOURCE_MAX_MB"
+)
+
+// What a read of a file's resource is bounded by when nothing else is set
+// (ADR-029), in megabytes of 1,048,576 bytes. A resource goes to the MCP
+// client, not straight into the model's context, so it is bounded by what a
+// client takes in one message rather than by what a model reads at once.
+const (
+	// DefaultResourceDownloadMaxMB is the largest file a resource read
+	// downloads and converts, which is held in memory while it is.
+	DefaultResourceDownloadMaxMB = 200
+	// DefaultResourceMaxMB is the most one resource holds as it is sent:
+	// Claude Code takes a message of 16 MB over SSE.
+	DefaultResourceMaxMB = 16
+	// maxMB is the most either may be set to: what one read holds in memory.
+	maxMB = 2048
 )
 
 // EnvironmentVariables is every variable mm-mcp reads. The unit-test seal
 // empties each of them, and a governance test fails when the source names one
 // that is not listed here (ADR-006).
-var EnvironmentVariables = []string{EnvURL, EnvToken, EnvAllowWrites, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated, EnvBlockExternalNetwork, EnvCAFile}
+var EnvironmentVariables = []string{
+	EnvURL, EnvToken, EnvAllowWrites, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
+	EnvBlockExternalNetwork, EnvCAFile, EnvResourceDownloadMaxMB, EnvResourceMaxMB,
+}
 
 // Config is a server's configuration.
 type Config struct {
@@ -58,6 +80,11 @@ type Config struct {
 	// CAFile is a PEM file of certificate authorities to trust beside the
 	// system's, for a server whose certificate an organisation signed itself.
 	CAFile string
+	// ResourceDownloadMaxMB is the largest file a resource read downloads, and
+	// ResourceMaxMB the most a resource holds as sent; zero is the default.
+	// ResourceDownloadBytes and ResourceBytes read them.
+	ResourceDownloadMaxMB int
+	ResourceMaxMB         int
 	// Local says the server runs on the person's own machine, for the one client
 	// that started it over stdio. It comes from how the server is served, not
 	// from the environment, and only a local server offers the tools that read
@@ -65,9 +92,27 @@ type Config struct {
 	Local bool
 }
 
+// ResourceDownloadBytes is the largest file a resource read downloads.
+func (c Config) ResourceDownloadBytes() int64 {
+	return megabytes(c.ResourceDownloadMaxMB, DefaultResourceDownloadMaxMB)
+}
+
+// ResourceBytes is the most one resource holds as it is sent.
+func (c Config) ResourceBytes() int64 {
+	return megabytes(c.ResourceMaxMB, DefaultResourceMaxMB)
+}
+
+func megabytes(set, fallback int) int64 {
+	if set <= 0 {
+		set = fallback
+	}
+	return int64(set) << 20
+}
+
 // String leaves the token out, so a Config can be logged or printed in an error.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, SkipAsking: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, Local: %t}", c.URL, c.AllowWrites, c.SkipAsking, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.Local)
+	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, SkipAsking: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceDownloadMaxMB: %d, ResourceMaxMB: %d, Local: %t}",
+		c.URL, c.AllowWrites, c.SkipAsking, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceDownloadMaxMB, c.ResourceMaxMB, c.Local)
 }
 
 // GoString is String, so %#v leaves the token out too.
@@ -144,11 +189,36 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		// which nobody chose and few could name.
 		return Config{}, errorf("%s must be a full path, not %q.", EnvDownloadDir, downloadDir)
 	}
+	downloadMax, err := parseMB(EnvResourceDownloadMaxMB, lookup(EnvResourceDownloadMaxMB), DefaultResourceDownloadMaxMB)
+	if err != nil {
+		return Config{}, err
+	}
+	resourceMax, err := parseMB(EnvResourceMaxMB, lookup(EnvResourceMaxMB), DefaultResourceMaxMB)
+	if err != nil {
+		return Config{}, err
+	}
 	return Config{
 		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, SkipAsking: !ask, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
-		DownloadDir: downloadDir,
-		CAFile:      strings.TrimSpace(lookup(EnvCAFile)),
+		DownloadDir:           downloadDir,
+		CAFile:                strings.TrimSpace(lookup(EnvCAFile)),
+		ResourceDownloadMaxMB: downloadMax,
+		ResourceMaxMB:         resourceMax,
 	}, nil
+}
+
+// parseMB reads a size in megabytes: a whole number from 1 to maxMB, or the
+// fallback when it is not set. A bundle's number setting may arrive written as
+// a decimal, 16.0, which is whole all the same.
+func parseMB(name, raw string, fallback int) (int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return fallback, nil
+	}
+	value, err := strconv.ParseFloat(raw, 64)
+	if err != nil || value != math.Trunc(value) || value < 1 || value > maxMB {
+		return 0, errorf("%s must be a whole number of megabytes from 1 to %d, not %q.", name, maxMB, raw)
+	}
+	return int(value), nil
 }
 
 // ParseBool reads the usual spellings of true and false; empty is false.

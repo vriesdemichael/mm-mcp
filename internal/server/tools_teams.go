@@ -216,7 +216,7 @@ type Channel struct {
 	TeamID      string `json:"team_id,omitempty" jsonschema:"the team the channel is in; empty for a direct or group message"`
 	Team        string `json:"team,omitempty" jsonschema:"the team's display name"`
 	Name        string `json:"name" jsonschema:"the name in the channel's address"`
-	DisplayName string `json:"display_name" jsonschema:"for a direct message, the other person's username"`
+	DisplayName string `json:"display_name" jsonschema:"as Mattermost shows it: for a direct message, the other person's username; for a group message, the other people's"`
 	Type        string `json:"type" jsonschema:"public, private, direct or group"`
 	Purpose     string `json:"purpose,omitempty"`
 	Header      string `json:"header,omitempty"`
@@ -288,6 +288,7 @@ func getUserChannelsSpec() Spec {
 				Operation: "GetUsersByIds",
 				Params:    map[string]Coverage{"since": Omitted("the tool reads the other person of each direct message, whenever they changed")},
 			},
+			groupNamesUse,
 		},
 		func(clientFor ClientFor) mcp.ToolHandlerFor[getUserChannelsInput, Channels] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input getUserChannelsInput) (*mcp.CallToolResult, Channels, error) {
@@ -361,10 +362,13 @@ type myChannels struct {
 	// home is the team the links of direct and group messages open in.
 	home   *model.Team
 	people map[string]string
+	// groups names each group message, as groupNames does.
+	groups map[string]string
 }
 
 // readMyChannels reads the user's channels and what names them.
-// GetUser, GetChannelsForUser, GetTeamsForUser, GetUsersByIds.
+// GetUser, GetChannelsForUser, GetTeamsForUser, GetUsersByIds,
+// GetUsersByGroupChannelIds.
 func readMyChannels(ctx context.Context, client *mattermost.Client) (myChannels, error) {
 	self, err := client.Me(ctx)
 	if err != nil {
@@ -391,12 +395,18 @@ func readMyChannels(ctx context.Context, client *mattermost.Client) (myChannels,
 	if mine.people, err = usernames(ctx, client, others); err != nil {
 		return myChannels{}, err
 	}
+	if mine.groups, err = groupNames(ctx, client, channels, self.Id); err != nil {
+		return myChannels{}, err
+	}
 	return mine, nil
 }
 
 // describe is one channel as a tool returns it, named as the person knows it.
 func (m myChannels) describe(channel *model.Channel) Channel {
 	out := toChannel(channel, m.self.Id, m.people, zoneOf(m.self))
+	if group := m.groups[channel.Id]; group != "" {
+		out.DisplayName = group
+	}
 	team := m.teams[channel.TeamId]
 	if team != nil {
 		out.Team = team.DisplayName
@@ -404,6 +414,43 @@ func (m myChannels) describe(channel *model.Channel) Channel {
 	out.URL = channelLink(m.client, channel, team, m.home, m.people[otherInDirect(channel, m.self.Id)])
 	return out
 }
+
+// groupNames names each group message among channels as Mattermost's own app
+// names it: after the other people in it, by username, in order. Mattermost's
+// stored name lists everyone, the user included, and stops at 64 characters,
+// which would hide who a message goes to. GetUsersByGroupChannelIds.
+func groupNames(ctx context.Context, client *mattermost.Client, channels []*model.Channel, self string) (map[string]string, error) {
+	var ids []string
+	for _, channel := range channels {
+		if channel.Type == model.ChannelTypeGroup {
+			ids = append(ids, channel.Id)
+		}
+	}
+	names := map[string]string{}
+	if len(ids) == 0 {
+		return names, nil
+	}
+	members, err := client.GroupMembers(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, users := range members {
+		var others []string
+		for _, user := range users {
+			if user.Id != self {
+				others = append(others, user.Username)
+			}
+		}
+		slices.SortFunc(others, func(a, b string) int { return strings.Compare(strings.ToLower(a), strings.ToLower(b)) })
+		if len(others) > 0 {
+			names[id] = strings.Join(others, ", ")
+		}
+	}
+	return names, nil
+}
+
+// groupNamesUse is the GetUsersByGroupChannelIds groupNames calls.
+var groupNamesUse = Use{Operation: "GetUsersByGroupChannelIds", Params: map[string]Coverage{}}
 
 // otherInDirect is the other person in a direct message, and the user
 // themselves in a direct message to themselves, which Mattermost names with
@@ -485,6 +532,7 @@ func myChannelsUses() []Use {
 			Operation: "GetUsersByIds",
 			Params:    map[string]Coverage{"since": Omitted("the tool reads the other person of each direct message, whenever they changed")},
 		},
+		groupNamesUse,
 	}
 }
 

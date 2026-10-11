@@ -274,6 +274,7 @@ func TestALocalToolOnlyReadsMattermost(t *testing.T) {
 var readingPosts = map[string]bool{
 	"SearchPosts": true, "SearchPostsInAllTeams": true, "SearchFiles": true, "SearchUsers": true,
 	"SearchChannels": true, "GetUsersByIds": true, "GetUsersByUsernames": true, "GetUsersStatusesByIds": true,
+	"GetUsersByGroupChannelIds": true,
 }
 
 // TestAReadOnlyToolCallsOnlyOperationsThatRead holds a tool annotated read-only,

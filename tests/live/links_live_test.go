@@ -4,7 +4,9 @@ package live
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -235,5 +237,101 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		if !result.IsError || !strings.Contains(errorText(result), refused.says) {
 			t.Errorf("%s %v: %s; want it refused saying %q", refused.call.Name, refused.call.Arguments, errorText(result), refused.says)
 		}
+	}
+}
+
+// A group message is named as Mattermost's app names it, after the other
+// people in it, in answers and in the questions that ask before a write:
+// Mattermost's stored name lists everyone, the user included, and stops at 64
+// characters, which would hide who a post goes to.
+func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user := seedUser(t, admin)
+	others := []*model.User{seedUser(t, admin), seedUser(t, admin), seedUser(t, admin), seedUser(t, admin)}
+	seedTeam(t, admin, append([]*model.User{user}, others...)...)
+	ids := []string{user.Id}
+	var usernames []string
+	for _, other := range others {
+		ids = append(ids, other.Id)
+		usernames = append(usernames, other.Username)
+	}
+	slices.Sort(usernames)
+	want := strings.Join(usernames, ", ")
+	author := clientAs(t, others[0])
+	group, _, err := author.CreateGroupChannel(t.Context(), ids)
+	check(t, err)
+	if strings.Contains(group.DisplayName, usernames[3]) {
+		t.Fatalf("Mattermost names the group %q in full; the test needs names long enough to be cut", group.DisplayName)
+	}
+	theirs := postAs(t, author, group.Id, "", "a post in the group about @"+user.Username)
+	postAs(t, author, group.Id, theirs.Id, "a reply that starts a thread the user follows")
+	_, fileID := attachAs(t, author, group.Id, "notes.txt", []byte("notes for the group\n"))
+	session, questions := writingSession(t, admin, user, accept)
+
+	listed := getUserChannels(t, session, nil)
+	if got := listed[group.Id].DisplayName; got != want {
+		t.Errorf("get_user_channels names the group %q; want %q", got, want)
+	}
+	var found server.Channels
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "search_channels", Arguments: map[string]any{"term": usernames[3]}}), &found)
+	if !slices.ContainsFunc(found.Channels, func(channel server.Channel) bool { return channel.ID == group.Id && channel.DisplayName == want }) {
+		t.Errorf("search_channels finds the group by a name its stored one cuts off: %+v", found.Channels)
+	}
+	if read := readChannel(t, session, map[string]any{"channel_id": group.Id}); read.Channel != want {
+		t.Errorf("read_channel names the group %q", read.Channel)
+	}
+
+	posted := createPost(t, session, map[string]any{"channel_id": group.Id, "message": "the user's own post in the group"})
+	if question := questions.only(t); !strings.Contains(question.Message, "the group message with "+want) {
+		t.Errorf("the question names the group as:\n%s", question.Message)
+	}
+	for _, call := range []*mcp.CallToolParams{
+		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited"}},
+		{Name: "add_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
+		{Name: "remove_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
+		{Name: "pin_post", Arguments: map[string]any{"post_id": theirs.Id}},
+		{Name: "save_post", Arguments: map[string]any{"post_id": theirs.Id}},
+		{Name: "save_draft", Arguments: map[string]any{"channel_id": group.Id, "message": "a draft for the group"}},
+		{Name: "follow_thread", Arguments: map[string]any{"post_id": theirs.Id}},
+	} {
+		if result := callTool(t, session, call); result.IsError {
+			t.Fatalf("%s: %s", call.Name, errorText(result))
+		}
+	}
+
+	// Every answer that names posts in it names the group so too.
+	inGroup := func(name string, arguments map[string]any) {
+		t.Helper()
+		result := callTool(t, session, &mcp.CallToolParams{Name: name, Arguments: arguments})
+		if result.IsError {
+			t.Fatalf("%s: %s", name, errorText(result))
+		}
+		raw, _ := json.Marshal(result.StructuredContent)
+		if !strings.Contains(string(raw), `"`+want+`"`) {
+			t.Errorf("%s does not name the group %q: %.600s", name, want, raw)
+		}
+	}
+	inGroup("list_pinned_posts", map[string]any{"channel_id": group.Id})
+	inGroup("list_saved", nil)
+	inGroup("list_drafts", nil)
+	inGroup("list_threads", nil)
+	eventually(t, 30*time.Second, func() (bool, string) {
+		var mentions server.Mentions
+		structured(t, callTool(t, session, &mcp.CallToolParams{Name: "list_mentions"}), &mentions)
+		return len(mentions.Posts) > 0, fmt.Sprint(mentions.Posts)
+	})
+	inGroup("list_mentions", nil)
+	eventually(t, 30*time.Second, func() (bool, string) {
+		var files server.FileResults
+		structured(t, callTool(t, session, &mcp.CallToolParams{Name: "search_files", Arguments: map[string]any{"terms": "notes"}}), &files)
+		return slices.ContainsFunc(files.Files, func(file server.FoundFile) bool { return file.ID == fileID }), fmt.Sprint(files.Files)
+	})
+	inGroup("search_files", map[string]any{"terms": "notes"})
+	inGroup("search_posts", map[string]any{"terms": "group"})
+	inGroup("read_unread", map[string]any{"channel_id": group.Id})
+	inGroup("delete_draft", map[string]any{"channel_id": group.Id})
+	if result := callTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": posted.ID}}); result.IsError {
+		t.Errorf("delete_post: %s", errorText(result))
 	}
 }

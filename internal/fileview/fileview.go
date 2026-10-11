@@ -85,6 +85,11 @@ type View struct {
 	// archive's listing. A caller that returns a file whole, as a resource is
 	// read, takes it rather than a window.
 	Whole string
+	// Partial is set when Whole stops short of what the file holds: a
+	// document's text past what is extracted, an archive's listing past what
+	// is listed. The window's header says so; a caller that returns Whole
+	// without it must too, or not return it.
+	Partial bool
 	// Image is the image returned, for an image.
 	Image *Image
 	// Media is the audio or video returned, when it is within MediaBytes.

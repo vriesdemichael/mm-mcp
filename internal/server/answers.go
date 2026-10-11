@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"strings"
 	"time"
@@ -55,7 +56,7 @@ type Post struct {
 	ID         string `json:"id"`
 	URL        string `json:"url" jsonschema:"the post's link, which opens it in Mattermost: to say where something was said, cite the post by this link, not its channel's"`
 	ChannelID  string `json:"channel_id,omitempty" jsonschema:"left out where the answer names its one channel for all its posts"`
-	Channel    string `json:"channel,omitempty" jsonschema:"the channel's display name; a direct message is named after the person on the other side"`
+	Channel    string `json:"channel,omitempty" jsonschema:"the channel's display name, as Mattermost shows it: a direct or group message is named after the other people in it"`
 	ChannelURL string `json:"channel_url,omitempty" jsonschema:"the channel's link, which opens it in Mattermost"`
 	Team       string `json:"team,omitempty" jsonschema:"the team's display name; empty for a direct or group message, which belong to no team"`
 	Author     string `json:"author" jsonschema:"the author's username, or their id when it could not be read"`
@@ -88,6 +89,8 @@ type surroundings struct {
 	// home is the team the links of direct and group messages open in.
 	home   *model.Team
 	people map[string]*model.User
+	// groups names each group message, as groupNames does.
+	groups map[string]string
 }
 
 // describePosts is posts as the tools return them.
@@ -157,6 +160,13 @@ func readSurroundings(ctx context.Context, client *mattermost.Client, posts []*m
 	if err != nil {
 		return surroundings{}, err
 	}
+	in := make([]*model.Channel, 0, len(around.channels))
+	for _, channel := range around.channels {
+		in = append(in, channel)
+	}
+	if around.groups, err = groupNames(ctx, client, in, self.Id); err != nil {
+		return surroundings{}, err
+	}
 	around.people = people
 	around.people[self.Id] = self
 	return around, nil
@@ -194,7 +204,7 @@ func (s surroundings) post(post *model.Post) Post {
 	}
 	if channel := s.channels[post.ChannelId]; channel != nil && s.self != nil {
 		names := s.usernames()
-		out.Channel = toChannel(channel, s.self.Id, names, s.zone).DisplayName
+		out.Channel = cmp.Or(s.groups[channel.Id], toChannel(channel, s.self.Id, names, s.zone).DisplayName)
 		team := s.teams[channel.TeamId]
 		if team != nil {
 			out.Team = team.DisplayName
@@ -308,8 +318,9 @@ func usernames(ctx context.Context, client *mattermost.Client, ids []string) (ma
 }
 
 // describeUses are the operations describePosts calls. inTeams says whether
-// the tool's posts can be in a team's channel; a direct or group message's
-// cannot, so a tool that answers only with those never reads a team.
+// the tool's posts can be in any channel; one that answers only with direct
+// or group messages never reads a team, and names a group message only when
+// it declares groupNamesUse itself.
 func describeUses(inTeams bool) []Use {
 	uses := []Use{
 		{
@@ -333,7 +344,7 @@ func describeUses(inTeams bool) []Use {
 		uses = append(uses, Use{
 			Operation: "GetTeam",
 			Params:    map[string]Coverage{"team_id": Fixed("each channel's team", "a post names its team")},
-		})
+		}, groupNamesUse)
 	}
 	return uses
 }

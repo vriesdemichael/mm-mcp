@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"maps"
@@ -55,8 +56,9 @@ func excerpt(message string) string {
 }
 
 // place says where a channel is, as the person knows it: a channel by its name,
-// a direct message by the person on the other side.
-func place(channel *model.Channel, self string, names map[string]string) string {
+// a direct message by the person on the other side, a group message by the
+// other people in it, as groupNames names it, given as group.
+func place(channel *model.Channel, self string, names map[string]string, group string) string {
 	switch channel.Type {
 	case model.ChannelTypeDirect:
 		other := otherInDirect(channel, self)
@@ -68,7 +70,7 @@ func place(channel *model.Channel, self string, names map[string]string) string 
 		}
 		return "a direct message"
 	case model.ChannelTypeGroup:
-		return "the group message with " + oneLine(channel.DisplayName)
+		return "the group message with " + oneLine(cmp.Or(group, channel.DisplayName))
 	}
 	return "~" + oneLine(channel.DisplayName)
 }
@@ -121,7 +123,11 @@ func readPostInContext(ctx context.Context, client *mattermost.Client, postID st
 	if author == "" {
 		author = post.UserId
 	}
-	return postInContext{post: post, self: self, channel: channel, author: author, in: place(channel, self.Id, names)}, nil
+	groups, err := groupNames(ctx, client, []*model.Channel{channel}, self.Id)
+	if err != nil {
+		return postInContext{}, err
+	}
+	return postInContext{post: post, self: self, channel: channel, author: author, in: place(channel, self.Id, names, groups[channel.Id])}, nil
 }
 
 // postContextUses are the operations readPostInContext calls, for a tool that
@@ -147,6 +153,7 @@ func postContextUses() []Use {
 			Operation: "GetUsersByIds",
 			Params:    map[string]Coverage{"since": Omitted("the tool reads each username, whenever it changed")},
 		},
+		groupNamesUse,
 	}
 }
 
@@ -232,9 +239,13 @@ func inChannel(ctx context.Context, client *mattermost.Client, channelID, rootID
 	if err != nil {
 		return destination{}, err
 	}
+	groups, err := groupNames(ctx, client, []*model.Channel{channel}, self.Id)
+	if err != nil {
+		return destination{}, err
+	}
 	return destination{
 		self:      self,
-		label:     place(channel, self.Id, names),
+		label:     place(channel, self.Id, names, groups[channel.Id]),
 		channelID: channelID,
 		key:       "channel:" + channelID + "/" + rootID,
 		root:      root,
@@ -616,6 +627,7 @@ func groupMessageSpec() Spec {
 		},
 		uses(peopleUses("usernames"), []Use{
 			{Operation: "CreateGroupChannel", Params: map[string]Coverage{}},
+			groupNamesUse,
 			{
 				Operation: "GetUser",
 				Params:    map[string]Coverage{"user_id": Fixed("me", "the message is sent under the user's name, and the user is in the group")},
