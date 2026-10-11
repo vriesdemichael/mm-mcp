@@ -49,6 +49,8 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 	_, soundID := attachAs(t, author, channel.Id, "tone.wav", silence())
 	_, hugeID := attachAs(t, author, channel.Id, "disk.img", make([]byte, fileview.MediaBytes+1))
 	_, middleID := attachAs(t, author, channel.Id, "middle.bin", bytes.Repeat([]byte{0, 1, 2, 0xff}, 250_000))
+	large := bytes.Repeat([]byte{0, 1, 2, 0xff}, 17<<20/4)
+	_, largeID := attachAs(t, author, channel.Id, "large.bin", large)
 	_, manyID := attachAs(t, author, channel.Id, "many.zip", longListing())
 	session := sessionFor(t, admin, user)
 
@@ -88,25 +90,35 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 		t.Errorf("the sound reads %d bytes as %s", len(got.Blob), got.MIMEType)
 	}
 
-	// More than read_file returns in one piece is read whole, within the
-	// resource's own bounds.
+	// More than read_file returns in one piece is read whole, in one message
+	// within what clients take.
 	if got := read(longID); got.Text != long {
 		t.Errorf("the long log reads %d bytes of %d", len(got.Text), len(long))
 	}
 	if got := read(hugeID); len(got.Blob) != fileview.MediaBytes+1 || got.MIMEType != "application/octet-stream" {
 		t.Errorf("the disk image reads %d bytes as %s", len(got.Blob), got.MIMEType)
 	}
+	// A message larger than clients take is refused before it is sent: past
+	// its limit, a client drops the request or the whole session. The session
+	// goes on.
+	if _, err := readResource(t, session, "file", liveFile(largeID)); err == nil ||
+		!strings.Contains(err.Error(), "large.bin is 22.7 MiB as one message, more than the 10.0 MiB a resource is sent in (MM_MCP_RESOURCE_MAX_MB)") {
+		t.Errorf("a 17 MiB file: %v", err)
+	}
+	if got := read(textID); got.Text != text {
+		t.Errorf("after the refusal, the text file reads %q", got.Text)
+	}
 
-	// With the bounds set lower, a file larger than a resource is read from is
-	// refused before it is fetched, and one larger as sent than a resource
-	// holds after; each says what reads it instead.
+	// Given caps, a server refuses a file larger than a resource is read from
+	// before it is fetched, and one whose message is larger than a resource is
+	// sent in after; each refusal says what reads it instead.
 	bounded := mcpWith(t, config.Config{URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, ResourceDownloadMaxMB: 2, ResourceMaxMB: 1}, nil)
 	for _, refused := range []struct {
 		id, says string
 		fetched  int
 	}{
 		{longID, "long.log is 3.8 MiB, more than the 2.0 MiB a resource is read from (MM_MCP_RESOURCE_DOWNLOAD_MAX_MB)", 0},
-		{middleID, "middle.bin is 1.3 MiB as sent, more than the 1.0 MiB a resource holds (MM_MCP_RESOURCE_MAX_MB)", 1},
+		{middleID, "middle.bin is 1.3 MiB as one message, more than the 1.0 MiB a resource is sent in (MM_MCP_RESOURCE_MAX_MB)", 1},
 	} {
 		_, err := readResource(t, bounded, "file", liveFile(refused.id))
 		if err == nil || !strings.Contains(err.Error(), refused.says) || !strings.Contains(err.Error(), "read_file reads a text in windows, and save_file saves a file") {

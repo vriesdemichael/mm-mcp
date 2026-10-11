@@ -29,20 +29,17 @@ const (
 	EnvResourceMaxMB                   = "MM_MCP_RESOURCE_MAX_MB"
 )
 
-// What a read of a file's resource is bounded by when nothing else is set
-// (ADR-029), in megabytes of 1,048,576 bytes. A resource goes to the MCP
-// client, not straight into the model's context, so it is bounded by what a
-// client takes in one message rather than by what a model reads at once.
-const (
-	// DefaultResourceDownloadMaxMB is the largest file a resource read
-	// downloads and converts, which is held in memory while it is.
-	DefaultResourceDownloadMaxMB = 200
-	// DefaultResourceMaxMB is the most one resource holds as it is sent:
-	// Claude Code takes a message of 16 MB over SSE.
-	DefaultResourceMaxMB = 16
-	// maxMB is the most either may be set to: what one read holds in memory.
-	maxMB = 2048
-)
+// DefaultResourceMaxMB is the most one resource's message holds when nothing
+// else is set, in megabytes of 1,048,576 bytes (ADR-029). MCP sends a resource
+// whole, in one message, and a client refuses a message past its own limit by
+// dropping the request or the whole session: the TypeScript SDK's stdio
+// transport takes 10 MiB, Go's 16 MiB. Refused here first, the file can be
+// read another way.
+const DefaultResourceMaxMB = 10
+
+// maxMB is the largest cap a resource read takes, in megabytes: past it, the
+// bytes no longer fit an int64.
+const maxMB = math.MaxInt64 >> 20
 
 // EnvironmentVariables is every variable mm-mcp reads. The unit-test seal
 // empties each of them, and a governance test fails when the source names one
@@ -80,11 +77,12 @@ type Config struct {
 	// CAFile is a PEM file of certificate authorities to trust beside the
 	// system's, for a server whose certificate an organisation signed itself.
 	CAFile string
-	// ResourceDownloadMaxMB is the largest file a resource read downloads, and
-	// ResourceMaxMB the most a resource holds as sent; zero is the default.
-	// ResourceDownloadBytes and ResourceBytes read them.
-	ResourceDownloadMaxMB int
-	ResourceMaxMB         int
+	// ResourceDownloadMaxMB is the largest file a resource read downloads, in
+	// megabytes; zero or less caps nothing. ResourceMaxMB is the most a
+	// resource's message holds; zero is DefaultResourceMaxMB, and less than
+	// zero caps nothing. ResourceDownloadBytes and ResourceBytes read them.
+	ResourceDownloadMaxMB int64
+	ResourceMaxMB         int64
 	// Local says the server runs on the person's own machine, for the one client
 	// that started it over stdio. It comes from how the server is served, not
 	// from the environment, and only a local server offers the tools that read
@@ -92,21 +90,20 @@ type Config struct {
 	Local bool
 }
 
-// ResourceDownloadBytes is the largest file a resource read downloads.
-func (c Config) ResourceDownloadBytes() int64 {
-	return megabytes(c.ResourceDownloadMaxMB, DefaultResourceDownloadMaxMB)
-}
+// ResourceDownloadBytes is the largest file a resource read downloads, or 0
+// when nothing but Mattermost's own upload limit bounds it.
+func (c Config) ResourceDownloadBytes() int64 { return max(c.ResourceDownloadMaxMB, 0) << 20 }
 
-// ResourceBytes is the most one resource holds as it is sent.
+// ResourceBytes is the most one resource's message holds as it is sent, or 0
+// when nothing bounds it.
 func (c Config) ResourceBytes() int64 {
-	return megabytes(c.ResourceMaxMB, DefaultResourceMaxMB)
-}
-
-func megabytes(set, fallback int) int64 {
-	if set <= 0 {
-		set = fallback
+	switch {
+	case c.ResourceMaxMB == 0:
+		return DefaultResourceMaxMB << 20
+	case c.ResourceMaxMB < 0:
+		return 0
 	}
-	return int64(set) << 20
+	return c.ResourceMaxMB << 20
 }
 
 // String leaves the token out, so a Config can be logged or printed in an error.
@@ -189,13 +186,20 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		// which nobody chose and few could name.
 		return Config{}, errorf("%s must be a full path, not %q.", EnvDownloadDir, downloadDir)
 	}
-	downloadMax, err := parseMB(EnvResourceDownloadMaxMB, lookup(EnvResourceDownloadMaxMB), DefaultResourceDownloadMaxMB)
+	downloadMax, err := parseMB(EnvResourceDownloadMaxMB, lookup(EnvResourceDownloadMaxMB))
 	if err != nil {
 		return Config{}, err
 	}
-	resourceMax, err := parseMB(EnvResourceMaxMB, lookup(EnvResourceMaxMB), DefaultResourceMaxMB)
+	resourceMax, err := parseMB(EnvResourceMaxMB, lookup(EnvResourceMaxMB))
 	if err != nil {
 		return Config{}, err
+	}
+	switch raw := strings.TrimSpace(lookup(EnvResourceMaxMB)); {
+	case raw == "":
+		resourceMax = DefaultResourceMaxMB
+	case resourceMax == 0:
+		// Set to 0: no limit, which the zero value does not mean.
+		resourceMax = -1
 	}
 	return Config{
 		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, SkipAsking: !ask, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
@@ -206,19 +210,19 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 	}, nil
 }
 
-// parseMB reads a size in megabytes: a whole number from 1 to maxMB, or the
-// fallback when it is not set. A bundle's number setting may arrive written as
-// a decimal, 16.0, which is whole all the same.
-func parseMB(name, raw string, fallback int) (int, error) {
+// parseMB reads a cap in megabytes: a whole number, or 0 or nothing for none.
+// A bundle's number setting may arrive written as a decimal, 16.0, which is
+// whole all the same.
+func parseMB(name, raw string) (int64, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return fallback, nil
+		return 0, nil
 	}
 	value, err := strconv.ParseFloat(raw, 64)
-	if err != nil || value != math.Trunc(value) || value < 1 || value > maxMB {
-		return 0, errorf("%s must be a whole number of megabytes from 1 to %d, not %q.", name, maxMB, raw)
+	if err != nil || value != math.Trunc(value) || value < 0 || value > maxMB {
+		return 0, errorf("%s must be a whole number of megabytes, or 0 for no limit, not %q.", name, raw)
 	}
-	return int(value), nil
+	return int64(value), nil
 }
 
 // ParseBool reads the usual spellings of true and false; empty is false.

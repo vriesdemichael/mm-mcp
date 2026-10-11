@@ -454,11 +454,12 @@ A client can read one when it needs it, and some let you attach one to the
 conversation or save it. It reads as [`read_file`](#read_file) reads the file,
 but whole: text, a Word, PowerPoint or Excel file's text and an archive's
 listing as text, an image as the image `read_file` returns, and anything else
-as itself. A resource holds up to 16 MiB as sent, a binary file counted as its
-base64, from a file of up to 200 MiB; `MM_MCP_RESOURCE_MAX_MB` and
-`MM_MCP_RESOURCE_DOWNLOAD_MAX_MB` change either
-([Configuration](configuration.md)). A longer text is read with `read_file`, in
-windows, and a larger file saved with `save_file`.
+as itself, in one message of up to 10 MiB, a binary file counted as its
+base64: MCP sends a resource whole, and clients drop a larger message.
+`MM_MCP_RESOURCE_MAX_MB` changes that for a client that takes more, and
+`MM_MCP_RESOURCE_DOWNLOAD_MAX_MB` caps the file downloaded, for a server others
+share ([Configuration](configuration.md)). Past a limit, a text is read with
+`read_file`, in windows, and a file saved with `save_file`.
 Each post's files, and each file `search_files` finds, give the address, the
 answer links each file as a resource, and every `file_id` takes the address. A
 client that completes resource addresses offers, as you type part of a file's

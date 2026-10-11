@@ -119,21 +119,23 @@ setting left empty, counts as unset.
     and `logout` at start and says so, and `doctor` reports it.
 
 `MM_MCP_RESOURCE_MAX_MB`
-:   Optional, `16` by default. The most one file read as an MCP resource holds
-    as it is sent, in megabytes of 1,048,576 bytes, a binary file counted as
-    its base64, a third larger than the file. A resource goes to your MCP
-    client, which may refuse a message larger than it takes; Claude Code takes
-    16 MB over SSE. A file that would be larger is refused, with `read_file` and
-    `save_file` as the ways to read it
+:   Optional, `10` by default. The most the one message that carries a file
+    read as an MCP resource holds, in megabytes of 1,048,576 bytes, a binary
+    file counted as its base64, a third larger than the file. MCP sends a
+    resource whole, in one message, and an MCP client drops a message past its
+    own limit, and with it the request or the whole session: the TypeScript
+    SDK's stdio transport, which many clients are built on, takes 10 MiB, and
+    Go's 16 MiB. A file whose message would be larger is refused before it is
+    sent, with `read_file` and `save_file` as the ways to read it
     ([ADR-029](adr/029-files-reach-the-model-as-content-and-the-disk-only-locally.md)).
-    A whole number from 1 to 2048.
+    Raise it to what your client takes; `0` is no limit.
 
 `MM_MCP_RESOURCE_DOWNLOAD_MAX_MB`
-:   Optional, `200` by default. The largest file read as an MCP resource, in
+:   Optional, no limit by default but Mattermost's own upload limit, which
+    every attachment is within. The largest file read as an MCP resource, in
     megabytes of 1,048,576 bytes. A file is held whole in memory while it is
-    converted, so this bounds what one read costs the machine mm-mcp runs on;
-    a larger file is refused before it is downloaded. A whole number from 1 to
-    2048.
+    converted, a few times over, so set it on a server others share; a larger
+    file is refused before it is downloaded. A whole number; `0` is no limit.
 
 `MM_MCP_BLOCK_EXTERNAL_NETWORK`
 :   For mm-mcp's own tests. While it is `1`, mm-mcp refuses to reach any address

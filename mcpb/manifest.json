@@ -94,20 +94,17 @@
     },
     "resource_max_mb": {
       "type": "number",
-      "title": "Largest file resource, in MB",
-      "description": "The most one attached file read as an MCP resource holds as it is sent, a binary file counted as its base64. A larger one is refused, and read_file or save_file reads it instead.",
-      "default": 16,
-      "min": 1,
-      "max": 2048,
+      "title": "Largest resource message, in MB",
+      "description": "The most one message carrying an attached file as an MCP resource holds, a binary file counted as its base64. MCP sends a resource whole, and a client drops a message past its own limit, 10 MB for clients built on the TypeScript SDK. A larger one is refused, and read_file or save_file reads it instead. 0 is no limit.",
+      "default": 10,
+      "min": 0,
       "required": false
     },
     "resource_download_max_mb": {
       "type": "number",
       "title": "Largest file read as a resource, in MB",
-      "description": "The largest attached file a resource read downloads, which is held in memory while it is converted. A larger one is refused before it is downloaded.",
-      "default": 200,
-      "min": 1,
-      "max": 2048,
+      "description": "The largest attached file a resource read downloads, which is held in memory while it is converted. A larger one is refused before it is downloaded. Leave it empty for no limit but Mattermost's own upload limit.",
+      "min": 0,
       "required": false
     }
   },
