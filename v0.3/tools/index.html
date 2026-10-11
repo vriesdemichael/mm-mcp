@@ -946,6 +946,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#files-as-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files as resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#page-sizes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1340,6 +1351,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#files-as-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files as resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#page-sizes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1551,7 +1573,9 @@ your own, in the timezone you set in Mattermost, as in its search box.</dd>
 <dt id="search_files"><code>search_files</code>: Search files</dt>
 <dd>Files attached to posts you can read, by name, by type with <code>ext:pdf</code>, and by
 <code>from</code>, <code>in</code>, <code>before</code>, <code>after</code> and <code>on</code>, each with the post and channel it
-is in. Like <code>search_posts</code>, it finds the 100 most recent matches at most.</dd>
+is in and their links, and the file's address as a
+<a href="#files-as-resources">resource</a>. Like <code>search_posts</code>, it finds the 100 most
+recent matches at most.</dd>
 <dt id="search_users"><code>search_users</code>: Search users</dt>
 <dd>Users whose username, name, nickname or email address contains a term,
 optionally only within a team or a channel. Deactivated users are left out.
@@ -1671,11 +1695,12 @@ they were last active, and the status message they set.</dd>
 <dt id="get_user_teams"><code>get_user_teams</code>: List the user's teams</dt>
 <dd>The teams you belong to.</dd>
 <dt id="get_team_info"><code>get_team_info</code>: Get team</dt>
-<dd>A team by id or name. An open team you are not in is found by the exact name
-in its address.</dd>
+<dd>A team by id, name or link. An open team you are not in is found by the
+exact name in its address.</dd>
 <dt id="get_channel_info"><code>get_channel_info</code>: Get channel</dt>
-<dd>A channel by id or name, among your own channels and the public channels of
-your teams, saying whether you belong to it and whether it is archived.</dd>
+<dd>A channel by id, name or link, among your own channels and the public
+channels of your teams, saying whether you belong to it and whether it is
+archived.</dd>
 <dt id="list_team_channels"><code>list_team_channels</code>: List a team's channels</dt>
 <dd>A team's public channels, by name.</dd>
 <dt id="list_archived_channels"><code>list_archived_channels</code>: List archived channels</dt>
@@ -1756,28 +1781,58 @@ failed one what to do. It never returns the credential
 <h2 id="good-to-know">Good to know<a class="headerlink" href="#good-to-know" title="Permanent link">&para;</a></h2>
 <h3 id="works-the-same-everywhere">Works the same everywhere<a class="headerlink" href="#works-the-same-everywhere" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Names work where ids do.</strong> Every <code>channel_id</code> and <code>team_id</code> takes a name as
-  well as an id, a channel's with <code>~</code> or <code>#</code> before it or not, and every
-  <code>post_id</code> and <code>root_id</code> takes the address the post opens at. A name of a
+<li><strong>Names and links work where ids do.</strong> Every <code>channel_id</code> and <code>team_id</code>
+  takes a name as well as an id, a channel's with <code>~</code> or <code>#</code> before it or not.
+  Every id argument takes the link Mattermost shows you: a channel's, a direct
+  or group message's, a team's, a post's, Copy Link's or the one a thread opens
+  at, and a file's, or its <a href="#files-as-resources">resource</a> address. A name of a
   channel, a team or a person matches in any case, whole or in part; an
   ambiguous one is refused with every candidate, and an unknown one with the
-  closest names
+  closest names. A link is never fetched, and one to another server is refused
   (<a href="../adr/030-names-are-matched-leniently-and-a-refusal-names-the-next-step/">ADR-030</a>).</li>
+<li><strong>Every place comes with its link.</strong> Each post, channel and team an answer
+  describes carries the link it opens at, made from names: a channel's in its
+  team, a direct or group message's in your first team, as
+  <code>/&lt;team&gt;/messages/@&lt;username&gt;</code>, and a post's in its channel's team, as
+  Copy Link gives it. Asked where something was said, the agent links the post,
+  not the conversation. Beside each link is the name Mattermost shows: a
+  channel's display name, and a direct or group message named after the other
+  people in it.</li>
 <li><strong>Every list pages the same way.</strong> Give <code>limit</code>, and pass the <code>next_cursor</code> an
   answer ends with back as <code>cursor</code>, with the same other arguments, for the next
   page, until an answer has none
   (<a href="../adr/032-every-list-pages-by-an-opaque-cursor/">ADR-032</a>).</li>
-<li><strong>Every post comes back in one shape:</strong> its address, which opens it in
-  Mattermost, its author's username and name, its channel and team by name, its
-  files with their ids, reactions with who reacted, whether it is pinned or
-  marked as written with AI, its thread, and when it was edited. An answer whose
-  posts are all in one channel names the channel and team once.</li>
+<li><strong>Every post comes back in one shape:</strong> its link, its author's username and
+  name, its channel by name and link and its team by name, its files with their
+  ids and resource addresses, reactions with who reacted, whether it is pinned
+  or marked as written with AI, its thread, and when it was edited. An answer
+  whose posts are all in one channel names the channel and team once.</li>
 <li><strong>A list cuts a long message short.</strong> A message longer than 4,000 characters
   is cut, with its whole length said; <code>read_post</code> reads it whole.</li>
 <li><strong>Times are your own.</strong> A time in an answer is in the timezone you set in
   Mattermost, with its offset, such as <code>2026-10-09T09:30:00+02:00</code>, and a time
   you give without an offset is read in it too. With no timezone set, UTC.</li>
 </ul>
+<h3 id="files-as-resources">Files as resources<a class="headerlink" href="#files-as-resources" title="Permanent link">&para;</a></h3>
+<p>Every file attached to a post is also an MCP resource, at
+<code>mattermost://&lt;your server&gt;/files/&lt;file id&gt;</code>, from a template mm-mcp lists
+(<a href="../adr/029-files-reach-the-model-as-content-and-the-disk-only-locally/">ADR-029</a>).
+A client can read one when it needs it, and some let you attach one to the
+conversation or save it. It reads as <a href="#read_file"><code>read_file</code></a> reads the file,
+but whole: text, a Word, PowerPoint or Excel file's text and an archive's
+listing as text, an image as the image <code>read_file</code> returns, and anything else
+as itself, in one message of up to 10 MiB, a binary file counted as its
+base64: MCP sends a resource whole, and clients drop a larger message.
+<code>MM_MCP_RESOURCE_MAX_MB</code> changes that for a client that takes more
+(<a href="../configuration/">Configuration</a>). A file larger than your Mattermost now
+takes in one, its Maximum File Size, is not downloaded.
+Past a limit, a text is read with <code>read_file</code>, in windows, and a file saved
+with <code>save_file</code>.
+Each post's files, and each file <code>search_files</code> finds, give the address, the
+answer links each file as a resource, and every <code>file_id</code> takes the address. A
+client that completes resource addresses offers, as you type part of a file's
+name, the ids of the files that match. Threads and conversations are not
+resources: a conversation has no end to read it whole to.</p>
 <h3 id="page-sizes">Page sizes<a class="headerlink" href="#page-sizes" title="Permanent link">&para;</a></h3>
 <p>What a page holds when <code>limit</code> is not given, and the most it can hold.</p>
 <table>

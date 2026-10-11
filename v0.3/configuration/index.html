@@ -1215,6 +1215,20 @@ itself. <code>mm-mcp serve</code>, <code>login</code>, <code>logout</code> and <
 in your terminal for <code>mm-mcp login</code> as in your MCP client for the server. A
 file that cannot be read, or holds no certificate, stops <code>serve</code>, <code>login</code>
 and <code>logout</code> at start and says so, and <code>doctor</code> reports it.</dd>
+<dt><code>MM_MCP_RESOURCE_MAX_MB</code></dt>
+<dd>Optional, <code>10</code> by default. The most the one message that carries a file
+read as an MCP resource holds, in megabytes of 1,048,576 bytes, a binary
+file counted as its base64, a third larger than the file. MCP sends a
+resource whole, in one message, and an MCP client drops a message past its
+own limit, and with it the request or the whole session: the TypeScript
+SDK's stdio transport, which many clients are built on, takes 10 MiB, and
+Go's 16 MiB. A file whose message would be larger is refused before it is
+sent, with <code>read_file</code> and <code>save_file</code> as the ways to read it
+(<a href="../adr/029-files-reach-the-model-as-content-and-the-disk-only-locally/">ADR-029</a>).
+Raise it to what your client takes; <code>0</code> is no limit. The file a resource
+read downloads is bounded by Mattermost's own Maximum File Size, which
+every upload was within; a file past it, most likely attached before an
+administrator lowered it, is refused before it is downloaded.</dd>
 <dt><code>MM_MCP_BLOCK_EXTERNAL_NETWORK</code></dt>
 <dd>For mm-mcp's own tests. While it is <code>1</code>, mm-mcp refuses to reach any address
 but the loopback ones
