@@ -278,11 +278,12 @@ func byteCount(bytes int64) string {
 // listArchive views an archive's listing as a window of lines.
 func listArchive(request Request, mimeType, name string, size int64, listing, more string) (View, error) {
 	return lines(request, KindArchive, mimeType, size, linedText{
-		what:   "a listing of " + name + " (" + formatSize(size) + ")",
-		unit:   "entry",
-		layout: "Each line is an entry: its path, a tab, and then its size or what it is.",
-		noun:   "listing",
-		empty:  name + " (" + formatSize(size) + ") with no entries.",
-		note:   more,
+		what:    "a listing of " + name + " (" + formatSize(size) + ")",
+		unit:    "entry",
+		layout:  "Each line is an entry: its path, a tab, and then its size or what it is.",
+		noun:    "listing",
+		empty:   name + " (" + formatSize(size) + ") with no entries.",
+		note:    more,
+		partial: more != "",
 	}, listing)
 }

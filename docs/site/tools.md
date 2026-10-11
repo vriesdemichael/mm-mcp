@@ -427,7 +427,9 @@ Each of these asks you first, showing exactly what will happen
   team, a direct or group message's in your first team, as
   `/<team>/messages/@<username>`, and a post's in its channel's team, as
   Copy Link gives it. Asked where something was said, the agent links the post,
-  not the conversation.
+  not the conversation. Beside each link is the name Mattermost shows: a
+  channel's display name, and a direct or group message named after the other
+  people in it.
 - **Every list pages the same way.** Give `limit`, and pass the `next_cursor` an
   answer ends with back as `cursor`, with the same other arguments, for the next
   page, until an answer has none
@@ -452,7 +454,11 @@ A client can read one when it needs it, and some let you attach one to the
 conversation or save it. It reads as [`read_file`](#read_file) reads the file,
 but whole: text, a Word, PowerPoint or Excel file's text and an archive's
 listing as text, an image as the image `read_file` returns, and anything else
-as itself, up to 3.6 MiB; a longer text is read with `read_file`, in windows.
+as itself. A resource holds up to 16 MiB as sent, a binary file counted as its
+base64, from a file of up to 200 MiB; `MM_MCP_RESOURCE_MAX_MB` and
+`MM_MCP_RESOURCE_DOWNLOAD_MAX_MB` change either
+([Configuration](configuration.md)). A longer text is read with `read_file`, in
+windows, and a larger file saved with `save_file`.
 Each post's files, and each file `search_files` finds, give the address, the
 answer links each file as a resource, and every `file_id` takes the address. A
 client that completes resource addresses offers, as you type part of a file's

@@ -28,7 +28,7 @@ func TestAZipArchiveIsListedEntryByEntry(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Read: %v", err)
 		}
-		if view.Kind != KindArchive || view.MIMEType != "application/zip" || view.Window == nil {
+		if view.Kind != KindArchive || view.MIMEType != "application/zip" || view.Window == nil || view.Partial {
 			t.Fatalf("%s came back as %s %s: %q", path, view.Kind, view.MIMEType, view.Text)
 		}
 
@@ -277,7 +277,7 @@ func TestAListingStopsAtItsSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Read: %v", err)
 	}
-	if view.Window == nil || view.Window.TotalLines >= count || !strings.Contains(view.Text, "of listing") {
-		t.Fatalf("lines %d of %d: %.300q", view.Window.TotalLines, count, view.Text)
+	if view.Window == nil || view.Window.TotalLines >= count || !view.Partial || !strings.Contains(view.Text, "of listing") {
+		t.Fatalf("lines %d of %d, partial %t: %.300q", view.Window.TotalLines, count, view.Partial, view.Text)
 	}
 }

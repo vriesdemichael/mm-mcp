@@ -15,6 +15,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/fileview"
 	"github.com/vriesdemichael/mm-mcp/internal/server"
 	"github.com/vriesdemichael/mm-mcp/internal/testsupport/filefixture"
@@ -47,6 +48,8 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 	_, pdfID := attachAs(t, author, channel.Id, "brief.pdf", []byte(minimalPDF))
 	_, soundID := attachAs(t, author, channel.Id, "tone.wav", silence())
 	_, hugeID := attachAs(t, author, channel.Id, "disk.img", make([]byte, fileview.MediaBytes+1))
+	_, middleID := attachAs(t, author, channel.Id, "middle.bin", bytes.Repeat([]byte{0, 1, 2, 0xff}, 250_000))
+	_, manyID := attachAs(t, author, channel.Id, "many.zip", longListing())
 	session := sessionFor(t, admin, user)
 
 	templates := listedTemplates(t, session)
@@ -85,12 +88,38 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 		t.Errorf("the sound reads %d bytes as %s", len(got.Blob), got.MIMEType)
 	}
 
-	// More than a resource holds is refused with what reads it instead.
-	for id, says := range map[string]string{longID: "the text of long.log is", hugeID: "disk.img is"} {
-		_, err := readResource(t, session, "file", liveFile(id))
-		if err == nil || !strings.Contains(err.Error(), says) || !strings.Contains(err.Error(), "read_file reads a text in windows, and save_file saves a file") {
-			t.Errorf("%s: %v", says, err)
+	// More than read_file returns in one piece is read whole, within the
+	// resource's own bounds.
+	if got := read(longID); got.Text != long {
+		t.Errorf("the long log reads %d bytes of %d", len(got.Text), len(long))
+	}
+	if got := read(hugeID); len(got.Blob) != fileview.MediaBytes+1 || got.MIMEType != "application/octet-stream" {
+		t.Errorf("the disk image reads %d bytes as %s", len(got.Blob), got.MIMEType)
+	}
+
+	// With the bounds set lower, a file larger than a resource is read from is
+	// refused before it is fetched, and one larger as sent than a resource
+	// holds after; each says what reads it instead.
+	bounded := mcpWith(t, config.Config{URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, ResourceDownloadMaxMB: 2, ResourceMaxMB: 1}, nil)
+	for _, refused := range []struct {
+		id, says string
+		fetched  int
+	}{
+		{longID, "long.log is 3.8 MiB, more than the 2.0 MiB a resource is read from (MM_MCP_RESOURCE_DOWNLOAD_MAX_MB)", 0},
+		{middleID, "middle.bin is 1.3 MiB as sent, more than the 1.0 MiB a resource holds (MM_MCP_RESOURCE_MAX_MB)", 1},
+	} {
+		_, err := readResource(t, bounded, "file", liveFile(refused.id))
+		if err == nil || !strings.Contains(err.Error(), refused.says) || !strings.Contains(err.Error(), "read_file reads a text in windows, and save_file saves a file") {
+			t.Errorf("%s: %v", refused.says, err)
 		}
+		if fetched := reachedLast(t, bounded, "GetFile"); fetched != refused.fetched {
+			t.Errorf("%s: fetched %d times, want %d", refused.says, fetched, refused.fetched)
+		}
+	}
+
+	// A listing cut short is not the archive's, and a resource is the whole.
+	if _, err := readResource(t, session, "file", liveFile(manyID)); err == nil || !strings.Contains(err.Error(), "the text of many.zip stops short") {
+		t.Errorf("an archive listed in part: %v", err)
 	}
 	// A file nobody has is not found.
 	_, err := readResource(t, session, "file", liveFile("abcdefghijklmnopqrstuvwxyz"))
@@ -118,6 +147,16 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 	if content.FileID != textID || content.URI != liveFile(textID) || content.Content == nil || *content.Content != text {
 		t.Errorf("read_file by the address: %+v", content)
 	}
+}
+
+// longListing is a zip archive whose listing is longer than fileview lists.
+func longListing() []byte {
+	name := strings.Repeat("n", 1000)
+	entries := make([]filefixture.Entry, 0, fileview.ArchiveListingBytes/1000+100)
+	for index := range cap(entries) {
+		entries = append(entries, filefixture.Entry{Name: fmt.Sprintf("%08d-%s", index, name)})
+	}
+	return filefixture.Zip(entries...)
 }
 
 // silence is a WAV file of one second of silence at 8 kHz.

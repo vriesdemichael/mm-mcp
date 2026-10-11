@@ -153,6 +153,8 @@ type linedText struct {
 	empty string
 	// note follows the window's sentence: what the text leaves out.
 	note string
+	// partial says the text stops short of what the file holds.
+	partial bool
 }
 
 // lines views text as a window of numbered lines.
@@ -190,6 +192,7 @@ func lines(request Request, kind Kind, mimeType string, size int64, form linedTe
 		Size:     size,
 		Text:     header.String() + "\n" + cut.view,
 		Whole:    text,
+		Partial:  form.partial,
 		Window: &Window{
 			Content:       cut.content,
 			StartLine:     cut.start,

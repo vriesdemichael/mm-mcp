@@ -281,3 +281,32 @@ func TestAnAnswerNamingFilesCarriesTheirLinksAfterItself(t *testing.T) {
 		t.Errorf("got %+v", result)
 	}
 }
+
+// A resource is measured as it is sent, never less: what MM_MCP_RESOURCE_MAX_MB
+// bounds is a message a client takes (ADR-029).
+func TestAResourceIsMeasuredAsItIsSent(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		contents mcp.ResourceContents
+		want     int64
+	}{
+		{mcp.ResourceContents{Blob: make([]byte, 3)}, 4},
+		{mcp.ResourceContents{Blob: make([]byte, 4)}, 8},
+		{mcp.ResourceContents{Blob: []byte{}}, 0},
+		{mcp.ResourceContents{Text: "plain"}, 5},
+		{mcp.ResourceContents{Text: "é"}, 2},
+		{mcp.ResourceContents{Text: `a"b\c`}, 7},
+		{mcp.ResourceContents{Text: "<&>\n\x01"}, 30},
+	} {
+		if got := sentSize(&c.contents); got != c.want {
+			t.Errorf("%+v: got %d, want %d", c.contents, got, c.want)
+		}
+		// Never less than JSON gives it, which is what goes over the wire.
+		if c.contents.Text != "" {
+			encoded, _ := json.Marshal(c.contents.Text)
+			if got := sentSize(&c.contents); got < int64(len(encoded)-2) {
+				t.Errorf("%q: counted %d, JSON has %d", c.contents.Text, got, len(encoded)-2)
+			}
+		}
+	}
+}

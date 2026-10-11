@@ -232,6 +232,12 @@ func (c *Client) PostsSince(ctx context.Context, channelID string, since int64, 
 	return result(c.api.GetPostsSince(ctx, channelID, since, collapsed))
 }
 
+// GroupMembers is the people in each of the given group messages, by the
+// channel's id. GetUsersByGroupChannelIds.
+func (c *Client) GroupMembers(ctx context.Context, channelIDs []string) (map[string][]*model.User, error) {
+	return result(c.api.GetUsersByGroupChannelIds(ctx, channelIDs))
+}
+
 // ChannelByNames is the channel with the given address name in the team with
 // the given address name, archived or not: the channel a link names.
 // GetChannelByNameForTeamName.

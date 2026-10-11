@@ -298,15 +298,19 @@ func TestAConfirmationNamesAChannelAsThePersonKnowsIt(t *testing.T) {
 	names := map[string]string{self: "me", other: "bob"}
 	for _, c := range []struct {
 		channel *model.Channel
+		group   string
 		want    string
 	}{
-		{&model.Channel{Type: model.ChannelTypeOpen, DisplayName: "Town Square"}, "~Town Square"},
-		{&model.Channel{Type: model.ChannelTypePrivate, DisplayName: "Secret"}, "~Secret"},
-		{&model.Channel{Type: model.ChannelTypeDirect, Name: model.GetDMNameFromIds(self, other)}, "your direct message with @bob"},
-		{&model.Channel{Type: model.ChannelTypeDirect, Name: model.GetDMNameFromIds(self, self)}, "your direct message to yourself"},
-		{&model.Channel{Type: model.ChannelTypeGroup, DisplayName: "bob, me, sue"}, "the group message with bob, me, sue"},
+		{&model.Channel{Type: model.ChannelTypeOpen, DisplayName: "Town Square"}, "", "~Town Square"},
+		{&model.Channel{Type: model.ChannelTypePrivate, DisplayName: "Secret"}, "", "~Secret"},
+		{&model.Channel{Type: model.ChannelTypeDirect, Name: model.GetDMNameFromIds(self, other)}, "", "your direct message with @bob"},
+		{&model.Channel{Type: model.ChannelTypeDirect, Name: model.GetDMNameFromIds(self, self)}, "", "your direct message to yourself"},
+		// A group message by the other people in it, not Mattermost's stored
+		// name, which lists everyone and stops at 64 characters.
+		{&model.Channel{Type: model.ChannelTypeGroup, DisplayName: "bob, me, sue, tr"}, "bob, sue, trudy", "the group message with bob, sue, trudy"},
+		{&model.Channel{Type: model.ChannelTypeGroup, DisplayName: "bob, me, sue"}, "", "the group message with bob, me, sue"},
 	} {
-		if got := place(c.channel, self, names); got != c.want {
+		if got := place(c.channel, self, names, c.group); got != c.want {
 			t.Errorf("%s %q: got %q, want %q", c.channel.Type, c.channel.DisplayName, got, c.want)
 		}
 	}

@@ -258,7 +258,7 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 	resources := AllResources()
 	server := mcp.NewServer(
 		&mcp.Implementation{Name: Name, Version: version.Version, WebsiteURL: "https://github.com/vriesdemichael/mm-mcp"},
-		&mcp.ServerOptions{Instructions: instructions, CompletionHandler: completion(clientFor, cfg.URL, resources)},
+		&mcp.ServerOptions{Instructions: instructions, CompletionHandler: completion(clientFor, cfg, resources)},
 	)
 	registerResources(server, clientFor, cfg, resources)
 	for _, spec := range Exposed(cfg) {
