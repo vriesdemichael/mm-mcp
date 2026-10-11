@@ -317,6 +317,15 @@ func declaredButNeverCalled() []string {
 	return missing
 }
 
+// lastReached is the operations the session's last call reached, in order.
+func lastReached(t *testing.T, session *mcp.ClientSession) []string {
+	t.Helper()
+	rec := recorderOf(t, session)
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	return slices.Clone(rec.last)
+}
+
 // reachedLast is how many times the session's last tool call reached an
 // operation, for a test of how a tool pages through Mattermost.
 func reachedLast(t *testing.T, session *mcp.ClientSession, operation string) int {

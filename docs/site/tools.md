@@ -456,10 +456,11 @@ but whole: text, a Word, PowerPoint or Excel file's text and an archive's
 listing as text, an image as the image `read_file` returns, and anything else
 as itself, in one message of up to 10 MiB, a binary file counted as its
 base64: MCP sends a resource whole, and clients drop a larger message.
-`MM_MCP_RESOURCE_MAX_MB` changes that for a client that takes more, and
-`MM_MCP_RESOURCE_DOWNLOAD_MAX_MB` caps the file downloaded, for a server others
-share ([Configuration](configuration.md)). Past a limit, a text is read with
-`read_file`, in windows, and a file saved with `save_file`.
+`MM_MCP_RESOURCE_MAX_MB` changes that for a client that takes more
+([Configuration](configuration.md)). A file larger than your Mattermost now
+takes in one, its Maximum File Size, is not downloaded.
+Past a limit, a text is read with `read_file`, in windows, and a file saved
+with `save_file`.
 Each post's files, and each file `search_files` finds, give the address, the
 answer links each file as a resource, and every `file_id` takes the address. A
 client that completes resource addresses offers, as you type part of a file's

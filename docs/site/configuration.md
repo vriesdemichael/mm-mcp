@@ -128,14 +128,10 @@ setting left empty, counts as unset.
     Go's 16 MiB. A file whose message would be larger is refused before it is
     sent, with `read_file` and `save_file` as the ways to read it
     ([ADR-029](adr/029-files-reach-the-model-as-content-and-the-disk-only-locally.md)).
-    Raise it to what your client takes; `0` is no limit.
-
-`MM_MCP_RESOURCE_DOWNLOAD_MAX_MB`
-:   Optional, no limit by default but Mattermost's own upload limit, which
-    every attachment is within. The largest file read as an MCP resource, in
-    megabytes of 1,048,576 bytes. A file is held whole in memory while it is
-    converted, a few times over, so set it on a server others share; a larger
-    file is refused before it is downloaded. A whole number; `0` is no limit.
+    Raise it to what your client takes; `0` is no limit. The file a resource
+    read downloads is bounded by Mattermost's own Maximum File Size, which
+    every upload was within; a file past it, most likely attached before an
+    administrator lowered it, is refused before it is downloaded.
 
 `MM_MCP_BLOCK_EXTERNAL_NETWORK`
 :   For mm-mcp's own tests. While it is `1`, mm-mcp refuses to reach any address

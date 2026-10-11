@@ -25,7 +25,6 @@ const (
 	EnvMarkAIGenerated                 = "MM_MCP_MARK_AI_GENERATED"
 	EnvBlockExternalNetwork            = "MM_MCP_BLOCK_EXTERNAL_NETWORK"
 	EnvCAFile                          = "MM_MCP_CA_FILE"
-	EnvResourceDownloadMaxMB           = "MM_MCP_RESOURCE_DOWNLOAD_MAX_MB"
 	EnvResourceMaxMB                   = "MM_MCP_RESOURCE_MAX_MB"
 )
 
@@ -37,8 +36,8 @@ const (
 // read another way.
 const DefaultResourceMaxMB = 10
 
-// maxMB is the largest cap a resource read takes, in megabytes: past it, the
-// bytes no longer fit an int64.
+// maxMB is the largest cap on a resource's message, in megabytes: past it,
+// the bytes no longer fit an int64.
 const maxMB = math.MaxInt64 >> 20
 
 // EnvironmentVariables is every variable mm-mcp reads. The unit-test seal
@@ -46,7 +45,7 @@ const maxMB = math.MaxInt64 >> 20
 // that is not listed here (ADR-006).
 var EnvironmentVariables = []string{
 	EnvURL, EnvToken, EnvAllowWrites, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
-	EnvBlockExternalNetwork, EnvCAFile, EnvResourceDownloadMaxMB, EnvResourceMaxMB,
+	EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
 }
 
 // Config is a server's configuration.
@@ -77,22 +76,16 @@ type Config struct {
 	// CAFile is a PEM file of certificate authorities to trust beside the
 	// system's, for a server whose certificate an organisation signed itself.
 	CAFile string
-	// ResourceDownloadMaxMB is the largest file a resource read downloads, in
-	// megabytes; zero or less caps nothing. ResourceMaxMB is the most a
-	// resource's message holds; zero is DefaultResourceMaxMB, and less than
-	// zero caps nothing. ResourceDownloadBytes and ResourceBytes read them.
-	ResourceDownloadMaxMB int64
-	ResourceMaxMB         int64
+	// ResourceMaxMB is the most a resource's message holds, in megabytes;
+	// zero is DefaultResourceMaxMB, and less than zero caps nothing.
+	// ResourceBytes reads it.
+	ResourceMaxMB int64
 	// Local says the server runs on the person's own machine, for the one client
 	// that started it over stdio. It comes from how the server is served, not
 	// from the environment, and only a local server offers the tools that read
 	// or write this machine's files.
 	Local bool
 }
-
-// ResourceDownloadBytes is the largest file a resource read downloads, or 0
-// when nothing but Mattermost's own upload limit bounds it.
-func (c Config) ResourceDownloadBytes() int64 { return max(c.ResourceDownloadMaxMB, 0) << 20 }
 
 // ResourceBytes is the most one resource's message holds as it is sent, or 0
 // when nothing bounds it.
@@ -108,8 +101,8 @@ func (c Config) ResourceBytes() int64 {
 
 // String leaves the token out, so a Config can be logged or printed in an error.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, SkipAsking: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceDownloadMaxMB: %d, ResourceMaxMB: %d, Local: %t}",
-		c.URL, c.AllowWrites, c.SkipAsking, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceDownloadMaxMB, c.ResourceMaxMB, c.Local)
+	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, SkipAsking: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
+		c.URL, c.AllowWrites, c.SkipAsking, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
 }
 
 // GoString is String, so %#v leaves the token out too.
@@ -186,10 +179,6 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		// which nobody chose and few could name.
 		return Config{}, errorf("%s must be a full path, not %q.", EnvDownloadDir, downloadDir)
 	}
-	downloadMax, err := parseMB(EnvResourceDownloadMaxMB, lookup(EnvResourceDownloadMaxMB))
-	if err != nil {
-		return Config{}, err
-	}
 	resourceMax, err := parseMB(EnvResourceMaxMB, lookup(EnvResourceMaxMB))
 	if err != nil {
 		return Config{}, err
@@ -203,10 +192,9 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 	}
 	return Config{
 		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, SkipAsking: !ask, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
-		DownloadDir:           downloadDir,
-		CAFile:                strings.TrimSpace(lookup(EnvCAFile)),
-		ResourceDownloadMaxMB: downloadMax,
-		ResourceMaxMB:         resourceMax,
+		DownloadDir:   downloadDir,
+		CAFile:        strings.TrimSpace(lookup(EnvCAFile)),
+		ResourceMaxMB: resourceMax,
 	}, nil
 }
 

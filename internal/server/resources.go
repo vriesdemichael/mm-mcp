@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -34,9 +35,9 @@ import (
 // client refuses a message past its own limit by dropping the request or the
 // whole session, so the message is capped, MM_MCP_RESOURCE_MAX_MB, 10 MiB by
 // default, and refused here first with a way to read the file instead. The
-// file downloaded is bounded by nothing by default but Mattermost's own upload
-// limit: on the person's machine the memory is theirs, and a server others
-// share sets MM_MCP_RESOURCE_DOWNLOAD_MAX_MB.
+// file downloaded is bounded by Mattermost's own limit on a file, which an
+// administrator sets for every upload: a file past it, most likely attached
+// before the limit was lowered, is refused before it is fetched.
 
 // ResourceSpec is a resource template mm-mcp offers, with the operations
 // reading a resource and completing the template's argument call, accounted
@@ -105,7 +106,7 @@ func fileResourceSpec() ResourceSpec {
 			}
 		},
 		Read: readFileResource,
-		Uses: fileOperationUses(),
+		Uses: append(fileOperationUses(), Use{Operation: "GetClientConfig", Params: map[string]Coverage{}}),
 		Complete: func(ctx context.Context, client *mattermost.Client, argument, typed string) (mcp.CompletionResultDetails, error) {
 			none := mcp.CompletionResultDetails{Values: []string{}}
 			typed = strings.TrimSpace(typed)
@@ -156,17 +157,10 @@ const maxCompletions = 100
 
 // resourceBounds says what bounds a resource on a server configured so.
 func resourceBounds(cfg config.Config) string {
-	var bounds []string
 	if most := cfg.ResourceBytes(); most > 0 {
-		bounds = append(bounds, "in one message of up to "+sizeOf(most))
+		return ", in one message of up to " + sizeOf(most)
 	}
-	if download := cfg.ResourceDownloadBytes(); download > 0 {
-		bounds = append(bounds, "from a file of up to "+sizeOf(download))
-	}
-	if len(bounds) == 0 {
-		return ""
-	}
-	return ", " + strings.Join(bounds, ", ")
+	return ""
 }
 
 // serverAddress is the configured server's address.
@@ -215,17 +209,20 @@ func readFileResource(clientFor ClientFor, cfg config.Config) mcp.ResourceHandle
 const plainText = "text/plain; charset=utf-8"
 
 // wholeFile is a file as a resource: converted as read_file converts it, and
-// returned whole, as a resource is read. Where the server is given caps, a
-// file larger than a resource read downloads is refused before it is fetched,
-// and one whose message would be larger than a resource is sent in is
-// refused after; a text the conversion cut short always is. Each refusal says
-// what reads the file instead.
+// returned whole, as a resource is read. A file larger than Mattermost now
+// takes is refused before it is fetched, and one whose message would be
+// larger than the server's cap on a resource is refused after; a text the
+// conversion cut short always is. Each refusal says what reads the file
+// instead. GetClientConfig, GetFile.
 func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileInfo, cfg config.Config, uri string) (*mcp.ResourceContents, error) {
 	opens := client.Permalink(info.PostId)
 	instead := "read_file reads a text in windows, and save_file saves a file, and the person can open it from its post: " + opens
-	if download := cfg.ResourceDownloadBytes(); download > 0 && info.Size > download {
-		return nil, fmt.Errorf("%s is %s, more than the %s a resource is read from (%s); %s",
-			info.Name, sizeOf(info.Size), sizeOf(download), config.EnvResourceDownloadMaxMB, instead)
+	clientConfig, err := client.ClientConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := withinUploadLimit(info, maxFileSize(clientConfig), instead); err != nil {
+		return nil, err
 	}
 	data, err := client.File(ctx, info.Id)
 	if err != nil {
@@ -271,6 +268,28 @@ func wholeFile(ctx context.Context, client *mattermost.Client, info *model.FileI
 		}
 	}
 	return contents, nil
+}
+
+// maxFileSize is the largest file Mattermost takes, from the configuration it
+// tells its clients, or 0 when it does not say.
+func maxFileSize(clientConfig map[string]string) int64 {
+	if size, err := strconv.ParseInt(clientConfig["MaxFileSize"], 10, 64); err == nil && size > 0 {
+		return size
+	}
+	return 0
+}
+
+// withinUploadLimit refuses a file larger than the most Mattermost takes in
+// one, limit, where it says: a resource read downloads no more than an upload
+// could hold. Every file uploaded was within the limit then, so a larger one
+// most likely came before an administrator lowered it.
+func withinUploadLimit(info *model.FileInfo, limit int64, instead string) error {
+	if limit <= 0 || info.Size <= limit {
+		return nil
+	}
+	return fmt.Errorf("%s is %s, more than the %s Mattermost now takes in one file, its Maximum File Size, which its "+
+		"administrator sets; a resource reads no file larger than Mattermost takes; %s",
+		info.Name, sizeOf(info.Size), sizeOf(limit), instead)
 }
 
 // messageEnvelope is more than the rest of the message a resource's contents
