@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mm-mcp spike view</title>
+<style>
+:root { color-scheme: light dark; font-family: var(--font-sans, system-ui, sans-serif); }
+body { margin: 0; background: transparent; color: var(--color-text-primary, CanvasText); }
+#app { padding: 6px 10px; }
+.line { font-size: 13px; opacity: 0.8; }
+.post { border: 1px solid var(--color-border-primary, rgba(128, 128, 128, 0.4)); border-radius: 8px; padding: 10px; }
+.author { font-weight: 600; }
+.message { white-space: pre-wrap; margin: 6px 0 10px; }
+button { margin: 4px 6px 4px 0; font: inherit; }
+#log { font-family: ui-monospace, monospace; font-size: 11px; white-space: pre-wrap; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+"use strict";
+// The spike's view (#37): the bridge follows bitbucket-data-center-cli's
+// views/bridge.js, JSON-RPC 2.0 over postMessage, MCP Apps 2026-01-26. Text is
+// put on the page with textContent only.
+
+const KEY = "io.github.vriesdemichael.mm-mcp/spike";
+const app = document.getElementById("app");
+let nextID = 1;
+const pending = new Map();
+let payload = null;
+let mode = "full";
+let logBox = null;
+const lines = [];
+
+function log(text) {
+  lines.push(new Date().toISOString().slice(11, 23) + " " + text);
+  console.log("[spike] " + text);
+  if (logBox) logBox.textContent = lines.join("\n");
+}
+
+function post(message) { window.parent.postMessage(message, "*"); }
+
+function request(method, params, timeout = 60000) {
+  const id = nextID++;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(method + " got no answer")); }, timeout);
+    pending.set(id, {
+      resolve: (v) => { clearTimeout(timer); resolve(v); },
+      reject: (e) => { clearTimeout(timer); reject(e); },
+    });
+    post({ jsonrpc: "2.0", id, method, params });
+  });
+}
+
+function notify(method, params) { post({ jsonrpc: "2.0", method, params }); }
+
+window.addEventListener("message", (event) => {
+  if (event.source !== window.parent) return;
+  const message = event.data;
+  if (!message || typeof message !== "object" || message.jsonrpc !== "2.0") return;
+  if (typeof message.method !== "string") {
+    const waiting = pending.get(message.id);
+    if (!waiting) return;
+    pending.delete(message.id);
+    if (message.error) waiting.reject(new Error(message.error.message || "refused"));
+    else waiting.resolve(message.result);
+    return;
+  }
+  if (message.id !== undefined && message.id !== null) {
+    if (message.method === "ping") { post({ jsonrpc: "2.0", id: message.id, result: {} }); return; }
+    if (message.method === "ui/resource-teardown") {
+      log("teardown: " + JSON.stringify(message.params));
+      post({ jsonrpc: "2.0", id: message.id, result: {} });
+      return;
+    }
+    post({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: "Method not found" } });
+    return;
+  }
+  handle(message.method, message.params || {});
+});
+
+function handle(method, params) {
+  if (method === "ui/notifications/host-context-changed") {
+    // Console only: a visible line would resize the page, and the host answers
+    // a resize with another context change.
+    console.log("[spike] host context changed: " + Object.keys(params).join(","));
+    return;
+  }
+  log("host sent " + method);
+  if (method === "ui/notifications/tool-input") {
+    mode = (params.arguments && params.arguments.mode) || "full";
+    render();
+  } else if (method === "ui/notifications/tool-result") {
+    const fromMeta = (params._meta && params._meta[KEY]) || null;
+    const fromStructured = (params.structuredContent && params.structuredContent.view) || null;
+    log("tool result fields: " + Object.keys(params).join(",") + "; _meta keys: " + Object.keys(params._meta || {}).join(","));
+    log("payload in _meta: " + (fromMeta ? "yes" : "no") + "; in structuredContent: " + (fromStructured ? "yes" : "no"));
+    payload = fromMeta || fromStructured;
+    if (payload) mode = payload.mode || mode;
+    report("result fields " + Object.keys(params).join(",") + " meta=" + (fromMeta ? "yes" : "no") + " structured=" + (fromStructured ? "yes" : "no"));
+    render();
+    if (payload && payload.auto) autoRun();
+  }
+}
+
+function el(tag, text, attrs) {
+  const node = document.createElement(tag);
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  for (const [name, value] of Object.entries(attrs || {})) node.setAttribute(name, value);
+  return node;
+}
+
+function button(label, action) {
+  const b = el("button", label, { type: "button" });
+  b.addEventListener("click", () => { action().catch((e) => log(label + " failed: " + e.message)); });
+  return b;
+}
+
+function reportSize() {
+  if (mode === "none") { notify("ui/notifications/size-changed", { width: 0, height: 0 }); return; }
+  // The content's own height: the document is never shorter than the frame,
+  // so measuring it would feed the frame's height back to the host.
+  const box = app.getBoundingClientRect();
+  notify("ui/notifications/size-changed", { width: Math.ceil(box.width), height: Math.ceil(box.height) });
+}
+
+function render() {
+  app.replaceChildren();
+  logBox = null;
+  if (mode === "none") { reportSize(); return; }
+  if (mode === "line") {
+    app.append(el("div", payload ? "Read a post by @" + payload.author : "Reading a post…", { class: "line" }));
+    reportSize();
+    return;
+  }
+  const box = el("div", null, { class: "post" });
+  box.append(el("div", payload ? "@" + payload.author : "Reading a post…", { class: "author" }));
+  if (payload) box.append(el("div", payload.message, { class: "message" }));
+  box.append(
+    button("Press: token in _meta", pressMeta),
+    button("Press: token in argument", pressArg),
+    button("Ask (elicitation)", ask),
+    button("Token from an app-only tool", appToken),
+    button("Update model context", updateContext),
+  );
+  logBox = el("div", lines.join("\n"), { id: "log" });
+  box.append(logBox);
+  app.append(box);
+  reportSize();
+}
+
+async function pressMeta() {
+  const r = await request("tools/call", { name: "spike_press", arguments: { note: "press-meta" }, _meta: { [KEY + "/token"]: payload && payload.token } });
+  log("press-meta answered: " + JSON.stringify(r && r.structuredContent));
+}
+
+async function pressArg() {
+  const r = await request("tools/call", { name: "spike_press", arguments: { note: "press-arg", token: payload && payload.token } });
+  log("press-arg answered: " + JSON.stringify(r && r.structuredContent));
+}
+
+async function ask() {
+  log("asking…");
+  const r = await request("tools/call", { name: "spike_ask", arguments: {} }, 300000);
+  log("ask answered: " + JSON.stringify(r && (r.structuredContent || r.content)));
+}
+
+async function appToken() {
+  const r = await request("tools/call", { name: "spike_token", arguments: {} });
+  const token = r && r.structuredContent && r.structuredContent.token;
+  log("app-only token: " + token);
+  const p = await request("tools/call", { name: "spike_press", arguments: { note: "press-app-token", token } });
+  log("press-app-token answered: " + JSON.stringify(p && p.structuredContent));
+}
+
+async function updateContext() {
+  // Made here, so it can reach the model only through this update.
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  const canary = "SPIKE-CTX-" + [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+  await request("ui/update-model-context", { content: [{ type: "text", text: "The spike view reports " + canary + "." }] });
+  log("model context updated with " + canary);
+}
+
+async function report(note) {
+  try { await request("tools/call", { name: "spike_press", arguments: { note } }); } catch (e) { log("report failed: " + e.message); }
+}
+
+async function autoRun() {
+  for (const step of [pressMeta, pressArg, appToken, updateContext]) {
+    try { await step(); } catch (e) { log(step.name + " failed: " + e.message); }
+  }
+  if (payload.ask) { try { await ask(); } catch (e) { log("ask failed: " + e.message); } }
+  await report("auto-done " + lines.length + " lines");
+}
+
+new ResizeObserver(reportSize).observe(app);
+
+(async () => {
+  try {
+    const result = await request("ui/initialize", {
+      appInfo: { name: "mm-mcp-spike", version: "0" },
+      appCapabilities: { availableDisplayModes: ["inline"] },
+      protocolVersion: "2026-01-26",
+    });
+    notify("ui/notifications/initialized", {});
+    const context = Object.assign({}, (result && result.hostContext) || {});
+    delete context.styles;
+    log("initialized with " + JSON.stringify(result && result.hostInfo));
+    await report("host " + JSON.stringify({
+      hostInfo: result && result.hostInfo,
+      hostCapabilities: result && result.hostCapabilities,
+      hostContext: context,
+      protocolVersion: result && result.protocolVersion,
+    }));
+  } catch (e) {
+    log("initialize failed: " + e.message);
+  }
+})();
+</script>
+</body>
+</html>

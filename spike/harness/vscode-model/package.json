@@ -1,0 +1,12 @@
+{
+  "name": "spike-model",
+  "displayName": "Spike model",
+  "publisher": "mmmcpspike",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.104.0" },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "languageModelChatProviders": [{ "vendor": "spike", "displayName": "Spike" }]
+  }
+}
