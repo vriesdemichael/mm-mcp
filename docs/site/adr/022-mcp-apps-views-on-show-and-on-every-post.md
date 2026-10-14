@@ -1,0 +1,35 @@
+---
+search:
+  boost: 0.3
+---
+
+# ADR-022: MCP Apps views, on show and on every post
+
+mm-mcp adopts MCP Apps. No view exists yet: they are planned, and this record holds for the first one and every one after it. In a client that renders them, a view puts what the person should see in front of them, laid out as Mattermost lays it out; a client that renders none gets text.
+
+A view sits only on a tool whose every call the person should see, never on a tool the model reads with:
+
+- `show`, which the model calls once it has what the person asked to see. Its kinds are `thread`, a post alone or with its thread, and `unreads`: the unread channels, mentions and followed threads with unread replies that wait for the person. `show` reads what it draws itself, from ids, so its counts are Mattermost's and the model cannot put words in a view.
+- Every tool that posts, `create_post`, `dm` and `group_message`, which shows the post as posted.
+- `propose_post`, which shows the draft it proposes for the person to post, edit or discard (ADR-035).
+
+`show` is listed to every client, since which tools are listed does not depend on what a client says it can do (ADR-021). A client that declared no views on the call is told that nothing was shown, and nothing is fetched for it. Whether a client renders views is read from each request, because a client may declare it on every request rather than once.
+
+The result carries in `structuredContent` what the model could read without waste: names, times, text, reactions and Mattermost's totals. MCP Apps names that field for the view, but VS Code hands it to the model in place of the text, and Goose hands the view nothing else ([mm-mcp#37](https://github.com/vriesdemichael/mm-mcp/issues/37)). So it is written to be read by both, and in VS Code the model may read a thread twice. What serves the eye alone, avatars, custom emoji, images and file previews, the view reads as resources through the host, never from the result, however large they are. mm-mcp fetches them with its own credential, because the client's webview has none. A host that does not pass a view's resource reads on gets initials, emoji names and file cards. Nothing goes in any part of a result that the model must not see, because some client hands each part to its model.
+
+What a person does in a view, opening a channel in place or pressing a button, goes through one tool that only views call, marked `visibility: ["app"]`. It is the one tool listed by what a client declares: it is listed only to a request that declared views, because a client that does not know MCP Apps ignores the mark and would offer its model a tool that acts without asking, and it refuses a call whose request declared none. A call from a view never asks the person anything, because Goose fails such a question and VS Code hangs on it. A view that is refused a call, as Goose's approval modes refuse every call a view makes, says so and offers to open the place in Mattermost. A view acts only on a click, because clients run a view's code again when a conversation is reopened. It never sends `ui/message`, which enters the conversation as the person's own words. It may tell the model what happened through `ui/update-model-context`, in mm-mcp's fixed wording, but Goose does not pass that on, so the model learns an outcome from Mattermost itself.
+
+One page draws every view: plain JavaScript and CSS embedded in the binary with go:embed, with no build step and no third-party code, declaring no network domains. Text from Mattermost is never parsed as HTML: the page builds elements through the DOM, renders Markdown with a parser of its own that produces elements, and opens a link only through the host. It takes the host's theme and Mattermost's own wording. A count in a view is Mattermost's, and a view that lists fewer says so.
+
+Add a view only to a tool whose every call the person should see. Build elements, never HTML from strings; the browser tests under the `views` tag hold the page. Put in the result only what the model could read without waste, and have the view fetch the rest as resources. Send everything a view does through the one tool only views call.
+
+A person takes in a thread faster laid out as Mattermost lays it out than from a model's account of it, and an image, which a model reads worst, is often why they want to see a post at all. A post is the write a person should always see: an agent posting in twenty channels is as loud for the person it posts for as for the people it posts to. A client spends space on every call of a tool that has a view, whatever the view draws, and a read the model makes for itself should not cost the person that. The text carried in the result lets a stored conversation render without mm-mcp running.
+
+## Not chosen
+
+- **A view on each tool that reads, drawing one line unless the person asked to see it**: VS Code gives every call of a tool with a view at least 100 pixels, whatever the view draws, so every read would leave a band.
+- **The view's data in `_meta`**: Goose replaces a result's `_meta` with its own before the view sees it.
+- **Images in the result**: A client that hands `structuredContent` to its model would fill its context with megabytes the model cannot use.
+- **Images through the tool only views call**: A client that declares views but ignores `visibility` would offer every input of that tool to its model, and a resource read lists nothing.
+- **A component library rendered on the server**: A thread and a composer need control over layout and Markdown rendering that a library constrains.
+- **React bundled with a build step**: Node in every build, and a large bundle in every view, for pages a few hundred lines of plain JavaScript draw.
