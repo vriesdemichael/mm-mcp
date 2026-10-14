@@ -74,7 +74,7 @@ as you or as a bot. By default, each post others will see waits for your yes.</p
 Planned, not yet built: **views in the chat**, so that in a client that renders
 MCP Apps a thread appears as Mattermost lays it out and a draft appears before
 it is posted
-([ADR-022](adr/022-mcp-apps-views-through-one-show-tool.md)).
+([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)).
 
 ## How it behaves
 
