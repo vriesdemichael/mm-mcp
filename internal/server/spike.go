@@ -9,15 +9,23 @@ package server
 // whether a person or a machine drove it.
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	_ "embed"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
+	"image"
+	"image/png"
 	"io"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -100,7 +108,99 @@ func registerSpike(server *mcp.Server, clientFor ClientFor, _ config.Config) {
 		Description: "Spike for #37: asks the person a question through elicitation and answers with what came back.",
 		Annotations: readOnly("Spike: ask"),
 	}, spikeAsk)
-	spikeLog.Printf("registered: resource %s, tools spike_show_post, spike_press (app only), spike_token (app only), spike_ask, spike_write", spikeURI)
+	// Question 9: resources a view reads through the host, of any size, as
+	// avatars and images would be. The text one carries a marker, to see
+	// whether a view's read reaches the model or the stored conversation.
+	server.AddResourceTemplate(&mcp.ResourceTemplate{
+		URITemplate: spikeBlobPrefix + "{size}",
+		Name:        "spike-blob",
+		Title:       "Spike: a blob of the given size",
+		Description: "Spike for #37, read by the spike's view: random bytes, size in bytes.",
+		MIMEType:    "application/octet-stream",
+	}, spikeReadResource)
+	server.AddResourceTemplate(&mcp.ResourceTemplate{
+		URITemplate: spikeTextPrefix + "{size}",
+		Name:        "spike-text",
+		Title:       "Spike: a text of the given size",
+		Description: "Spike for #37, read by the spike's view: text with a marker, size in bytes.",
+		MIMEType:    "text/plain",
+	}, spikeReadResource)
+	server.AddResourceTemplate(&mcp.ResourceTemplate{
+		URITemplate: spikeImagePrefix + "{size}",
+		Name:        "spike-image",
+		Title:       "Spike: an image of the given size",
+		Description: "Spike for #37, read by the spike's view: a PNG of about the size in bytes.",
+		MIMEType:    "image/png",
+	}, spikeReadResource)
+	server.AddResourceTemplate(&mcp.ResourceTemplate{
+		URITemplate: spikeImageTextPrefix + "{size}",
+		Name:        "spike-image-text",
+		Title:       "Spike: an image as base64 text",
+		Description: "Spike for #37, read by the spike's view: a PNG of about the size in bytes, base64 in a text resource.",
+		MIMEType:    "text/plain",
+	}, spikeReadResource)
+	spikeLog.Printf("registered: resource %s, tools spike_show_post, spike_press (app only), spike_token (app only), spike_ask, spike_write; resource templates %s{size}, %s{size}; filtering app-only tools by declared views: %t",
+		spikeURI, spikeBlobPrefix, spikeTextPrefix, spikeFilter)
+}
+
+const (
+	spikeBlobPrefix      = "mattermost://spike/blob/"
+	spikeTextPrefix      = "mattermost://spike/text/"
+	spikeImagePrefix     = "mattermost://spike/image/"
+	spikeImageTextPrefix = "mattermost://spike/imagetext/"
+	spikeMaxSize         = 64 << 20
+)
+
+// spikeFilter hides the app-only tools from a tools/list whose request did not
+// declare views, as ADR-022 plans, to see whether a client that declares views
+// only on some requests can still call them from its view (question 10).
+var spikeFilter = os.Getenv("SPIKE_FILTER_APP_TOOLS") == "1"
+
+func spikeReadResource(_ context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+	uri := request.Params.URI
+	views, declared := spikeDeclared(request)
+	text := strings.HasPrefix(uri, spikeTextPrefix)
+	image := strings.HasPrefix(uri, spikeImagePrefix)
+	imageText := strings.HasPrefix(uri, spikeImageTextPrefix)
+	uri2 := strings.TrimPrefix(uri, spikeImageTextPrefix)
+	size, err := strconv.Atoi(strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(uri2, spikeBlobPrefix), spikeTextPrefix), spikeImagePrefix))
+	if err != nil || size < 0 || size > spikeMaxSize {
+		spikeLog.Printf("resources/read %s: refused, size must be 0 to %d", uri, spikeMaxSize)
+		return nil, mcp.ResourceNotFoundError(uri)
+	}
+	contents := &mcp.ResourceContents{URI: uri}
+	if imageText {
+		contents.MIMEType = "text/plain"
+		contents.Text = base64.StdEncoding.EncodeToString(spikePNG(size))
+		spikeLog.Printf("resources/read %s: PNG of %d bytes as %d base64 characters; views declared on this request: %t (%s)", uri, size, len(contents.Text), views, declared)
+	} else if text {
+		marker := spikeCanary("SPIKE-RES-")
+		contents.MIMEType = "text/plain"
+		contents.Text = strings.Repeat(marker+" ", size/len(marker+" ")+1)[:size]
+		spikeLog.Printf("resources/read %s: text of %d bytes with %s; views declared on this request: %t (%s)", uri, size, marker, views, declared)
+	} else if image {
+		contents.MIMEType = "image/png"
+		contents.Blob = spikePNG(size)
+		spikeLog.Printf("resources/read %s: PNG of %d bytes; views declared on this request: %t (%s)", uri, len(contents.Blob), views, declared)
+	} else {
+		contents.MIMEType = "application/octet-stream"
+		contents.Blob = make([]byte, size)
+		_, _ = rand.Read(contents.Blob)
+		spikeLog.Printf("resources/read %s: blob of %d bytes; views declared on this request: %t (%s)", uri, size, views, declared)
+	}
+	return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{contents}}, nil
+}
+
+// spikeDeclared reports whether any request declared views: on protocol
+// 2026-07-28 from the request's own _meta, before it from initialize.
+func spikeDeclared(request mcp.Request) (bool, string) {
+	carrier, ok := request.(interface {
+		ClientCapabilities() *mcp.ClientCapabilities
+	})
+	if !ok {
+		return false, "not a request from the client"
+	}
+	return spikeViewsIn(carrier.ClientCapabilities())
 }
 
 // spikeAppOnly marks a tool for the view alone: a host that follows the
@@ -132,20 +232,47 @@ func spikeLogging(next mcp.MethodHandler) mcp.MethodHandler {
 		if method != "initialize" && len(text) > 4000 {
 			text = text[:4000] + "…"
 		}
+		views, declared := spikeDeclared(request)
 		spikeLog.Printf("received %s %s", method, text)
+		spikeLog.Printf("  views declared on this %s: %t (%s)", method, views, declared)
 		result, err := next(ctx, method, request)
 		if err != nil {
 			spikeLog.Printf("answered %s with error: %v", method, err)
+		}
+		if listed, ok := result.(*mcp.ListToolsResult); ok && err == nil {
+			if spikeFilter && !views {
+				kept := listed.Tools[:0:0]
+				for _, tool := range listed.Tools {
+					if !spikeIsAppOnly(tool) {
+						kept = append(kept, tool)
+					}
+				}
+				listed.Tools = kept
+			}
+			names := make([]string, 0, len(listed.Tools))
+			for _, tool := range listed.Tools {
+				names = append(names, tool.Name)
+			}
+			spikeLog.Printf("  listed %d tools: %s", len(names), strings.Join(names, ", "))
 		}
 		return result, err
 	}
 }
 
+func spikeIsAppOnly(tool *mcp.Tool) bool {
+	ui, _ := tool.Meta["ui"].(map[string]any)
+	visibility, _ := ui["visibility"].([]string)
+	return len(visibility) == 1 && visibility[0] == "app"
+}
+
 // spikeViews reports whether the client declared it renders MCP Apps views.
 func spikeViews(request *mcp.CallToolRequest) (bool, string) {
+	return spikeDeclared(request)
+}
+
+func spikeViewsIn(capabilities *mcp.ClientCapabilities) (bool, string) {
 	// Per request: clients on protocol 2026-07-28 send no initialize, and put
 	// their capabilities in each request's _meta.
-	capabilities := request.ClientCapabilities()
 	if capabilities == nil {
 		return false, "no capabilities"
 	}
@@ -296,4 +423,25 @@ func spikeAsk(_ context.Context, request *mcp.CallToolRequest, _ struct{}) (*mcp
 		}},
 		RequestState: "spike-ask",
 	}, spikeAskOutput{}, nil
+}
+
+// spikePNG is a valid PNG of about size bytes: a 1x1 image followed by a
+// private ancillary chunk of random bytes, which decoders skip.
+func spikePNG(size int) []byte {
+	var encoded bytes.Buffer
+	_ = png.Encode(&encoded, image.NewRGBA(image.Rect(0, 0, 1, 1)))
+	pixel := encoded.Bytes()
+	pad := size - len(pixel) - 12
+	if pad <= 0 {
+		return pixel
+	}
+	chunk := make([]byte, 8+pad+4)
+	binary.BigEndian.PutUint32(chunk, uint32(pad))
+	copy(chunk[4:], "spKe")
+	_, _ = rand.Read(chunk[8 : 8+pad])
+	binary.BigEndian.PutUint32(chunk[8+pad:], crc32.ChecksumIEEE(chunk[4:8+pad]))
+	end := len(pixel) - 12
+	out := append([]byte{}, pixel[:end]...)
+	out = append(out, chunk...)
+	return append(out, pixel[end:]...)
 }

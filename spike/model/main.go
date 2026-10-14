@@ -24,7 +24,7 @@ import (
 	"time"
 )
 
-var markers = regexp.MustCompile(`SPIKE-(META|SC|CTX|TOKEN)-[0-9a-f]{8}`)
+var markers = regexp.MustCompile(`SPIKE-(META|SC|CTX|TOKEN|RES)-[0-9a-f]{8}`)
 
 type message struct {
 	Role    string          `json:"role"`

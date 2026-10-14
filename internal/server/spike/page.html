@@ -143,6 +143,7 @@ function render() {
     button("Ask (elicitation)", ask),
     button("Token from an app-only tool", appToken),
     button("Update model context", updateContext),
+    button("Read resources", readResources),
   );
   logBox = el("div", lines.join("\n"), { id: "log" });
   box.append(logBox);
@@ -182,12 +183,88 @@ async function updateContext() {
   log("model context updated with " + canary);
 }
 
+// Question 9: does the host pass a view's resources/read on, and how large a
+// resource does it take? Ascending, stopping at the first failure, since a
+// message past a transport's limit can end the session.
+const SIZES = [1024, 512 << 10, 2 << 20, 5 << 20, 7 << 20, 9 << 20, 12 << 20, 20 << 20];
+
+async function readResources() {
+  const t0 = performance.now();
+  try {
+    const r = await request("resources/read", { uri: "mattermost://spike/text/4096" }, 120000);
+    const c = r && r.contents && r.contents[0];
+    const note = "res text 4096: ok, " + (c && c.text ? c.text.length : 0) + " chars, marker " + (c && c.text ? c.text.slice(0, 18) : "none") + ", " + Math.round(performance.now() - t0) + " ms";
+    log(note); await report(note);
+  } catch (e) {
+    const note = "res text 4096: failed: " + e.message;
+    log(note); await report(note);
+    return;
+  }
+  for (const size of [70, 1 << 20, 9 << 20]) {
+    const t = performance.now();
+    try {
+      const r = await request("resources/read", { uri: "mattermost://spike/image/" + size }, 120000);
+      const c = r && r.contents && r.contents[0];
+      const shape = c ? Object.entries(c).map(([k, v]) => k + ":" + (typeof v === "string" ? "string(" + v.length + ")" : typeof v)).join(" ") : "none";
+      let drawn = "not drawn";
+      if (c && typeof c.blob === "string") {
+        const img = new Image();
+        drawn = await new Promise((ok) => { img.onload = () => ok("drawn " + img.naturalWidth + "x" + img.naturalHeight); img.onerror = () => ok("refused by the image decoder or the page's policy"); img.src = "data:image/png;base64," + c.blob; });
+      }
+      const note = "res image " + size + ": ok, " + Math.round(performance.now() - t) + " ms; " + shape + "; " + drawn;
+      log(note); await report(note);
+    } catch (e) {
+      const note = "res image " + size + ": failed: " + e.message;
+      log(note); await report(note);
+    }
+  }
+  for (const size of [70, 1 << 20, 9 << 20]) {
+    const t = performance.now();
+    try {
+      const r = await request("resources/read", { uri: "mattermost://spike/imagetext/" + size }, 120000);
+      const c = r && r.contents && r.contents[0];
+      let drawn = "not drawn";
+      if (c && typeof c.text === "string") {
+        const img = new Image();
+        drawn = await new Promise((ok) => { img.onload = () => ok("drawn " + img.naturalWidth + "x" + img.naturalHeight); img.onerror = () => ok("refused by the image decoder or the page's policy"); img.src = "data:image/png;base64," + c.text; });
+        if (drawn.startsWith("drawn")) {
+          const bytes = Uint8Array.from(atob(c.text), (ch) => ch.charCodeAt(0));
+          const url = URL.createObjectURL(new Blob([bytes], { type: "image/png" }));
+          const img2 = new Image();
+          drawn += "; as a blob: URL " + await new Promise((ok) => { img2.onload = () => ok("drawn"); img2.onerror = () => ok("refused"); img2.src = url; });
+          if (size === 70) { img.alt = "spike image"; img.width = 24; img.height = 24; logBox && logBox.before(img); }
+        }
+      }
+      const note = "res imagetext " + size + ": ok, " + Math.round(performance.now() - t) + " ms; text " + (c && c.text ? c.text.length : -1) + " chars; " + drawn;
+      log(note); await report(note);
+    } catch (e) {
+      const note = "res imagetext " + size + ": failed: " + e.message;
+      log(note); await report(note);
+    }
+  }
+  for (const size of SIZES) {
+    const t = performance.now();
+    try {
+      const r = await request("resources/read", { uri: "mattermost://spike/blob/" + size }, 120000);
+      const c = r && r.contents && r.contents[0];
+      const got = c && typeof c.blob === "string" ? Math.floor(c.blob.length * 3 / 4) - (c.blob.endsWith("==") ? 2 : c.blob.endsWith("=") ? 1 : 0) : -1;
+      const shape = c ? Object.entries(c).map(([k, v]) => k + ":" + (typeof v === "string" ? "string(" + v.length + ")" : Array.isArray(v) ? "array(" + v.length + ")" : typeof v)).join(" ") : "no contents; result keys " + Object.keys(r || {}).join(",");
+      const note = "res blob " + size + ": ok, " + got + " bytes, " + Math.round(performance.now() - t) + " ms; " + shape;
+      log(note); await report(note);
+    } catch (e) {
+      const note = "res blob " + size + ": failed after " + Math.round(performance.now() - t) + " ms: " + e.message;
+      log(note); await report(note);
+      return;
+    }
+  }
+}
+
 async function report(note) {
   try { await request("tools/call", { name: "spike_press", arguments: { note } }); } catch (e) { log("report failed: " + e.message); }
 }
 
 async function autoRun() {
-  for (const step of [pressMeta, pressArg, appToken, updateContext]) {
+  for (const step of [pressMeta, pressArg, appToken, updateContext, readResources]) {
     try { await step(); } catch (e) { log(step.name + " failed: " + e.message); }
   }
   if (payload.ask) { try { await ask(); } catch (e) { log("ask failed: " + e.message); } }

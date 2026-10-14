@@ -178,3 +178,36 @@ Two more:
   should say it has no such tool.
 - **Writes the model makes.** Have Claude call `spike_write`. Is an approval
   asked?
+
+## Questions 8 to 10, and running on Windows
+
+The second run (#37, questions 8 to 10) adds:
+
+- **Resources the view reads**, through the host's `serverResources`:
+  `mattermost://spike/text/{size}` (text with a `SPIKE-RES-` marker),
+  `mattermost://spike/blob/{size}` (random bytes), `mattermost://spike/image/{size}`
+  (a PNG as a blob) and `mattermost://spike/imagetext/{size}` (the same PNG as
+  base64 in a text resource). The view reads each, ascending, and reports what
+  arrived and whether an image draws from a `data:` and a `blob:` URL.
+- **The capability on every request**, `tools/list` included, in `SPIKE_LOG`.
+- **`SPIKE_FILTER_APP_TOOLS=1`** in `.tmp/spike.env` hides the app-only tools
+  from a `tools/list` whose request declared no views.
+
+On Windows no virtual display is needed; the clients open on the desktop.
+
+1. `go run ./spike/seed` seeds a user, a token and a post on the local stack
+   and writes `.tmp/spike.env`.
+2. Build `.tmp/mm-mcp-spike.exe` and `.tmp/spike-model.exe` as above, and start
+   the model.
+3. **Goose**: unpack `Goose-win32-x64.zip`, write `config.yaml` from
+   `goose-config.yaml` with `cmd` set to `harness\mm-mcp-spike.cmd`, under
+   `<home>\Roaming\Block\goose\config\`, and start `Goose.exe
+   --remote-debugging-port=9333` with `APPDATA` and `LOCALAPPDATA` pointing into
+   `<home>`, so it touches nothing of the person's own. `goose-approve-run.mjs`
+   allows the model's call once in approve mode.
+4. **VS Code**: start the installed `Code.exe` with `--user-data-dir`,
+   `--extensions-dir`, `--extensionDevelopmentPath=harness\vscode-model` and
+   `--remote-debugging-port=9334`, with `vscode-settings.json` and an `mcp.json`
+   naming `harness\mm-mcp-spike.cmd`. `vscode-manage.mjs` opens "Chat: Manage
+   Language Models", which makes the spike model selectable without signing in.
+5. `look.mjs <port> <png>` screenshots either client.
