@@ -462,7 +462,17 @@ takes in one, its Maximum File Size, is not downloaded.
 Past a limit, a text is read with `read_file`, in windows, and a file saved
 with `save_file`.
 Each post's files, and each file `search_files` finds, give the address, the
-answer links each file as a resource, and every `file_id` takes the address. A
+answer links each file as a resource, and every `file_id` takes the address. An
+image also gives its size and its preview's address, at
+`mattermost://<your server>/files/<file id>/preview`: the smaller image its post
+shows, cheaper to look at than the whole image.
+
+The pictures a post shows with it are resources too: a person's profile picture,
+at `mattermost://<your server>/users/<user id>/image`, the one they set or the
+one Mattermost draws from their initials, and a custom emoji's, at
+`mattermost://<your server>/emoji/<name>`. Each reads as a picture, PNG, JPEG,
+GIF or WebP and never SVG, and one read again within a few minutes comes from
+what mm-mcp kept rather than from Mattermost. A
 client that completes resource addresses offers, as you type part of a file's
 name, the ids of the files that match. Threads and conversations are not
 resources: a conversation has no end to read it whole to.

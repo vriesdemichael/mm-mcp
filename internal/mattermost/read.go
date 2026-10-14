@@ -197,6 +197,18 @@ func (c *Client) File(ctx context.Context, id string) ([]byte, error) {
 	return result(c.transfer.GetFile(ctx, id))
 }
 
+// FilePreview is the smaller image Mattermost makes of an uploaded image and
+// shows in its post; a file with no preview is refused. GetFilePreview.
+func (c *Client) FilePreview(ctx context.Context, id string) ([]byte, error) {
+	return result(c.transfer.GetFilePreview(ctx, id))
+}
+
+// ProfileImage is a user's profile picture, the one Mattermost draws from
+// their initials when they set none. GetProfileImage.
+func (c *Client) ProfileImage(ctx context.Context, userID string) ([]byte, error) {
+	return result(c.api.GetProfileImage(ctx, userID, ""))
+}
+
 // FileSearch asks Mattermost's file search.
 type FileSearch struct {
 	// TeamID limits the search to one team; empty searches every team.
@@ -294,6 +306,11 @@ func (c *Client) GroupChannel(ctx context.Context, userIDs []string) (*model.Cha
 // Emoji is the server's custom emoji with the given name. GetEmojiByName.
 func (c *Client) Emoji(ctx context.Context, name string) (*model.Emoji, error) {
 	return result(c.api.GetEmojiByName(ctx, name))
+}
+
+// EmojiImage is a custom emoji's picture. GetEmojiImage.
+func (c *Client) EmojiImage(ctx context.Context, id string) ([]byte, error) {
+	return result(c.api.GetEmojiImage(ctx, id))
 }
 
 // AutocompleteEmoji is the server's custom emoji whose names start with
