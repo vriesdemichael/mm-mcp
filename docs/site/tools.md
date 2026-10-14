@@ -9,8 +9,8 @@ hide:
 your own words; it picks the tool. Writing is off until you allow it.</p>
 
 <div class="mm-stats">
-<a class="mm-stat" href="#every-tool"><strong>45</strong> tools</a>
-<span class="mm-stat mm-stat--read"><strong>24</strong> only read</span>
+<a class="mm-stat" href="#every-tool"><strong>47</strong> tools</a>
+<span class="mm-stat mm-stat--read"><strong>26</strong> only read</span>
 <span class="mm-stat mm-stat--asks"><strong>14</strong> ask you first</span>
 <span class="mm-stat mm-stat--yours"><strong>6</strong> yours alone, not asked</span>
 <span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
@@ -52,6 +52,18 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
     { .mm-example }
 
     [`read_channel`](#read_channel){ .mm-chip } [`read_post`](#read_post){ .mm-chip } [`list_pinned_posts`](#list_pinned_posts){ .mm-chip } [`list_saved`](#list_saved){ .mm-chip }
+
+-   :material-eye-outline:{ .lg .middle } **See it as Mattermost shows it**
+
+    ---
+
+    In an AI app that shows MCP Apps views, a thread appears in the chat as
+    Mattermost lays it out: names and pictures, Markdown, reactions and images.
+
+    “Show me the thread about last night's outage.”
+    { .mm-example }
+
+    [`show`](#show){ .mm-chip } [`view_action`](#view_action){ .mm-chip }
 
 -   :material-file-document-outline:{ .lg .middle } **Open the attachments**
 
@@ -210,6 +222,25 @@ The tools that write are offered only once you allow writes, with
 
 `list_saved`: List saved posts { #list_saved }
 :   The posts you saved to come back to.
+
+### See it as Mattermost shows it
+
+`show`: Show { #show }
+:   Puts a thread in front of you in the chat, laid out as Mattermost lays it
+    out: who wrote each post, with their profile picture, when, the Markdown
+    drawn, `@mentions` and `~channels`, reactions with who reacted, images
+    you can open whole and file cards, and the edited and pinned marks. It
+    shows the first 30 posts, says how many more the thread has, and loads
+    more as you ask. Links open in Mattermost. Your agent calls it when you
+    ask to see something, after it found it; it reads with `read_post`, and
+    `show` answers with what `read_post` answers, so the chat holds nothing
+    the view adds. In an app that shows no views it shows nothing, and says so,
+    and your agent answers in words ([Views](#views)).
+
+`view_action`: Act in a view { #view_action }
+:   What you do in a view, such as loading more of a thread, goes through this
+    tool. Only a view calls it: an app that shows views keeps it from your
+    agent, and mm-mcp offers it only to an app that says it shows views.
 
 ### Open the attachments
 
@@ -476,6 +507,19 @@ what mm-mcp kept rather than from Mattermost. A
 client that completes resource addresses offers, as you type part of a file's
 name, the ids of the files that match. Threads and conversations are not
 resources: a conversation has no end to read it whole to.
+
+### Views
+
+In an AI app that shows MCP Apps views, [`show`](#show) puts a thread in the
+chat as Mattermost lays it out
+([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)). The view is a
+page in mm-mcp itself, which reaches no network: the app reads the thread from
+mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
+credential. Where the app reads no pictures, people are their initials and a
+custom emoji its name. The page takes the app's light or dark theme and its
+language, where mm-mcp has words for it, and English otherwise. Goose's desktop
+app shows views, and so does VS Code with its `chat.mcp.apps.enabled` setting
+on; `diagnose` says whether yours does.
 
 ### Page sizes
 

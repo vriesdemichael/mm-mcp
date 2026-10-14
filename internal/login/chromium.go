@@ -403,6 +403,37 @@ func (w *chromiumWindow) Evaluate(ctx context.Context, script string) error {
 	return nil
 }
 
+// Value is what expression evaluates to in the page, awaited, as JSON. A
+// login needs no value back; the view page's browser tests read what a view
+// drew with it.
+func (w *chromiumWindow) Value(ctx context.Context, expression string) (json.RawMessage, error) {
+	session, err := w.page(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var evaluated struct {
+		Result struct {
+			Value json.RawMessage `json:"value"`
+		} `json:"result"`
+		ExceptionDetails *struct {
+			Text      string `json:"text"`
+			Exception *struct {
+				Description string `json:"description"`
+			} `json:"exception"`
+		} `json:"exceptionDetails"`
+	}
+	if err := w.call(ctx, session, "Runtime.evaluate", map[string]any{"expression": expression, "awaitPromise": true, "returnByValue": true}, &evaluated); err != nil {
+		return nil, err
+	}
+	if details := evaluated.ExceptionDetails; details != nil {
+		if details.Exception != nil && details.Exception.Description != "" {
+			return nil, fmt.Errorf("the script failed: %s", details.Exception.Description)
+		}
+		return nil, fmt.Errorf("the script failed: %s", details.Text)
+	}
+	return evaluated.Result.Value, nil
+}
+
 func (w *chromiumWindow) Close() {
 	if w.conn != nil {
 		closing, cancel := context.WithTimeout(context.Background(), 2*time.Second)

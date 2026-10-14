@@ -198,6 +198,39 @@ jobs:
       - name: Run the browser tests
         run: task test:browser
 
+  # The view page in the official MCP Apps bridge, in Playwright's Chromium
+  # (ADR-022): the page as a host runs it, with what a view is sent and what it
+  # asks of the host checked. No Mattermost is involved.
+  view-tests:
+    name: View Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Resolve the pinned tool versions
+        run: grep -E "^[A-Za-z_][A-Za-z0-9_]*=" .github/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Task
+        uses: ./.github/actions/setup-task
+        with:
+          version: ${{ env.GO_TASK_VERSION }}
+
+      - name: Run the view tests
+        run: task test:views
+
   # The live suite against both supported ends (ADR-025), through the tasks a
   # developer runs. Team Edition needs no licence and no secret, so this runs on
   # pull requests from forks too.
@@ -451,6 +484,7 @@ jobs:
       - unit-tests
       - unit-tests-other-os
       - browser-tests
+      - view-tests
       - live-tests
       - coverage-gates
       - codecov

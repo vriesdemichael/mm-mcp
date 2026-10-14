@@ -83,3 +83,23 @@ updates:
         update-types:
           - "version-update:semver-major"
           - "version-update:semver-minor"
+
+  # The views browser tests' host, test only and never shipped (ADR-022):
+  # the official MCP Apps bridge and what it needs to run in a browser.
+  - package-ecosystem: "npm"
+    directory: "/internal/views/testhost"
+    target-branch: "next"
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "UTC"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      views-test-host-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"

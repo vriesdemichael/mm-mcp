@@ -325,125 +325,150 @@ func readPostSpec() Spec {
 				"Give any post in the thread. include_thread false reads the post alone.",
 			Annotations: readOnly("Read post"),
 		},
-		uses([]Use{
-			{
-				Operation: "GetPost",
-				Params: map[string]Coverage{
-					"post_id":         SetBy("post_id"),
-					"include_deleted": Omitted("a deleted post is gone for the person too"),
-				},
-			},
-			{
-				Operation: "GetPostThread",
-				Params: map[string]Coverage{
-					"post_id":                  SetBy("post_id"),
-					"perPage":                  SetBy("limit"),
-					"fromPost":                 SetBy("cursor"),
-					"fromCreateAt":             Fixed("the time of the post the cursor names", "Mattermost pages a thread from a post and its time together"),
-					"direction":                Fixed("down", "a thread reads oldest first"),
-					"fromUpdateAt":             Omitted("a sync for clients that already hold the thread"),
-					"skipFetchThreads":         Omitted("the thread's posts are what the tool reads; Mattermost's default answers with them"),
-					"collapsedThreads":         Omitted("collapsed threads change how a channel lists replies, not what a thread holds"),
-					"collapsedThreadsExtended": Omitted("collapsed threads change how a channel lists replies, not what a thread holds"),
-					"updatesOnly":              Omitted("a sync for clients that already hold the thread"),
-				},
-			},
-		}, describeUses(true)),
+		readPostUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[readPostInput, PostWithThread] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input readPostInput) (*mcp.CallToolResult, PostWithThread, error) {
-				limit, err := limitOf(input.Limit, defaultThreadPage, maxThreadPage)
-				if err != nil {
-					return nil, PostWithThread{}, err
-				}
-				at, err := openCursor("read_post", input, input.Cursor)
-				if err != nil {
-					return nil, PostWithThread{}, err
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, PostWithThread{}, err
 				}
-				if input.IncludeThread != nil && !*input.IncludeThread {
-					post, err := client.Post(ctx, input.PostID)
-					if err != nil {
-						return nil, PostWithThread{}, err
-					}
-					posts, err := describePosts(ctx, client, []*model.Post{post})
-					if err != nil {
-						return nil, PostWithThread{}, err
-					}
-					root := post.RootId
-					if root == "" {
-						root = post.Id
-					}
-					return nil, PostWithThread{Post: &posts[0], RootID: root}, nil
-				}
-				list, err := client.Thread(ctx, mattermost.ThreadPage{PostID: input.PostID, PerPage: limit, FromPost: at.After, FromCreateAt: at.At})
-				if err != nil {
-					return nil, PostWithThread{}, err
-				}
-				// Mattermost answers a page of a thread with its replies after the
-				// cursor, and adds to every page the thread's first post and the post
-				// asked for, wherever they fall. A page keeps what comes after the
-				// cursor, by time and then id; the post asked for stays out of it
-				// until the replies reach it, and the page is cut to the limit, the
-				// rest following from its last post.
-				var asked *model.Post
-				var page []*model.Post
-				replies := 0
-				for _, post := range orderedPosts(list, true) {
-					if post.Id == input.PostID {
-						asked = post
-					}
-					if at.After != "" && !(post.CreateAt > at.At || (post.CreateAt == at.At && post.Id > at.After)) {
-						continue
-					}
-					if post.RootId != "" && post.Id != input.PostID {
-						replies++
-					}
-					page = append(page, post)
-				}
-				more := list.HasNext != nil && *list.HasNext
-				if asked != nil && asked.RootId != "" && more && len(page) > 0 {
-					// The window is full, and the post asked for lies beyond it.
-					if last := page[len(page)-1]; last.Id == asked.Id && replies >= limit {
-						page = page[:len(page)-1]
-					}
-				}
-				if len(page) > limit {
-					page, more = page[:limit], true
-				}
-				described := page
-				if asked != nil && !slices.Contains(page, asked) {
-					described = append(slices.Clone(page), asked)
-				}
-				posts, err := describePosts(ctx, client, described)
-				if err != nil {
-					return nil, PostWithThread{}, err
-				}
-				out := PostWithThread{Thread: posts[:len(page)]}
-				_, out.Thread = inOneChannel(out.Thread)
-				for i := range posts {
-					if posts[i].ID == input.PostID {
-						out.Post = &posts[i]
-					}
-				}
-				if asked != nil {
-					out.RootID = asked.RootId
-					if out.RootID == "" {
-						out.RootID = asked.Id
-					}
-				}
-				ordered := page
-				if more && len(ordered) > 0 {
-					last := ordered[len(ordered)-1]
-					at.After, at.At = last.Id, last.CreateAt
-					out.NextCursor = at.String()
-				}
-				return nil, out, nil
+				out, err := readThread(ctx, client, input, defaultThreadPage)
+				return nil, out, err
 			}
 		},
-	), map[string]string{"include_thread": "chooses between reading the post alone, GetPost, and its thread, GetPostThread"})
+	), readPostShapes)
+}
+
+// readPostShapes are read_post's arguments that set no parameter, which show
+// and the tool only views call take too.
+var readPostShapes = map[string]string{"include_thread": "chooses between reading the post alone, GetPost, and its thread, GetPostThread"}
+
+// readPostUses are the operations reading a post and its thread calls: what
+// read_post and show answer with is one answer.
+func readPostUses() []Use {
+	return uses([]Use{
+		{
+			Operation: "GetPost",
+			Params: map[string]Coverage{
+				"post_id":         SetBy("post_id"),
+				"include_deleted": Omitted("a deleted post is gone for the person too"),
+			},
+		},
+	}, threadPageUses())
+}
+
+// threadPageUses are the operations reading a page of a thread calls, which
+// is all the tool only views call reads.
+func threadPageUses() []Use {
+	return uses([]Use{
+		{
+			Operation: "GetPostThread",
+			Params: map[string]Coverage{
+				"post_id":                  SetBy("post_id"),
+				"perPage":                  SetBy("limit"),
+				"fromPost":                 SetBy("cursor"),
+				"fromCreateAt":             Fixed("the time of the post the cursor names", "Mattermost pages a thread from a post and its time together"),
+				"direction":                Fixed("down", "a thread reads oldest first"),
+				"fromUpdateAt":             Omitted("a sync for clients that already hold the thread"),
+				"skipFetchThreads":         Omitted("the thread's posts are what the tool reads; Mattermost's default answers with them"),
+				"collapsedThreads":         Omitted("collapsed threads change how a channel lists replies, not what a thread holds"),
+				"collapsedThreadsExtended": Omitted("collapsed threads change how a channel lists replies, not what a thread holds"),
+				"updatesOnly":              Omitted("a sync for clients that already hold the thread"),
+			},
+		},
+	}, describeUses(true))
+}
+
+// readThread is read_post's answer: a post, and a page of the thread it is
+// in, defaultLimit posts long unless the input says. Its cursor is
+// read_post's, whichever tool answers with it.
+func readThread(ctx context.Context, client *mattermost.Client, input readPostInput, defaultLimit int) (PostWithThread, error) {
+	limit, err := limitOf(input.Limit, defaultLimit, maxThreadPage)
+	if err != nil {
+		return PostWithThread{}, err
+	}
+	at, err := openCursor("read_post", input, input.Cursor)
+	if err != nil {
+		return PostWithThread{}, err
+	}
+	if input.IncludeThread != nil && !*input.IncludeThread {
+		post, err := client.Post(ctx, input.PostID)
+		if err != nil {
+			return PostWithThread{}, err
+		}
+		posts, err := describePosts(ctx, client, []*model.Post{post})
+		if err != nil {
+			return PostWithThread{}, err
+		}
+		root := post.RootId
+		if root == "" {
+			root = post.Id
+		}
+		return PostWithThread{Post: &posts[0], RootID: root}, nil
+	}
+	list, err := client.Thread(ctx, mattermost.ThreadPage{PostID: input.PostID, PerPage: limit, FromPost: at.After, FromCreateAt: at.At})
+	if err != nil {
+		return PostWithThread{}, err
+	}
+	// Mattermost answers a page of a thread with its replies after the
+	// cursor, and adds to every page the thread's first post and the post
+	// asked for, wherever they fall. A page keeps what comes after the
+	// cursor, by time and then id; the post asked for stays out of it
+	// until the replies reach it, and the page is cut to the limit, the
+	// rest following from its last post.
+	var asked *model.Post
+	var page []*model.Post
+	replies := 0
+	for _, post := range orderedPosts(list, true) {
+		if post.Id == input.PostID {
+			asked = post
+		}
+		if at.After != "" && !(post.CreateAt > at.At || (post.CreateAt == at.At && post.Id > at.After)) {
+			continue
+		}
+		if post.RootId != "" && post.Id != input.PostID {
+			replies++
+		}
+		page = append(page, post)
+	}
+	more := list.HasNext != nil && *list.HasNext
+	if asked != nil && asked.RootId != "" && more && len(page) > 0 {
+		// The window is full, and the post asked for lies beyond it.
+		if last := page[len(page)-1]; last.Id == asked.Id && replies >= limit {
+			page = page[:len(page)-1]
+		}
+	}
+	if len(page) > limit {
+		page, more = page[:limit], true
+	}
+	described := page
+	if asked != nil && !slices.Contains(page, asked) {
+		described = append(slices.Clone(page), asked)
+	}
+	posts, err := describePosts(ctx, client, described)
+	if err != nil {
+		return PostWithThread{}, err
+	}
+	out := PostWithThread{Thread: posts[:len(page)]}
+	_, out.Thread = inOneChannel(out.Thread)
+	for i := range posts {
+		if posts[i].ID == input.PostID {
+			out.Post = &posts[i]
+		}
+	}
+	if asked != nil {
+		out.RootID = asked.RootId
+		if out.RootID == "" {
+			out.RootID = asked.Id
+		}
+	}
+	ordered := page
+	if more && len(ordered) > 0 {
+		last := ordered[len(ordered)-1]
+		at.After, at.At = last.Id, last.CreateAt
+		out.NextCursor = at.String()
+	}
+	return out, nil
 }
 
 // PinnedPosts is a channel's pinned posts.
