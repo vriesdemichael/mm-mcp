@@ -15,6 +15,7 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/credstore"
 	"github.com/vriesdemichael/mm-mcp/internal/doctor"
+	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
 // The diagnose tool makes the checks `mm-mcp doctor` makes, from inside the
@@ -102,7 +103,7 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 	checks := []doctor.Check{{
 		Name: "MCP client", Status: doctor.OK,
 		Detail: fmt.Sprintf("%s, speaking MCP %s", client, request.ProtocolVersion()),
-	}}
+	}, viewsCheck(request)}
 	const name = "confirmations"
 	switch {
 	case cfg.AllowWrites && cfg.ForceHumanInTheLoopInClaudeCode:
@@ -147,6 +148,23 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 		checks = append(checks, doctor.Check{Name: "test question", Status: doctor.Skipped, Detail: "this client cannot show a question"})
 	}
 	return checks
+}
+
+// viewsCheck says whether the client renders MCP Apps views, so "why don't I
+// see it" has an answer (ADR-022).
+func viewsCheck(request *mcp.CallToolRequest) doctor.Check {
+	const name = "views"
+	types := declaredViewTypes(request)
+	switch {
+	case rendersViews(request):
+		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client renders MCP Apps views, so show puts a thread in front of the person laid out as Mattermost lays it out"}
+	case types != nil:
+		return doctor.Check{Name: name, Status: doctor.OK, Detail: fmt.Sprintf(
+			"this client renders MCP Apps views of %s, not of %s, mm-mcp's, so show shows nothing and the model answers in words",
+			strings.Join(types, ", "), views.MIMEType)}
+	default:
+		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client renders no MCP Apps views, so show shows nothing and the model answers in words"}
+	}
 }
 
 // letTheClientAsk ends the advice to a person whose client does not show

@@ -1,0 +1,138 @@
+// Package views is mm-mcp's MCP Apps view page (ADR-022): one page that draws
+// every view, plain JavaScript and CSS embedded in the binary, with no build
+// step and no third-party code. The page holds no Mattermost data: what a
+// view draws arrives as the result of the call it belongs to, and the
+// pictures as resources the host reads from mm-mcp.
+//
+// Page assembles it into one self-contained document: the style, then one
+// script that runs every file in Scripts in one scope, in that order, after
+// the data the page needs: where this Mattermost's resources start, the
+// emoji that come with Mattermost, from Mattermost's own table, and the
+// catalogs of the page's own words.
+package views
+
+import (
+	"embed"
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"path"
+	"strings"
+	"sync"
+
+	"github.com/mattermost/mattermost/server/public/model"
+)
+
+// The MCP Apps names mm-mcp speaks.
+const (
+	// Extension is the capability a client declares when it renders views.
+	Extension = "io.modelcontextprotocol/ui"
+	// MIMEType is the type of a view page.
+	MIMEType = "text/html;profile=mcp-app"
+	// URI is the page's address.
+	URI = "ui://mm-mcp/view"
+)
+
+//go:embed page/page.html page/view.css page/*.js page/catalogs/*.json
+var assets embed.FS
+
+// Scripts is every script of the page, in the order they run; main.js, which
+// starts the view, runs last.
+var Scripts = []string{"bridge.js", "dom.js", "i18n.js", "format.js", "pictures.js", "markdown.js", "thread.js", "main.js"}
+
+const (
+	stylePlaceholder  = "/*MM_VIEW_STYLE*/"
+	scriptPlaceholder = "/*MM_VIEW_SCRIPT*/"
+)
+
+// Asset is one of the page's files, by its name under page/.
+func Asset(name string) (string, error) {
+	data, err := assets.ReadFile(path.Join("page", name))
+	return string(data), err
+}
+
+// Catalogs is the page's own words, by language tag, as the catalogs under
+// page/catalogs hold them.
+func Catalogs() (map[string]map[string]any, error) {
+	entries, err := fs.ReadDir(assets, "page/catalogs")
+	if err != nil {
+		return nil, err
+	}
+	catalogs := map[string]map[string]any{}
+	for _, entry := range entries {
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".json") {
+			continue
+		}
+		data, err := assets.ReadFile("page/catalogs/" + name)
+		if err != nil {
+			return nil, err
+		}
+		var words map[string]any
+		if err := json.Unmarshal(data, &words); err != nil {
+			return nil, fmt.Errorf("the catalog %s: %w", name, err)
+		}
+		catalogs[strings.TrimSuffix(name, ".json")] = words
+	}
+	return catalogs, nil
+}
+
+// shell is the page with everything but where this Mattermost's resources
+// start: the same for every server, so made once.
+var shell = sync.OnceValue(func() string {
+	page := mustAsset("page.html")
+	style := mustAsset("view.css")
+	catalogs, err := Catalogs()
+	if err != nil {
+		panic(err)
+	}
+	var script strings.Builder
+	script.WriteString("(() => {\n\"use strict\";\n")
+	script.WriteString("const RESOURCE_BASE = " + baseMarker + ";\n")
+	script.WriteString("const SYSTEM_EMOJI = " + mustJSON(systemEmoji()) + ";\n")
+	script.WriteString("const CATALOGS = " + mustJSON(catalogs) + ";\n")
+	for _, name := range Scripts {
+		script.WriteString("// ---- " + name + " ----\n")
+		script.WriteString(mustAsset(name))
+		script.WriteString("\n")
+	}
+	script.WriteString("})();\n")
+	if !strings.Contains(page, stylePlaceholder) || !strings.Contains(page, scriptPlaceholder) {
+		panic("the page has lost a placeholder")
+	}
+	return strings.Replace(strings.Replace(page, stylePlaceholder, style, 1), scriptPlaceholder, script.String(), 1)
+})
+
+// baseMarker stands in the shell for where this Mattermost's resources
+// start, which Page puts in.
+const baseMarker = `"\u0000MM_RESOURCE_BASE\u0000"`
+
+// Page is the view page for the Mattermost whose resources start at base, as
+// mattermost://chat.example.com does.
+func Page(base string) string {
+	return strings.Replace(shell(), baseMarker, mustJSON(base), 1)
+}
+
+// systemEmoji is Mattermost's table of the emoji that come with it: each
+// name, with the code points of its character in hex, joined by dashes.
+func systemEmoji() map[string]string {
+	return model.SystemEmojis
+}
+
+func mustAsset(name string) string {
+	text, err := Asset(name)
+	if err != nil {
+		panic(err)
+	}
+	return text
+}
+
+// mustJSON is value as JSON, which Go's encoder writes with <, > and &
+// escaped, so it cannot end the script it stands in.
+func mustJSON(value any) string {
+	data, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}

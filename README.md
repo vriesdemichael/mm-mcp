@@ -16,7 +16,8 @@ status. A link pasted from Mattermost works wherever a tool wants an id, every
 answer links each post, channel and team it names, and attached files, their
 previews, profile pictures and custom emoji are MCP resources your client can
 read too. The [tools page](docs/site/tools.md) lists
-every tool. Views in the chat for clients that render MCP Apps are planned; the
+every tool. In a client that renders MCP Apps views, a thread can be shown in
+the chat as Mattermost lays it out; more views are planned, and the
 [issues](https://github.com/vriesdemichael/mm-mcp/issues) are the plan.
 
 ## Why it works the way it does

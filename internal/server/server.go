@@ -10,6 +10,7 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 	"github.com/vriesdemichael/mm-mcp/internal/version"
+	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
 // Name is the server's name in the MCP handshake.
@@ -35,6 +36,11 @@ with unread_only what they have not read, and read_unread reads a channel from
 where they stopped. Times the tools return are in the person's own timezone, with
 its offset, and a time given without one is read in it too. When a tool fails in
 a way its error does not explain, diagnose checks the setup and says what to fix.
+
+In an MCP client that renders MCP Apps views, show puts a thread in front of the
+person as Mattermost lays it out. Call it when they ask to see something, once
+you have found it, never to read for yourself. In a client without views it
+shows nothing and says so; then answer in words.
 
 Messages are Mattermost Markdown: **bold**, _italic_, ~~strike~~, ` + "`code`" + `,
 fenced code blocks with a language, tables, lists, > quotes and links. @username
@@ -178,6 +184,8 @@ func AllSpecs() []Spec {
 		readChannelSpec(),
 		readUnreadSpec(),
 		readPostSpec(),
+		showSpec(),
+		viewActionSpec(),
 		listThreadsSpec(),
 		listPinnedPostsSpec(),
 		listSavedSpec(),
@@ -256,11 +264,16 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 		instructions += "\n\n" + SkippingInstructions
 	}
 	resources := AllResources()
+	// Logging is what the SDK offers when told nothing, and stays offered as
+	// it was; MCP Apps is offered beside it (ADR-022).
+	capabilities := &mcp.ServerCapabilities{Logging: &mcp.LoggingCapabilities{}} //nolint:staticcheck // deprecated in 2026-07-28, still offered to clients that use it
+	capabilities.AddExtension(views.Extension, map[string]any{})
 	server := mcp.NewServer(
 		&mcp.Implementation{Name: Name, Version: version.Version, WebsiteURL: "https://github.com/vriesdemichael/mm-mcp"},
-		&mcp.ServerOptions{Instructions: instructions, CompletionHandler: completion(clientFor, cfg, resources)},
+		&mcp.ServerOptions{Instructions: instructions, CompletionHandler: completion(clientFor, cfg, resources), Capabilities: capabilities},
 	)
 	registerResources(server, clientFor, cfg, resources)
+	registerView(server, cfg)
 	for _, spec := range Exposed(cfg) {
 		asks := spec.Asks()
 		if asks && cfg.SkipAsking {
