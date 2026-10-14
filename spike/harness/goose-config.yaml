@@ -1,0 +1,17 @@
+OPENAI_HOST: http://127.0.0.1:18080
+GOOSE_TELEMETRY_ENABLED: false
+extensions:
+  mmmcpspike:
+    enabled: true
+    type: stdio
+    name: mmmcpspike
+    description: mm-mcp spike
+    cmd: @HARNESS@/mm-mcp-spike.sh
+    args: []
+    timeout: 300
+providers:
+  openai:
+    enabled: true
+    model: spike-model
+    configured: true
+active_provider: openai

@@ -278,6 +278,7 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 		}
 		spec.Register(server, clientFor, cfg, asks)
 	}
+	spikeRegister(server, clientFor, cfg)
 	return server
 }
 

@@ -1,0 +1,9 @@
+{
+  "name": "mm-mcp-spike-harness",
+  "private": true,
+  "description": "Spike #37: drives MCP Apps clients against the spike build of mm-mcp. Never merged.",
+  "type": "module",
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}

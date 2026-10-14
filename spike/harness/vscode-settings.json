@@ -1,0 +1,17 @@
+{
+  "chat.mcp.autostart": "newAndOutdated",
+  "chat.mcp.discovery.enabled": {
+    "claude-desktop": false,
+    "copilot": false,
+    "windsurf": false,
+    "cursor-global": false,
+    "cursor-workspace": false
+  },
+  "security.workspace.trust.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "none",
+  "extensions.autoUpdate": "off",
+  "workbench.startupEditor": "none",
+  "chat.tools.autoApprove": true,
+  "chat.mcp.apps.enabled": true
+}
