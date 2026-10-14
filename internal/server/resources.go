@@ -61,22 +61,19 @@ type ResourceSpec struct {
 // AllResources is every resource template mm-mcp offers, whatever the
 // configuration: each only reads.
 func AllResources() []ResourceSpec {
-	return []ResourceSpec{fileResourceSpec()}
+	return []ResourceSpec{fileResourceSpec(), previewResourceSpec(), pictureResourceSpec(), emojiResourceSpec()}
 }
 
 // fileResource is the address of a file of the server at server as a
 // resource.
 func fileResource(server *url.URL, id string) string {
-	return fileResourceScheme + "://" + strings.ToLower(server.Host) + strings.TrimRight(server.Path, "/") + "/files/" + id
+	return resourceBase(server) + "/files/" + id
 }
 
 // fileResourceID is the file a resource address names on the server at
 // server.
 func fileResourceID(server, address *url.URL) (string, bool) {
-	if !strings.EqualFold(address.Scheme, fileResourceScheme) || !strings.EqualFold(address.Host, server.Host) {
-		return "", false
-	}
-	id, ok := strings.CutPrefix(address.Path, strings.TrimRight(server.Path, "/")+"/files/")
+	id, ok := resourcePart(server, address, "/files/", "")
 	return id, ok && mattermostID.MatchString(id)
 }
 

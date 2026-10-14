@@ -54,9 +54,13 @@ func TestAFileIsReadAsAResourceAsReadFileReadsIt(t *testing.T) {
 	_, manyID := attachAs(t, author, channel.Id, "many.zip", longListing())
 	session := sessionFor(t, admin, user)
 
-	templates := listedTemplates(t, session)
-	if len(templates) != 1 || templates[0].URITemplate != liveFile("{file_id}") {
-		t.Fatalf("the server lists %+v", templates)
+	listed := map[string]string{}
+	for _, template := range listedTemplates(t, session) {
+		listed[template.Name] = template.URITemplate
+	}
+	if listed["file"] != liveFile("{file_id}") || listed["preview"] != liveFile("{file_id}")+"/preview" ||
+		listed["picture"] != liveResource("/users/{user_id}/image") || listed["emoji"] != liveResource("/emoji/{emoji_name}") || len(listed) != 4 {
+		t.Fatalf("the server lists %v", listed)
 	}
 
 	read := func(id string) *mcp.ResourceContents {
