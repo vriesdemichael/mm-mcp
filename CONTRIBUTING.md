@@ -142,6 +142,7 @@ git add --renormalize .
 | Release Flow | refuses every pull request into `main` and points it at `next` |
 | Unit Tests | formatting, line endings, the decision records, the vendored specifications, golangci-lint, govulncheck, the unit suite with coverage and under the race detector, and that the live suite compiles |
 | Unit Tests (windows-latest), Unit Tests (macos-latest) | the unit suite on Windows and macOS |
+| View Tests | the MCP Apps view page in Playwright's Chromium, inside the official MCP Apps bridge (`task test:views`) |
 | Live Tests | starts Mattermost and runs the live suite, on the newest release and the Extended Support Release |
 | Coverage Gates | global and patch coverage over the unit and live profiles merged |
 | Codecov | publishes coverage history and the README badge |
@@ -152,6 +153,18 @@ git add --renormalize .
 A weekly workflow also runs the live suite against every Mattermost release
 between the two ends. Live tests run on pull requests from forks; if they fail
 on yours, the failure is real.
+
+## Translating the views
+
+The MCP Apps views show their own words from a catalog per language,
+`internal/views/page/catalogs/<language tag>.json`; English, `en.json`, is the
+first. Adding a language is adding one file: every word English has, with the
+same `{placeholders}`, and for a word that counts, its plural forms as
+[`Intl.PluralRules`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Intl/PluralRules)
+names them, `one` and `other` at least. A view picks the language of the AI
+application it is shown in, and English where there is no catalog for it.
+`go test ./internal/views/` checks the catalogs against English; what people
+wrote in Mattermost is never translated.
 
 ## Where the deeper detail lives
 

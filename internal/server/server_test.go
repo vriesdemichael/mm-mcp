@@ -13,6 +13,7 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 	"github.com/vriesdemichael/mm-mcp/internal/network"
 	"github.com/vriesdemichael/mm-mcp/internal/server"
+	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
 // What the server offers a client, read through an in-memory MCP client. No
@@ -23,6 +24,18 @@ var readOnlyConfig = config.Config{URL: "https://chat.example.com", Token: "t"}
 
 func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 	t.Helper()
+	return connectWith(t, cfg, nil)
+}
+
+// rendersViews is the options of a client that renders MCP Apps views.
+func rendersViews() *mcp.ClientOptions {
+	capabilities := &mcp.ClientCapabilities{}
+	capabilities.AddExtension(views.Extension, map[string]any{"mimeTypes": []string{views.MIMEType}})
+	return &mcp.ClientOptions{Capabilities: capabilities}
+}
+
+func connectWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {
+	t.Helper()
 	client := mattermost.New(cfg.URL, cfg.Token, network.NewSafeTransport())
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
 	serverSession, err := server.New(cfg, server.Single(client)).Connect(t.Context(), serverTransport, nil)
@@ -30,7 +43,7 @@ func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = serverSession.Close() })
-	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, nil).Connect(t.Context(), clientTransport, nil)
+	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, options).Connect(t.Context(), clientTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,9 +51,11 @@ func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 	return session
 }
 
+// listTools is every tool a server offers: to a client that renders views,
+// which is offered the tool only views call as well.
 func listTools(t *testing.T, cfg config.Config) []*mcp.Tool {
 	t.Helper()
-	result, err := connect(t, cfg).ListTools(t.Context(), nil)
+	result, err := connectWith(t, cfg, rendersViews()).ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

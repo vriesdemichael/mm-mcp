@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -476,5 +477,104 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 		if want := fmt.Sprintf("<strong>%d</strong> %s", stat.count, stat.label); !strings.Contains(page, want) {
 			t.Errorf("the counts at the top do not say %q", want)
 		}
+	}
+}
+
+// The tools that put a view in front of the person (ADR-022): those whose
+// every call the person should see. A view on a tool the model reads with
+// would take space in the conversation on every read.
+var toolsWithAView = map[string]bool{"show": true}
+
+func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
+	t.Parallel()
+	found := 0
+	for _, spec := range server.AllSpecs() {
+		ui, _ := spec.Tool.Meta["ui"].(map[string]any)
+		_, linked := ui["resourceUri"]
+		_, flat := spec.Tool.Meta["ui/resourceUri"]
+		if linked || flat {
+			found++
+			if !toolsWithAView[spec.Tool.Name] {
+				t.Errorf("%s carries a view; only a tool whose every call the person should see does", spec.Tool.Name)
+			}
+		}
+	}
+	if found != len(toolsWithAView) {
+		t.Errorf("%d tools carry a view; %d should", found, len(toolsWithAView))
+	}
+}
+
+// viewData is the data tool each tool a view draws from answers as: a view
+// draws the data tool's output, unchanged.
+var viewData = map[string]string{"show": "read_post", "view_action": "read_post"}
+
+func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
+	t.Parallel()
+	schemas := map[string]string{}
+	for _, tool := range listTools(t, writingConfig) {
+		data, err := json.Marshal(tool.OutputSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		schemas[tool.Name] = string(data)
+	}
+	for name, data := range viewData {
+		if schemas[name] == "" || schemas[name] != schemas[data] {
+			t.Errorf("%s answers as\n%s\nwhere %s answers as\n%s", name, schemas[name], data, schemas[data])
+		}
+	}
+	for _, spec := range server.AllSpecs() {
+		ui, _ := spec.Tool.Meta["ui"].(map[string]any)
+		if _, linked := ui["resourceUri"]; (linked || isForViews(spec.Tool)) && viewData[spec.Tool.Name] == "" {
+			t.Errorf("%s answers a view, but names no data tool it answers as", spec.Tool.Name)
+		}
+	}
+}
+
+// isForViews reports whether a tool is marked for views alone, as declared
+// or as a client receives it.
+func isForViews(tool *mcp.Tool) bool {
+	ui, _ := tool.Meta["ui"].(map[string]any)
+	switch visibility := ui["visibility"].(type) {
+	case []string:
+		return slices.Equal(visibility, []string{"app"})
+	case []any:
+		return slices.Equal(visibility, []any{"app"})
+	}
+	return false
+}
+
+func TestEveryToolOnlyViewsCallIsForViewsAlone(t *testing.T) {
+	t.Parallel()
+	offered := map[string]bool{}
+	listed, err := connect(t, writingConfig).ListTools(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tool := range listed.Tools {
+		offered[tool.Name] = true
+	}
+	session := connect(t, writingConfig)
+	found := 0
+	for _, tool := range listTools(t, writingConfig) {
+		if !isForViews(tool) {
+			continue
+		}
+		found++
+		if offered[tool.Name] {
+			t.Errorf("%s is offered to a client that renders no views, whose model would see it", tool.Name)
+		}
+		// Refused before Mattermost is reached: the unit tests block the
+		// network, which would fail otherwise with another error.
+		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: tool.Name, Arguments: map[string]any{"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.IsError || !strings.Contains(fmt.Sprint(result.Content[0].(*mcp.TextContent).Text), "views alone") {
+			t.Errorf("%s answered a client that renders no views with %+v", tool.Name, result.Content)
+		}
+	}
+	if found == 0 {
+		t.Fatal("no tool is for views alone; the scan has stopped matching")
 	}
 }

@@ -5,7 +5,7 @@ search:
 
 # ADR-022: MCP Apps views, on show and on every post
 
-mm-mcp adopts MCP Apps. No view exists yet: they are planned, and this record holds for the first one and every one after it. In a client that renders them, a view puts what the person should see in front of them, laid out as Mattermost lays it out; a client that renders none gets text.
+mm-mcp adopts MCP Apps. The first view, a thread through `show`, exists; the others are planned, and this record holds for every one. In a client that renders them, a view puts what the person should see in front of them, laid out as Mattermost lays it out; a client that renders none gets text.
 
 A view sits only on a tool whose every call the person should see, never on a tool the model reads with:
 
