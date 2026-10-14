@@ -22,3 +22,6 @@ __pycache__/
 
 # Windows version resources go-winres generates for the release build.
 cmd/mm-mcp/rsrc_windows_*.syso
+
+# Node packages a test installs; package-lock.json pins them.
+node_modules/

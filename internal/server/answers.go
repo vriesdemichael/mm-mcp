@@ -372,6 +372,10 @@ type Attachment struct {
 	Name     string `json:"name"`
 	Size     int64  `json:"size" jsonschema:"in bytes"`
 	MIMEType string `json:"mime_type"`
+	// Width, Height and PreviewURI are set for an image.
+	Width      int    `json:"width,omitempty" jsonschema:"an image's width in pixels"`
+	Height     int    `json:"height,omitempty" jsonschema:"an image's height in pixels"`
+	PreviewURI string `json:"preview_uri,omitempty" jsonschema:"the smaller image Mattermost shows in the post, as an MCP resource, for an image that has one: cheaper to look at than the whole image"`
 }
 
 // attachments are a post's files, from the metadata Mattermost answers a post
@@ -392,5 +396,10 @@ func attachments(client *mattermost.Client, post *model.Post) []Attachment {
 }
 
 func toAttachment(client *mattermost.Client, file *model.FileInfo) Attachment {
-	return Attachment{ID: file.Id, URI: fileURI(client, file.Id), Name: file.Name, Size: file.Size, MIMEType: file.MimeType}
+	attachment := Attachment{ID: file.Id, URI: fileURI(client, file.Id), Name: file.Name, Size: file.Size, MIMEType: file.MimeType,
+		Width: file.Width, Height: file.Height}
+	if file.HasPreviewImage {
+		attachment.PreviewURI = previewURI(client, file.Id)
+	}
+	return attachment
 }

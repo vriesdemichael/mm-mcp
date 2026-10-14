@@ -26,6 +26,15 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestEveryParameterOfACalledOperationIsAccountedFor`: every parameter and body field of a called operation is set, fixed or omitted with a reason.
 - `TestEveryToolArgumentSetsAParameterItCalls`: every argument a tool takes sets a parameter it declares, and every declared argument is taken.
 - `TestEveryDifferenceBetweenSupportedReleasesIsHandled`: an operation that differs on the oldest supported release is handled, said so, and listed on the releases page.
+- `TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView`: only a tool whose every call the person should see carries an MCP Apps view (ADR-022).
+- `TestAViewDrawsItsDataToolsOutputUnchanged`: every tool a view draws from answers exactly as the data tool it reads with.
+- `TestEveryToolOnlyViewsCallIsForViewsAlone`: a tool marked for views alone is offered only to a client that renders views, and refuses one that does not, before Mattermost is reached.
+- `TestThePageBuildsNoHTMLFromStrings`: the view page's scripts build elements, never HTML from a string, and set no picture they have not checked.
+- `TestThePageNeverSpeaksForThePerson`: the view page sends no message in the person's name.
+- `TestThePageIsOneSelfContainedDocument`: the view page is one document with one script, names no other host and loads nothing.
+- `TestThePageDeclaresEachNameOnce`: no two of the view page's scripts, which share one scope, declare the same name.
+- `TestEveryWordThePageShowsIsInEnglishAndEveryEnglishWordIsShown`: the view page's words and the English catalog agree.
+- `TestEveryCatalogHasTheEnglishWords`: every catalog of the view page has exactly English's words, with their placeholders and plural forms.
 - `TestTheRepositorysRecordsLoad`: every decision record parses, and no two share a number.
 - `TestTheRecordIndexIsCurrent`: the record index is what the records generate.
 - `TestEveryADRMentionHasARecord`: nothing in the repository names a record that does not exist.

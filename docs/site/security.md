@@ -24,7 +24,9 @@ content of attached files up to 64 MiB, as text or as images. An attached file
 is also offered as an MCP resource, which the application reads when it, or the
 person, chooses, and may pass on to the model as it passes a tool's result:
 the whole file, converted as `read_file` converts it, in one message of up to
-10 MiB unless [Configuration](configuration.md) says otherwise. A link given to a tool is read
+10 MiB unless [Configuration](configuration.md) says otherwise. So are the
+pictures a post shows: an image's preview, a person's profile picture and a
+custom emoji, each passed on only when it is a PNG, JPEG, GIF or WebP image. A link given to a tool is read
 for the names in it, never fetched, and one to another server is refused.
 
 **Anything the agent reads in Mattermost is therefore disclosed to the model's

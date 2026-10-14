@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"errors"
+	"maps"
 	"strings"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 	"github.com/vriesdemichael/mm-mcp/internal/network"
 	"github.com/vriesdemichael/mm-mcp/internal/server"
+	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
 // What the server offers a client, read through an in-memory MCP client. No
@@ -22,6 +24,18 @@ var readOnlyConfig = config.Config{URL: "https://chat.example.com", Token: "t"}
 
 func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 	t.Helper()
+	return connectWith(t, cfg, nil)
+}
+
+// rendersViews is the options of a client that renders MCP Apps views.
+func rendersViews() *mcp.ClientOptions {
+	capabilities := &mcp.ClientCapabilities{}
+	capabilities.AddExtension(views.Extension, map[string]any{"mimeTypes": []string{views.MIMEType}})
+	return &mcp.ClientOptions{Capabilities: capabilities}
+}
+
+func connectWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {
+	t.Helper()
 	client := mattermost.New(cfg.URL, cfg.Token, network.NewSafeTransport())
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
 	serverSession, err := server.New(cfg, server.Single(client)).Connect(t.Context(), serverTransport, nil)
@@ -29,7 +43,7 @@ func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = serverSession.Close() })
-	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, nil).Connect(t.Context(), clientTransport, nil)
+	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, options).Connect(t.Context(), clientTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,9 +51,11 @@ func connect(t *testing.T, cfg config.Config) *mcp.ClientSession {
 	return session
 }
 
+// listTools is every tool a server offers: to a client that renders views,
+// which is offered the tool only views call as well.
 func listTools(t *testing.T, cfg config.Config) []*mcp.Tool {
 	t.Helper()
-	result, err := connect(t, cfg).ListTools(t.Context(), nil)
+	result, err := connectWith(t, cfg, rendersViews()).ListTools(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +98,7 @@ func TestGetMeIsOfferedWithAnOutputSchema(t *testing.T) {
 
 // A file is offered as a resource on every server, read-only or not, under
 // an address of its own scheme that names the server (ADR-029).
-func TestAFileIsOfferedAsAResourceOfItsServer(t *testing.T) {
+func TestFilesAndPicturesAreOfferedAsResourcesOfTheirServer(t *testing.T) {
 	t.Parallel()
 	for _, cfg := range []config.Config{readOnlyConfig, writingConfig, {URL: "http://Localhost:8065/mm/", Token: "t"}} {
 		session := connect(t, cfg)
@@ -93,25 +109,44 @@ func TestAFileIsOfferedAsAResourceOfItsServer(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := map[string]string{
-			readOnlyConfig.URL:          "mattermost://chat.example.com/files/{file_id}",
-			"http://Localhost:8065/mm/": "mattermost://localhost:8065/mm/files/{file_id}",
+		base := map[string]string{
+			readOnlyConfig.URL:          "mattermost://chat.example.com",
+			"http://Localhost:8065/mm/": "mattermost://localhost:8065/mm",
 		}[cfg.URL]
-		if len(result.ResourceTemplates) != 1 || result.ResourceTemplates[0].URITemplate != want {
-			t.Errorf("%s: got %+v, want %s", cfg.URL, result.ResourceTemplates, want)
+		want := map[string]string{
+			"file":    base + "/files/{file_id}",
+			"preview": base + "/files/{file_id}/preview",
+			"picture": base + "/users/{user_id}/image",
+			"emoji":   base + "/emoji/{emoji_name}",
+		}
+		got := map[string]string{}
+		for _, template := range result.ResourceTemplates {
+			got[template.Name] = template.URITemplate
+		}
+		if !maps.Equal(got, want) {
+			t.Errorf("%s: got %v, want %v", cfg.URL, got, want)
 		}
 	}
 }
 
-// What is not a file of this server is not found, and nothing asks
-// Mattermost: the unit tests block the network, which would fail otherwise.
-func TestAResourceThatIsNoFileOfThisServerIsNotFound(t *testing.T) {
+// What is not a file or a picture of this server is not found, and nothing
+// asks Mattermost: the unit tests block the network, which would fail
+// otherwise.
+func TestAResourceThatIsNothingOfThisServerIsNotFound(t *testing.T) {
 	t.Parallel()
 	session := connect(t, readOnlyConfig)
 	for _, uri := range []string{
 		"mattermost://chat.example.com/files/not-an-id",
 		"mattermost://other.example.com/files/abcdefghijklmnopqrstuvwxyz",
 		"mattermost://chat.example.com/posts/abcdefghijklmnopqrstuvwxyz",
+		"mattermost://chat.example.com/files/not-an-id/preview",
+		"mattermost://other.example.com/files/abcdefghijklmnopqrstuvwxyz/preview",
+		"mattermost://chat.example.com/users/not-an-id/image",
+		"mattermost://chat.example.com/users/abcdefghijklmnopqrstuvwxyz/picture",
+		"mattermost://other.example.com/users/abcdefghijklmnopqrstuvwxyz/image",
+		"mattermost://chat.example.com/emoji/not%20a%20name",
+		"mattermost://chat.example.com/emoji/a/b",
+		"mattermost://other.example.com/emoji/tada",
 	} {
 		_, err := session.ReadResource(t.Context(), &mcp.ReadResourceParams{URI: uri})
 		var refused *jsonrpc.Error
@@ -153,8 +188,10 @@ func TestAResourceTemplateSaysWhatBoundsIt(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := result.ResourceTemplates[0].Description; !strings.Contains(got, want) {
-			t.Errorf("%v: %q does not say %q", cfg, got, want)
+		for _, template := range result.ResourceTemplates {
+			if got := template.Description; template.Name == "file" && !strings.Contains(got, want) {
+				t.Errorf("%v: %q does not say %q", cfg, got, want)
+			}
 		}
 	}
 }
