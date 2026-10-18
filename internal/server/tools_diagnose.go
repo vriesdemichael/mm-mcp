@@ -40,8 +40,8 @@ func diagnoseSpec() Spec {
 		&mcp.Tool{
 			Name: "diagnose",
 			Description: "Check why mm-mcp does not work as expected: the configuration the MCP client started it with, the login it stored, " +
-				"the way to the Mattermost server, the credential, the teams of the user it acts as, and this MCP client: whether it can show " +
-				"the questions mm-mcp asks before each write. Each check says what was found, and a failed one what to do. Call it when a tool " +
+				"the way to the Mattermost server, the credential, the teams of the user it acts as, and this MCP client: who decides on a " +
+				"write, and whether it can show the question mm-mcp asks where it is set to. Each check says what was found, and a failed one what to do. Call it when a tool " +
 				"fails in a way its error does not explain, or when the person asks why something does not work. It never returns the credential.",
 			Annotations: readOnly("Diagnose mm-mcp"),
 		},
@@ -117,9 +117,9 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 	case !cfg.Elicit:
 		checks = append(checks, doctor.Check{
 			Name: name, Status: doctor.OK,
-			Detail: "mm-mcp does not ask: the MCP client's own approval of each call decides, and mm-mcp checks what each call states, " +
-				"how far a post goes, what a call takes away and where it goes, before it acts. A client set to approve calls by itself " +
-				"writes with nobody seeing them first",
+			Detail: "mm-mcp does not ask: the MCP client's own approval of each call decides, and mm-mcp checks what each call states before " +
+				"it acts: how far a post or an edit goes, the text an edit replaces and the reactions and replies that answer it, what a " +
+				"deletion takes away, and where it goes. A client set to approve calls by itself writes with nobody seeing them first",
 			Next: fmt.Sprintf("Have the client ask before these tools if a person should approve each one. %s=true has mm-mcp ask as well, "+
 				"in a client that shows its question.", config.EnvElicitationOptIn),
 		})

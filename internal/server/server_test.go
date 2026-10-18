@@ -109,7 +109,7 @@ func TestTheServerIconIsTheSites(t *testing.T) {
 func TestAServerThatWritesSaysWhoDecides(t *testing.T) {
 	t.Parallel()
 	writing := config.Config{URL: "https://chat.example.com", Token: "t", AllowWrites: true}
-	if got := connect(t, writing).InitializeResult().Instructions; got != server.Instructions+"\n\n"+server.WritingInstructions {
+	if got := connect(t, writing).InitializeResult().Instructions; got != server.Instructions+"\n\n"+server.WritingInstructions+"\n\n"+server.ApprovingInstructions {
 		t.Errorf("writing: %q", got)
 	}
 	writing.Elicit = true
