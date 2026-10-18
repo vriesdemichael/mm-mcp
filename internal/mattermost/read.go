@@ -345,12 +345,6 @@ func (c *Client) GroupsByNames(ctx context.Context, names []string) ([]*model.Gr
 	return result(c.api.GetGroupsByNames(ctx, names))
 }
 
-// TeamMember is the user's membership of a team, with the roles it gives them
-// there, its scheme's included. GetTeamMember.
-func (c *Client) TeamMember(ctx context.Context, teamID, userID string) (*model.TeamMember, error) {
-	return result(c.api.GetTeamMember(ctx, teamID, userID, ""))
-}
-
 // RolesByNames is the roles with the given names, each with the permissions it
 // grants. GetRolesByNames.
 func (c *Client) RolesByNames(ctx context.Context, names []string) ([]*model.Role, error) {

@@ -137,3 +137,27 @@ func peopleIn(n int64) string {
 }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+// An edit is counted again after the person is asked, as a post is.
+func TestAnEditIsCountedAgainAfterThePersonIsAsked(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other, late := seedUser(t, admin), seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other, late)
+	channel := seedChannel(t, admin, team, user, other)
+	post := postAs(t, clientAs(t, user), channel.Id, "", "Retro at four")
+	count := members(t, channel.Id)
+	session := answeringAfter(t, admin, user, func() {
+		if _, _, err := admin.AddChannelMember(t.Context(), channel.Id, late.Id); err != nil {
+			t.Error(err)
+		}
+	}, accept)
+
+	refusedSaying(t, session, "update_post", map[string]any{"post_id": post.Id, "message": "Retro at five", "reaches": count},
+		"said "+itoa(count), "reaches: "+itoa(count+1))
+	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
+	check(t, err)
+	if stored.Message != "Retro at four" {
+		t.Errorf("the edit went out to members nobody counted: %q", stored.Message)
+	}
+}

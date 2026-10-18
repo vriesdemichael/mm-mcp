@@ -114,16 +114,26 @@ func checkMessage(ctx context.Context, client *mattermost.Client, message, where
 	for _, user := range users {
 		byName[user.Username] = user
 	}
-	var unknown []string
 	var groupless []mention
 	for _, m := range people {
 		if m.user(byName) == nil {
 			groupless = append(groupless, m)
 		}
 	}
-	groups := mentionedGroups(ctx, client, groupless)
+	unknown := sortMentions(&checked, people, byName, mentionedGroups(ctx, client, groupless), noted)
+	if len(unknown) > 0 {
+		return checkedMessage{}, fmt.Errorf("the message mentions someone nobody is called: %w", unknownUsers(ctx, client, unknown))
+	}
+	return checked, nil
+}
+
+// sortMentions notes what each mention of a person or a user group does,
+// once, and answers the mentions that name neither. noted holds what is
+// noted already.
+func sortMentions(checked *checkedMessage, people []mention, users map[string]*model.User, groups map[string]*model.Group, noted map[string]bool) []string {
+	var unknown []string
 	for _, m := range people {
-		user := m.user(byName)
+		user := m.user(users)
 		switch {
 		case user == nil && groups[m.word] != nil:
 			if !noted[m.word] {
@@ -138,10 +148,7 @@ func checkMessage(ctx context.Context, client *mattermost.Client, message, where
 			checked.notes = append(checked.notes, fmt.Sprintf("@%s is deactivated, and will not be notified.", user.Username))
 		}
 	}
-	if len(unknown) > 0 {
-		return checkedMessage{}, fmt.Errorf("the message mentions someone nobody is called: %w", unknownUsers(ctx, client, unknown))
-	}
-	return checked, nil
+	return unknown
 }
 
 func peopleCount(n int64) string {
@@ -327,6 +334,13 @@ func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned [
 	if err != nil {
 		return out
 	}
+	return groupsFor(mentioned, groups)
+}
+
+// groupsFor is the group each mention names, by the first of its names a
+// group goes by.
+func groupsFor(mentioned []mention, groups []*model.Group) map[string]*model.Group {
+	out := map[string]*model.Group{}
 	byName := map[string]*model.Group{}
 	for _, group := range groups {
 		if group.Name != nil {

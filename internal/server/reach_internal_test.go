@@ -3,6 +3,8 @@ package server
 import (
 	"strings"
 	"testing"
+
+	"github.com/mattermost/mattermost/server/public/model"
 )
 
 // What Mattermost's web app asks about before sending, decided from what it
@@ -81,5 +83,79 @@ func TestAWrongNotifiesIsRefusedAndOneWhereNothingIsAskedToo(t *testing.T) {
 	}
 	if err := checkNotifies("create_post", nil, loud); !strings.Contains(err.Error(), "@channel alerts 9 people") || !strings.Contains(err.Error(), "Consider whether") {
 		t.Errorf("the refusal does not say why, or ask for it to be weighed: %v", err)
+	}
+}
+
+func TestAGroupIsMentionableOnlyWhereItsKindIsOnAndTheUserMay(t *testing.T) {
+	t.Parallel()
+	ldap := &model.Group{Id: "g1", DisplayName: "Developers", Source: model.GroupSourceLdap, AllowReference: true}
+	custom := &model.Group{Id: "g2", DisplayName: "On call", Source: model.GroupSourceCustom, AllowReference: true}
+	closed := &model.Group{Id: "g3", DisplayName: "Board", Source: model.GroupSourceCustom, AllowReference: false}
+	mentioned := []mentionedGroup{{"@devs", ldap}, {"@oncall", custom}, {"@board", closed}}
+	counts := []*model.ChannelMemberCountByGroup{{GroupId: "g1", ChannelMemberCount: 7}, {GroupId: "g2", ChannelMemberCount: 3}}
+	allowed := func(got []groupMention) map[string]bool {
+		out := map[string]bool{}
+		for _, g := range got {
+			out[g.word] = g.allowed
+		}
+		return out
+	}
+	on := map[string]string{"IsLicensed": "true", "LDAPGroups": "true", "EnableCustomGroups": "true"}
+	off := map[string]string{}
+	got := groupMentions(mentioned, on, on, true, counts)
+	if got[0].members != 7 || got[1].members != 3 || got[2].members != 0 || got[0].name != "Developers" {
+		t.Fatalf("counted %+v", got)
+	}
+	if a := allowed(got); !a["@devs"] || !a["@oncall"] || a["@board"] {
+		t.Errorf("with both kinds on: %v", a)
+	}
+	if a := allowed(groupMentions(mentioned, off, on, true, counts)); a["@devs"] || !a["@oncall"] {
+		t.Errorf("without LDAP groups licensed: %v", a)
+	}
+	if a := allowed(groupMentions(mentioned, on, off, true, counts)); !a["@devs"] || a["@oncall"] {
+		t.Errorf("with custom groups off: %v", a)
+	}
+	if a := allowed(groupMentions(mentioned, on, on, false, counts)); a["@devs"] || a["@oncall"] {
+		t.Errorf("by a user who may not mention groups: %v", a)
+	}
+}
+
+func TestAPermissionIsGrantedByAnyOfTheRoles(t *testing.T) {
+	t.Parallel()
+	roles := []*model.Role{{Name: "team_user", Permissions: []string{"create_post"}}, {Name: "channel_user", Permissions: []string{"use_channel_mentions"}}}
+	if !permitted(roles, "use_channel_mentions") || permitted(roles, "use_group_mentions") || permitted(nil, "create_post") {
+		t.Error("a permission was read wrong from the roles")
+	}
+}
+
+func TestAMentionIsSortedIntoAPersonAGroupOrNobody(t *testing.T) {
+	t.Parallel()
+	people := mentions("thanks @alice and @bob, cc @devs @board and @nobody, again @devs")
+	users := map[string]*model.User{
+		"alice": {Id: "u1", Username: "alice"},
+		"bob":   {Id: "u2", Username: "bob", DeleteAt: 1},
+	}
+	members := 12
+	name, closed := "devs", "board"
+	groups := groupsFor(people, []*model.Group{
+		{Name: &name, DisplayName: "Developers", AllowReference: true, MemberCount: &members},
+		{Name: &closed, DisplayName: "Board", AllowReference: false},
+	})
+	var checked checkedMessage
+	unknown := sortMentions(&checked, people, users, groups, map[string]bool{})
+	if len(unknown) != 1 || unknown[0] != "@nobody" {
+		t.Errorf("unknown: %v", unknown)
+	}
+	if len(checked.groups) != 2 || checked.groups[0].word != "@devs" {
+		t.Errorf("groups: %+v", checked.groups)
+	}
+	want := []string{"@bob is deactivated", "@devs notifies the group Developers: 12 people", "@board names the group Board, which cannot be mentioned"}
+	for _, w := range want {
+		if !strings.Contains(strings.Join(checked.notes, "\n"), w) {
+			t.Errorf("the notes %q lack %q", checked.notes, w)
+		}
+	}
+	if len(checked.notes) != 3 {
+		t.Errorf("noted %d things, a mention twice included: %q", len(checked.notes), checked.notes)
 	}
 }
