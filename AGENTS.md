@@ -25,7 +25,7 @@ from CONTRIBUTING.md an agent must not lose
   ([ADR-005](docs/site/adr/005-unit-tests-do-not-simulate-mattermost.md)).
 - **Read-only by default; every write others see asks**, and a change that is
   the user's alone or gone in seconds says why it does not
-  ([ADR-021](docs/site/adr/021-read-only-by-default-and-every-write-asks.md)).
+  ([ADR-021](docs/site/adr/021-read-only-by-default.md)).
 - **No credential in a flag, an argument, a log line, an error or a tool result**
   ([ADR-019](docs/site/adr/019-credentials-are-supplied-not-acquired.md)).
 - **Temporary files go in `.tmp/`**; tests use t.TempDir()
@@ -107,7 +107,7 @@ Then break each new test by reverting its fix and watch it fail.
    it wraps its handler in `asking` with a question naming what it writes,
    where, and as whom; when the change is the user's alone or gone in seconds,
    its spec is marked `unasked` with the reason
-   ([ADR-021](docs/site/adr/021-read-only-by-default-and-every-write-asks.md)).
+   ([ADR-021](docs/site/adr/021-read-only-by-default.md)).
    A tool that answers with a list embeds `pageArgs` and `pageInfo` and pages
    with `openCursor` ([ADR-032](docs/site/adr/032-every-list-pages-by-an-opaque-cursor.md)).
 3. Declare its `Uses`: every operation it calls, by operationId in

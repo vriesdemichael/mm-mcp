@@ -3,7 +3,7 @@ search:
   boost: 0.3
 ---
 
-# ADR-021: Read-only by default, and every write others see asks the person
+# ADR-021: Read-only by default
 
 A server starts read-only. A tool that changes anything in Mattermost is registered only when `MM_MCP_ALLOW_WRITES` is true, so a read-only server does not list it and a client cannot call it. Once writes are allowed, what such a tool changes decides whether it asks.
 

@@ -32,7 +32,7 @@ setting left empty, counts as unset.
     that is yours alone or gone in seconds does not: following a thread, saving
     a post, setting a reminder, saving a draft, marking a channel read when you
     ask, and showing that you are typing
-    ([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)). Accepts
+    ([ADR-021](adr/021-read-only-by-default.md)). Accepts
     `true`, `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
 
 `MM_MCP_ASK_BEFORE_WRITES`
