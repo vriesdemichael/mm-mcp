@@ -9,6 +9,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/vriesdemichael/mm-mcp/internal/config"
+	"github.com/vriesdemichael/mm-mcp/internal/server"
 )
 
 // What a call takes away, stated in the call and checked against mm-mcp's own
@@ -26,7 +27,7 @@ func unaskedSession(t *testing.T, admin *model.Client4, user *model.User) *mcp.C
 	}, nil)
 }
 
-func TestAnEditStatesTheTextItDiscards(t *testing.T) {
+func TestAnEditStatesTheWholeTextItReplaces(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user := seedUser(t, admin)
@@ -35,31 +36,72 @@ func TestAnEditStatesTheTextItDiscards(t *testing.T) {
 	own := clientAs(t, user)
 	post := postAs(t, own, channel.Id, "", "Lunch at noon")
 	session := unaskedSession(t, admin, user)
-	edit := func(discards any) map[string]any {
+	edit := func(old any) map[string]any {
 		arguments := map[string]any{"post_id": post.Id, "message": "Lunch at one", "reaches": members(t, channel.Id)}
-		if discards != nil {
-			arguments["discards"] = discards
+		if old != nil {
+			arguments["old_message"] = old
 		}
 		return arguments
 	}
 
-	refusedSaying(t, session, "update_post", edit(nil), "left the number out", "13 characters", "your post in ~"+channel.DisplayName, "“Lunch at noon", "Consider whether", "discards: 13")
-	refusedSaying(t, session, "update_post", edit(12), "said 12", "discards: 13")
+	refusedSaying(t, session, "update_post", edit(nil), "give old_message", "your post in ~"+channel.DisplayName, "“Lunch at noon”")
+	refusedSaying(t, session, "update_post", edit("Lunch"), "does not read as old_message says", "“Lunch at noon”")
 
 	// The person adds to the post in Mattermost after the model read it.
 	_, _, err := own.PatchPost(t.Context(), post.Id, &model.PostPatch{Message: model.NewPointer("Lunch at noon, bring snacks")})
 	check(t, err)
-	refusedSaying(t, session, "update_post", edit(13), "said 13", "discards: 27")
+	refusedSaying(t, session, "update_post", edit("Lunch at noon"), "does not read as old_message says", "“Lunch at noon, bring snacks”", "Consider whether")
 	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
 	if stored.Message != "Lunch at noon, bring snacks" {
 		t.Fatalf("a refused edit changed the post: %q", stored.Message)
 	}
 
-	callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: edit(27)})
+	callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: edit("Lunch at noon, bring snacks")})
 	stored, _, err = admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
 	if stored.Message != "Lunch at one" {
+		t.Errorf("the post reads %q", stored.Message)
+	}
+}
+
+// Reactions and replies answer a post as it read; an edit makes them answers
+// to the new text, which Mattermost tells nobody about.
+func TestAnEditOfAnAnsweredPostStatesHowManyAnswerIt(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, brent, ann := seedUser(t, admin), seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, brent, ann)
+	channel := seedChannel(t, admin, team, user, brent, ann)
+	const asked = "Give me a thumbs up if you like cat memes"
+	post := postAs(t, clientAs(t, user), channel.Id, "", asked)
+	for _, who := range []*model.User{brent, ann} {
+		_, _, err := clientAs(t, who).SaveReaction(t.Context(), &model.Reaction{UserId: who.Id, PostId: post.Id, EmojiName: "thumbsup"})
+		check(t, err)
+	}
+	postAs(t, clientAs(t, ann), channel.Id, post.Id, "always")
+	session := unaskedSession(t, admin, user)
+
+	var read server.PostWithThread
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "read_post", Arguments: map[string]any{"post_id": post.Id, "include_thread": false}}), &read)
+	if read.Post == nil || read.Post.Responses != 3 {
+		t.Fatalf("read_post says %+v answer the post; want 3", read.Post)
+	}
+	edit := map[string]any{"post_id": post.Id, "message": "Let's drop that idea Brent had yesterday", "old_message": asked, "reaches": members(t, channel.Id)}
+	refusedSaying(t, session, "update_post", edit,
+		"3 reactions and replies answer your post", ":thumbsup: ×2", "@"+brent.Username, "1 reply in its thread",
+		"read as answers to the new text", "reply in the thread instead", "responses: 3")
+	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
+	check(t, err)
+	if stored.Message != asked {
+		t.Fatalf("a refused edit changed the post: %q", stored.Message)
+	}
+
+	edit["responses"] = read.Post.Responses
+	callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: edit})
+	stored, _, err = admin.GetPost(t.Context(), post.Id, "")
+	check(t, err)
+	if stored.Message != "Let's drop that idea Brent had yesterday" {
 		t.Errorf("the post reads %q", stored.Message)
 	}
 }

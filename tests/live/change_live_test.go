@@ -26,7 +26,7 @@ func TestUpdatePostReplacesTheUsersOwnTextShowingTheOldAndTheNew(t *testing.T) {
 
 	var edited server.Post
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-		"post_id": original.Id, "message": "Release at 4pm", "reaches": members(t, channel.Id), "discards": chars("Release at 3pm"),
+		"post_id": original.Id, "message": "Release at 4pm", "reaches": members(t, channel.Id), "old_message": "Release at 3pm",
 	}}), &edited)
 
 	question := questions.only(t)

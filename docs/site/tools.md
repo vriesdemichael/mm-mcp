@@ -305,9 +305,10 @@ Each of these asks you first, showing exactly what will happen
 :   Replaces the text of one of your own posts. The question shows the old text
     and the new. An edit notifies nobody, so only its length is checked. The
     call states `reaches`, how many members the post's channel has, since an
-    edit reaches everyone the post does, and `discards`, how many characters
-    the post holds now ([below](#what-a-write-takes-away)). Another person's
-    post is refused, even with an administrator's credential.
+    edit reaches everyone the post does; `old_message`, the post's whole text
+    as it reads now, beside the new; and, once anyone has reacted or replied,
+    `responses`, how many have ([below](#what-an-edit-changes)). Another
+    person's post is refused, even with an administrator's credential.
 
 `delete_post`: Delete post { #delete_post .mm-asks }
 :   Deletes one of your own posts. Deleting the post that starts a thread
@@ -410,7 +411,8 @@ Each of these asks you first, showing exactly what will happen
 :   Deletes your draft in a channel or thread. Nobody else sees a draft, but it
     may hold words you have not sent, so the question shows it and where it is
     first, and the call states `discards`, how many characters the draft
-    holds ([below](#what-a-write-takes-away)).
+    holds, as `list_drafts` gives its length
+    ([below](#what-a-write-takes-away)).
 
 `set_post_reminder`: Set post reminder { #set_post_reminder .mm-yours }
 :   Has Mattermost remind you of a post at a time, as its "Remind me" does. A
@@ -622,30 +624,46 @@ The model then calls again with `reaches: 512` and `notifies: 511`, which
 your client's approval shows you, or asks you first. Nothing is posted until
 both are right.
 
+#### What an edit changes
+
+`update_post` states the post's whole text as it reads now, `old_message`, beside
+the new one
+([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)).
+The model cannot change a post without writing out all of what it replaces, and
+your client's approval shows the old text beside the new. A post that reads
+otherwise, because you edited it in Mattermost since the model read it, or
+because `old_message` is only part of it, is refused with what it reads now.
+
+Once anyone has reacted to the post or, for one that starts a thread, replied
+to it, the edit states `responses` as well: how many have, as `read_post`
+gives it. Their answers will read as answers to the new text, and Mattermost
+tells nobody about an edit, so a thumbs up given to one sentence can end up
+under another. For example, editing your "Give me a thumbs up if you like cat
+memes", which five people gave a 👍 and two replied to, into something else,
+without `responses`, is refused with:
+
+> update_post did not run: 7 reactions and replies answer your post in ~Town
+> Square as it reads now: :thumbsup: ×5 (@brent, @ann, @joe, 2 more), 2 replies
+> in its thread, and the call left the number out. Mattermost tells nobody about
+> an edit, so they will read as answers to the new text. Consider whether they
+> still fit it; if the change is news to those who answered, reply in the
+> thread instead. If they still fit, call again with responses: 7
+
+A post nobody has answered needs no `responses`.
+
 #### What a write takes away
 
-A write that replaces or deletes words, or deletes posts, states how much in its
-call, as a number mm-mcp counts itself
-([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)):
-`discards`, the characters of text `update_post` replaces or `delete_draft`
-deletes, counted as Mattermost counts a message's length; and `deletes`, the
-posts `delete_post` removes, the post and every reply in its thread. A
-missing or wrong number is refused with the real one and the start of what
-would go, and the model is told to weigh whether you meant to lose it. Each is
-counted again just before the write, so a post you edited, a draft you typed on
-or a reply that arrived since the model read it stops the write, whether or not
-anyone is asked.
+A deletion states how much goes in its call, as a number mm-mcp counts itself:
+`discards`, the characters of the draft `delete_draft` deletes, as
+`list_drafts` gives each draft's length; and `deletes`, the posts
+`delete_post` removes, the post and every reply in its thread. A missing or
+wrong number is refused with the real one and the start of what would go, and
+the model is told to weigh whether you meant to lose it. Each is counted again
+just before the write, so a draft you typed on or a reply that arrived since
+the model read it stops the write, whether or not anyone is asked.
 
-For example, an edit of your post that reads "Retro moved to Thursday at four,
-agenda in the thread", without `discards`, is refused with:
-
-> update_post did not run: it discards the 53 characters of your post in ~Town
-> Square, which begins “Retro moved to Thursday at four, agenda in the thread”,
-> and the call left the number out. Consider whether the person meant to lose
-> those words. If they did, call again with discards: 53. If not, leave them as
-> they are, or ask the person
-
-and deleting a post that started a thread of 12 replies, without `deletes`:
+For example, deleting a post that started a thread of 12 replies, without
+`deletes`:
 
 > delete_post did not run: it deletes 13 posts, your post in ~Town Square and
 > the 12 replies in its thread, other people's included, and the call left the

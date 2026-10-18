@@ -667,7 +667,25 @@ type updatePostInput struct {
 	PostID  string `json:"post_id" jsonschema:"the post to edit, which must be the user's own"`
 	Message string `json:"message" jsonschema:"the post's new text in full, in Mattermost Markdown; it replaces the old text"`
 	reachField
-	discardField
+	editField
+}
+
+// checkEdit is what is checked of an edit before it goes further: how far it
+// reaches, that the post reads as old_message says, and how many answer it.
+// GetChannelStats, GetUsersByIds.
+func checkEdit(ctx context.Context, client *mattermost.Client, p postInContext, input updatePostInput) error {
+	if err := editReaches(ctx, client, p, input.Reaches); err != nil {
+		return err
+	}
+	what := "your post in " + p.in
+	if err := checkOldMessage(what, p.post.Message, input.OldMessage); err != nil {
+		return err
+	}
+	answers, err := answersTo(ctx, client, p.post)
+	if err != nil {
+		return err
+	}
+	return checkResponses(what, answers, input.Responses)
 }
 
 // editReaches refuses an edit whose reaches is not the member count of the
@@ -686,8 +704,9 @@ func updatePostSpec() Spec {
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
 				"newly mentions. The new text must fit the server's limit. Every call states reaches, how many members the post's " +
-				"channel has, since an edit reaches everyone the post does, and discards, how many characters the post holds now; " +
-				"each is checked against mm-mcp's own count, read again just before the edit. The person is asked to confirm each edit, seeing the old text " +
+				"channel has, since an edit reaches everyone the post does; old_message, the post's whole text as it reads now; and, " +
+				"when anyone has reacted or replied, responses, how many have: their answers will read as answers to the new text. " +
+				"Each is checked against the post as it is, read again just before the edit. The person is asked to confirm each edit, seeing the old text " +
 				"and the new; if they decline or close the question, do not edit it again unless they ask.",
 			Annotations: overwrites("Update post"),
 		},
@@ -735,10 +754,7 @@ func updatePostSpec() Spec {
 					if err := checkLength(ctx, client, input.Message); err != nil {
 						return confirmation{}, err
 					}
-					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
-						return confirmation{}, err
-					}
-					if err := checkDiscards("update_post", "your post in "+p.in, p.post.Message, 0, input.Discards); err != nil {
+					if err := checkEdit(ctx, client, p, input); err != nil {
 						return confirmation{}, err
 					}
 					_, marked := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
@@ -760,10 +776,7 @@ func updatePostSpec() Spec {
 					if err := stillAsAsked(ctx, "update_post", p.post.Message); err != nil {
 						return nil, Post{}, err
 					}
-					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
-						return nil, Post{}, err
-					}
-					if err := checkDiscards("update_post", "your post in "+p.in, p.post.Message, 0, input.Discards); err != nil {
+					if err := checkEdit(ctx, client, p, input); err != nil {
 						return nil, Post{}, err
 					}
 					props, _ := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
@@ -778,7 +791,7 @@ func updatePostSpec() Spec {
 					return nil, posts[0], nil
 				})
 		},
-	), map[string]string{"reaches": reachCheck, "discards": discardCheck})
+	), map[string]string{"reaches": reachCheck, "old_message": oldMessageCheck, "responses": responsesCheck})
 }
 
 // markablePostProps are the properties an edit may send back unchanged with

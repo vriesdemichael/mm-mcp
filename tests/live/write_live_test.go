@@ -294,7 +294,7 @@ func TestAServerThatDoesNotAskWritesWithoutAQuestion(t *testing.T) {
 				"channel_id": channel.Id, "message": "first draft", "reaches": members(t, channel.Id),
 			}}), &posted)
 			callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-				"post_id": posted.ID, "message": "posted unasked", "reaches": members(t, channel.Id), "discards": chars("first draft"),
+				"post_id": posted.ID, "message": "posted unasked", "reaches": members(t, channel.Id), "old_message": "first draft",
 			}})
 			callTool(t, session, &mcp.CallToolParams{Name: "add_reaction", Arguments: map[string]any{
 				"post_id": target.Id, "emoji": "thumbsup",

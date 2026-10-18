@@ -64,7 +64,7 @@ func TestUpdatePostStopsWhenThePostChangesWhileThePersonIsAsked(t *testing.T) {
 		}
 	}, accept)
 
-	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version", "reaches": members(t, post.ChannelId), "discards": chars("first version")}})
+	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version", "reaches": members(t, post.ChannelId), "old_message": "first version"}})
 	if err == nil && !result.IsError {
 		t.Fatal("an edit replaced text the person was never shown")
 	}

@@ -74,8 +74,11 @@ type Post struct {
 	Pinned      bool                `json:"pinned,omitempty" jsonschema:"whether the post is pinned to its channel"`
 	AIGenerated bool                `json:"ai_generated,omitempty" jsonschema:"whether the post is marked as written with AI, as Mattermost shows it"`
 	Reactions   map[string][]string `json:"reactions,omitempty" jsonschema:"each emoji name with the usernames of the people who reacted with it"`
-	Files       []Attachment        `json:"files,omitempty" jsonschema:"the files attached; read_file reads one, by its id or its uri"`
-	Type        string              `json:"type,omitempty" jsonschema:"set for a message Mattermost wrote, such as someone joining the channel"`
+	// Responses is how many reactions and, for a post that starts a thread,
+	// replies answer it.
+	Responses int64        `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies answer it: what update_post states before it edits it"`
+	Files     []Attachment `json:"files,omitempty" jsonschema:"the files attached; read_file reads one, by its id or its uri"`
+	Type      string       `json:"type,omitempty" jsonschema:"set for a message Mattermost wrote, such as someone joining the channel"`
 }
 
 // surroundings is what posts name, read once for all of them: the user, each
@@ -215,6 +218,7 @@ func (s surroundings) post(post *model.Post) Post {
 		}
 		out.URL = postLink(s.client, post.Id, team)
 	}
+	out.Responses = postAnswers{reactions: reactionsOf(post), replies: repliesTo(post)}.count()
 	if post.Metadata != nil && len(post.Metadata.Reactions) > 0 {
 		out.Reactions = map[string][]string{}
 		for _, reaction := range post.Metadata.Reactions {
