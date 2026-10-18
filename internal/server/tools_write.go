@@ -665,7 +665,7 @@ func groupMessageSpec() Spec {
 
 type updatePostInput struct {
 	PostID  string `json:"post_id" jsonschema:"the post to edit, which must be the user's own"`
-	Message string `json:"message" jsonschema:"the post's new text in full, in Mattermost Markdown; it replaces the old text"`
+	Message string `json:"message" jsonschema:"the replacement for old_message, in full, in Mattermost Markdown"`
 	reachField
 	editField
 }
@@ -704,7 +704,7 @@ func updatePostSpec() Spec {
 		&mcp.Tool{
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
-				"newly mentions. The new text must fit the server's limit. Every call states reaches, how many members the post's " +
+				"newly mentions. The replacement must fit the server's limit. Every call states reaches, how many members the post's " +
 				"channel has, since an edit reaches everyone the post does; old_message, the post's current text in full; and, for a " +
 				"post with reactions or replies, responses, their number, since an edit leaves them under the replacing text. " +
 				"Each is checked against the post, read again just before the edit. The person is asked to confirm each edit, seeing the current text " +
