@@ -231,7 +231,7 @@ func TestDiagnoseTellsAQuestionTheClientDeclinedAtOnce(t *testing.T) {
 	result := diagnosed(t, session, token, true)
 
 	if got := checkNamed(t, result, "test question"); got.Status != doctor.Failed || !strings.Contains(got.Detail, "answered it itself") ||
-		!strings.Contains(got.Next, config.EnvAskBeforeWrites+"=false") {
+		!strings.Contains(got.Next, "unset "+config.EnvElicitationOptIn) {
 		t.Fatalf("test question: %+v", got)
 	}
 }
@@ -247,8 +247,8 @@ func TestDiagnoseSaysWhoAsksWhenMmMcpDoesNot(t *testing.T) {
 		force  bool
 		status doctor.Status
 		says   string
-	}{{false, doctor.OK, "the only check"}, {true, doctor.OK, "on every call"}} {
-		session := mcpWith(t, config.Config{URL: liveURL, Token: token, AllowWrites: true, SkipAsking: true, ForceHumanInTheLoopInClaudeCode: c.force}, nil)
+	}{{false, doctor.OK, "approval of each call decides"}, {true, doctor.OK, "on every call"}} {
+		session := mcpWith(t, config.Config{URL: liveURL, Token: token, AllowWrites: true, ForceHumanInTheLoopInClaudeCode: c.force}, nil)
 
 		result := diagnosed(t, session, token, false)
 

@@ -265,7 +265,7 @@ func TestAWriteThePersonDidNotAcceptChangesNothing(t *testing.T) {
 	}
 }
 
-// A server configured with MM_MCP_ASK_BEFORE_WRITES=false asks nothing, so a
+// A server asks nothing unless told to (MM_MCP_ELICITATION_OPT_IN), so a
 // client that cannot be asked, or would say no, writes all the same: the
 // client's own approval is the check (ADR-033).
 func TestAServerThatDoesNotAskWritesWithoutAQuestion(t *testing.T) {
@@ -286,7 +286,7 @@ func TestAServerThatDoesNotAskWritesWithoutAQuestion(t *testing.T) {
 				}}
 			}
 			session := mcpWith(t, config.Config{
-				URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, SkipAsking: true,
+				URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true,
 			}, options)
 
 			var posted server.Post

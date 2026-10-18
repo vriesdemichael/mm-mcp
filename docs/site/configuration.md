@@ -24,45 +24,44 @@ setting left empty, counts as unset.
 
 `MM_MCP_ALLOW_WRITES`
 :   Optional, `false` by default. `true` offers the tools that post and change
-    things in Mattermost. A change others see, such as a post, a reply, an
-    edit, a deletion, a reaction or a pin, asks you before it acts, through a
-    question your MCP client must be able to show
-    ([Tools](tools.md#how-a-write-is-asked)), unless
-    `MM_MCP_ASK_BEFORE_WRITES` leaves the asking to your client. A change
-    that is yours alone or gone in seconds does not: following a thread, saving
-    a post, setting a reminder, saving a draft, marking a channel read when you
-    ask, and showing that you are typing
-    ([ADR-021](adr/021-read-only-by-default.md)). Accepts
-    `true`, `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
+    things in Mattermost. Your MCP client's own approval of each call decides
+    whether a change goes ahead: its prompt, its permission rules or its auto
+    mode ([ADR-033](adr/033-the-client-decides-whether-a-write-runs.md)).
+    mm-mcp checks what each call states before it acts: how many people a post
+    reaches and notifies, how much an edit or a deletion takes away, and where
+    it goes, by address ([Tools](tools.md#how-a-write-is-checked)). A change
+    that is yours alone or gone in seconds, such as following a thread, saving a
+    post or a draft, or showing that you are typing, is a write all the same
+    ([ADR-021](adr/021-read-only-by-default.md)). Accepts `true`, `false`, `1`,
+    `0`, `yes`, `no`, `on` and `off`.
+
+    !!! warning "A client that approves on its own writes as you"
+        A client that approves tools by itself, such as Claude Code in auto
+        mode, after "don't ask again", or under a rule that allows the tool,
+        posts under your name with nobody seeing it first. In Claude Code, an
+        `ask` rule or `MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE` keeps a
+        person on every post.
+
+`MM_MCP_ELICITATION_OPT_IN`
+:   Optional, `false` by default. `true` has mm-mcp ask you as well before each
+    change others see, once `MM_MCP_ALLOW_WRITES` is true: a question your MCP
+    client shows (an MCP elicitation), with what will be sent, where and under
+    whose name. It is a convenience where your client shows the question, not a
+    safeguard: some clients answer it without showing it, such as Claude Code in
+    the Claude desktop app's Code tab, which declines it unseen, and mm-mcp
+    cannot tell their answer from yours. While it is on, a client that cannot
+    show a question at all is refused every such change. A change that is yours
+    alone or gone in seconds never asks.
 
 `MM_MCP_ASK_BEFORE_WRITES`
-:   Optional, `true` by default. Whether mm-mcp asks you before each change
-    others see, once `MM_MCP_ALLOW_WRITES` is true
-    ([ADR-033](adr/033-who-asks-before-a-write-is-a-setting.md)). Changes that
-    are yours alone or gone in seconds never ask, whatever it is set to.
-
-    `false` leaves the asking to your MCP client: mm-mcp asks nothing, and the
-    client's own approval of each tool call, as its permission rules decide, is
-    the only check. Use it where your client does not show mm-mcp's question,
-    such as Claude Code in the Claude desktop app's Code tab, which declines it
-    without showing it, or for an agent
-    you allow to post on its own. The model is told that mm-mcp does not ask,
-    and mm-mcp says so in its log at start.
-
-    !!! warning "With `false`, a client that approves on its own posts as you"
-        Nothing in mm-mcp stops a post. A client that approves tools by itself,
-        such as Claude Code in auto mode, after "don't ask again", or under a
-        rule that allows the tool, posts under your name with nobody seeing it
-        first. In Claude Code, an `ask` rule or
-        `MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE` keeps a person on every post.
-
-    Claude Code's prompt shows a tool's input, so a channel or post named by its
-    id shows as that id, and a direct message to yourself names nobody.
+:   Gone. It made mm-mcp ask by default. A server started with it set stops,
+    and says to remove it; set `MM_MCP_ELICITATION_OPT_IN=true` to have mm-mcp
+    ask as well.
 
 `MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE`
-:   Optional, `false` by default, and only with `MM_MCP_ASK_BEFORE_WRITES=false`;
-    with mm-mcp asking too, you would be asked twice for one write, so mm-mcp
-    does not start. `true` marks each tool that would ask so that Claude Code
+:   Optional, `false` by default, and not with `MM_MCP_ELICITATION_OPT_IN=true`:
+    with both, you would be asked twice for one write, so mm-mcp does not start.
+    `true` marks each tool that changes what others see so that Claude Code
     asks a person on every call, in every permission mode, auto mode included,
     and no allow rule or "don't ask again" skips it
     ([Claude Code](https://code.claude.com/docs/en/mcp#require-approval-for-a-specific-tool)).
@@ -71,8 +70,8 @@ setting left empty, counts as unset.
     Claude Code 2.1.214 or later. An application built on Claude Code's SDK,
     such as the Claude desktop app, is handed each such call to approve and is
     expected to show it to a person; check that yours does before you rely on
-    it. The mark is Claude Code's own: any other MCP client ignores it and asks
-    as its own rules say.
+    it. It is a Claude Code feature, not a guarantee: the mark is Claude Code's
+    own, and any other MCP client ignores it and asks as its own rules say.
 
     Without it, Claude Code's own rules can keep a person on these tools, in
     `.claude/settings.json`. An `ask` rule prompts in every permission mode,
@@ -101,7 +100,7 @@ setting left empty, counts as unset.
 :   Optional, `true` by default. Every post and edit the model writes carries
     Mattermost's own marker for text written with AI, which its web app shows
     beside the post's time
-    ([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)).
+    ([ADR-031](adr/031-a-message-is-checked-before-it-is-posted.md)).
     `false` leaves it out.
 
 `MM_MCP_DOWNLOAD_DIR`

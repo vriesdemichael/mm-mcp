@@ -136,10 +136,10 @@ func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) 
 		t.Fatalf("got %d packages", len(document.Packages))
 	}
 	want := map[string]map[string]any{
-		"MM_URL":                   {"isRequired": true, "isSecret": false, "format": "string"},
-		"MM_TOKEN":                 {"isRequired": false, "isSecret": true, "format": "string"},
-		"MM_MCP_ALLOW_WRITES":      {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
-		"MM_MCP_ASK_BEFORE_WRITES": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
+		"MM_URL":                    {"isRequired": true, "isSecret": false, "format": "string"},
+		"MM_TOKEN":                  {"isRequired": false, "isSecret": true, "format": "string"},
+		"MM_MCP_ALLOW_WRITES":       {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
+		"MM_MCP_ELICITATION_OPT_IN": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
 		"MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
 		"MM_MCP_MARK_AI_GENERATED":                      {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
 		"MM_MCP_DOWNLOAD_DIR":                           {"isRequired": false, "isSecret": false, "format": "filepath"},

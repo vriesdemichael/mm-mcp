@@ -293,7 +293,9 @@ func TestTheBundleSetsEveryVariableAPersonConfigures(t *testing.T) {
 	}
 	var want []string
 	for _, name := range config.EnvironmentVariables {
-		if name != config.EnvBlockExternalNetwork {
+		// One is for mm-mcp's own tests; the other is read only to stop a
+		// server started with it.
+		if name != config.EnvBlockExternalNetwork && name != config.EnvAskBeforeWrites {
 			want = append(want, name)
 		}
 	}

@@ -105,9 +105,9 @@ mm-mcp login, which logs you in the way your server allows: through your own
 browser where it offers OAuth, a browser window of its own for single sign-on,
 your password in the terminal, or a token you paste. It keeps the session in
 the system's credential store. MM_MCP_ALLOW_WRITES=true offers
-the tools that change Mattermost. A change others see asks before it acts;
-following a thread, saving a post, a draft and the typing indicator do not.
-MM_MCP_ASK_BEFORE_WRITES=false leaves asking to the MCP client's own approval.
+the tools that change Mattermost, and the MCP client's own approval of each
+call decides; mm-mcp checks what each call states before it acts.
+MM_MCP_ELICITATION_OPT_IN=true has mm-mcp ask the person as well.
 When something does not work, mm-mcp doctor checks the configuration, the
 stored login, the way to the server and the credential, and says what to fix.
 `
@@ -183,11 +183,12 @@ func serve(ctx context.Context, args []string, deps Deps) int {
 	}
 	switch {
 	case cfg.AllowWrites && cfg.ForceHumanInTheLoopInClaudeCode:
-		fmt.Fprintf(deps.Stderr, "mm-mcp: %s=false and %s=true, so mm-mcp does not ask before a post or another change others see; "+
-			"it has the MCP client ask a person on every call, where the client honours that\n", config.EnvAskBeforeWrites, config.EnvForceHumanInTheLoopInClaudeCode)
-	case cfg.AllowWrites && cfg.SkipAsking:
-		fmt.Fprintf(deps.Stderr, "mm-mcp: warning: %s=false, so mm-mcp does not ask before a post or another change others see; "+
-			"the MCP client's own approval of each tool call is the only check\n", config.EnvAskBeforeWrites)
+		fmt.Fprintf(deps.Stderr, "mm-mcp: writes are allowed, and %s=true has Claude Code ask a person before every post or other change others see\n", config.EnvForceHumanInTheLoopInClaudeCode)
+	case cfg.AllowWrites && cfg.Elicit:
+		fmt.Fprintf(deps.Stderr, "mm-mcp: writes are allowed; the MCP client's approval of each call decides, and %s=true has mm-mcp ask the person as well\n", config.EnvElicitationOptIn)
+	case cfg.AllowWrites:
+		fmt.Fprintf(deps.Stderr, "mm-mcp: writes are allowed; mm-mcp does not ask before a post or another change others see, "+
+			"and the MCP client's own approval of each call decides\n")
 	}
 	client := mattermost.New(cfg.URL, cfg.Token, httpTransport)
 	if code, ok := preflight(ctx, client, cfg, deps.Stderr); !ok {

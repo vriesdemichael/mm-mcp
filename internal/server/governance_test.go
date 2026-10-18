@@ -347,9 +347,11 @@ func TestTheToolsPageDocumentsEveryToolAndOnlyThose(t *testing.T) {
 // cannot be asked. A tool that asks refuses it with the missing capability
 // error before reaching Mattermost; one that does not reaches for the network,
 // which the unit tests block, and fails some other way (ADR-021).
-func TestEveryToolThatWritesAsksFirst(t *testing.T) {
+func TestEveryToolThatWritesAsksFirstWhenOptedIn(t *testing.T) {
 	t.Parallel()
-	callEveryAskingTool(t, writingConfig, func(tool *mcp.Tool, err error) {
+	cfg := writingConfig
+	cfg.Elicit = true
+	callEveryAskingTool(t, cfg, func(tool *mcp.Tool, err error) {
 		var refused *jsonrpc.Error
 		if !errors.As(err, &refused) || refused.Code != mcp.CodeMissingRequiredClientCapabilities {
 			t.Errorf("%s, called by a client that cannot be asked, answered %v; want the missing capability error", tool.Name, err)
@@ -357,33 +359,36 @@ func TestEveryToolThatWritesAsksFirst(t *testing.T) {
 	})
 }
 
-// TestAServerThatDoesNotAskLeavesTheCallToTheClient holds what a server that
-// leaves asking to the client does with each tool that would ask (ADR-033): it
-// lets a client that cannot be asked through to Mattermost, which the unit
-// tests block, and tells the model that nobody is asked. Only
-// MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE marks those tools for Claude Code to ask on
-// every call, whatever its rules allow. Without it, the client's rules decide,
-// so an agent may be allowed to write with nobody watching; with mm-mcp asking,
-// nothing is marked, or the person would be asked twice.
+// TestAServerThatDoesNotAskLeavesTheCallToTheClient holds what a server does
+// with each tool that changes what others see (ADR-033). By default it asks
+// nothing: it lets a client that cannot be asked through to Mattermost, which
+// the unit tests block, and no description or instruction says the person is
+// asked. With MM_MCP_ELICITATION_OPT_IN it asks, and each such tool says so.
+// Only MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE marks those tools for
+// Claude Code to ask on every call, whatever its rules allow, so an agent may
+// otherwise be allowed to write with nobody watching.
 func TestAServerThatDoesNotAskLeavesTheCallToTheClient(t *testing.T) {
 	t.Parallel()
 	asking := map[string]bool{}
 	for _, spec := range server.AllSpecs() {
 		asking[spec.Tool.Name] = spec.Asks()
+		if spec.Asks() != (spec.Asking != "") {
+			t.Errorf("%s changes what others see: %v; says what it asks: %q", spec.Tool.Name, spec.Asks(), spec.Asking)
+		}
 	}
 	for _, mode := range []struct {
-		name        string
-		skip, force bool
-	}{{"mm-mcp asking", false, false}, {"not asking", true, false}, {"forcing a human in the loop", true, true}} {
+		name          string
+		elicit, force bool
+	}{{"by default", false, false}, {"opted in", true, false}, {"forcing a human in the loop", false, true}} {
 		cfg := writingConfig
-		cfg.SkipAsking, cfg.ForceHumanInTheLoopInClaudeCode = mode.skip, mode.force
-		if mode.skip {
+		cfg.Elicit, cfg.ForceHumanInTheLoopInClaudeCode = mode.elicit, mode.force
+		if !mode.elicit {
 			callEveryAskingTool(t, cfg, func(tool *mcp.Tool, err error) {
 				var refused *jsonrpc.Error
 				if err == nil || errors.As(err, &refused) && refused.Code == mcp.CodeMissingRequiredClientCapabilities {
 					t.Errorf("%s, %s, answered %v; want it to reach for Mattermost", tool.Name, mode.name, err)
 				}
-				if !strings.Contains(tool.Description, "configured not to ask") {
+				if !strings.Contains(tool.Description, "mm-mcp does not ask") {
 					t.Errorf("%s, %s, does not tell the model that mm-mcp asks nothing: %s", tool.Name, mode.name, tool.Description)
 				}
 				if denied := strings.Contains(tool.Description, "if they deny it"); denied != mode.force {
@@ -391,9 +396,16 @@ func TestAServerThatDoesNotAskLeavesTheCallToTheClient(t *testing.T) {
 				}
 			})
 		}
+		instructions := connect(t, cfg).InitializeResult().Instructions
+		if says := strings.Contains(instructions, "also asks the person"); says != mode.elicit {
+			t.Errorf("%s, the instructions say mm-mcp asks: %v", mode.name, says)
+		}
 		for _, tool := range listTools(t, cfg) {
-			if !asking[tool.Name] && strings.Contains(tool.Description, "configured not to ask") {
-				t.Errorf("%s never asks, and says it would", tool.Name)
+			if says := strings.Contains(tool.Description, "is asked to confirm"); says != (mode.elicit && asking[tool.Name]) {
+				t.Errorf("%s, %s, says the person is asked: %v", tool.Name, mode.name, says)
+			}
+			if !asking[tool.Name] && strings.Contains(tool.Description, "mm-mcp does not ask") {
+				t.Errorf("%s never asks, and says so as if it would", tool.Name)
 			}
 			marked := tool.Meta[server.RequiresUserInteraction] == true
 			if want := asking[tool.Name] && mode.force; marked != want {
@@ -496,7 +508,7 @@ func TestEveryListPagesByCursor(t *testing.T) {
 }
 
 // toolKind is what a tool does beyond reading, as the tools page marks it:
-// asks the person first, changes only what is theirs, or reaches their disk.
+// changes what others see, changes only what is theirs, or reaches their disk.
 func toolKind(spec server.Spec) string {
 	switch {
 	case spec.Local:

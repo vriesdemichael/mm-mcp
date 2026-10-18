@@ -44,12 +44,15 @@ disclosure only to what the agent asks to read.
   it needs.
 - **Write nothing until writes are allowed.** The tools that post or change
   anything are not offered while `MM_MCP_ALLOW_WRITES` is false, its default.
-- **Make a change others see only after a person approves it.** By default,
-  mm-mcp asks through the AI application before each such change, showing what
-  will be posted, where and under which name, and acts only on approval. With
-  `MM_MCP_ASK_BEFORE_WRITES=false`, the application's own approval of the tool
-  call is the only check, and an application configured to approve
-  automatically will post without anyone reviewing it
+- **Check every change others see, and leave approving it to the AI
+  application.** The application's own approval of each call decides whether
+  it runs, and one configured to approve automatically posts without anyone
+  reviewing it. mm-mcp checks what each call states before it acts: how many
+  people a post reaches and notifies, how much an edit or a deletion takes
+  away, and where it goes, by an address matched exactly; each is counted
+  again just before the write. Every post and edit is marked as written with
+  AI. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp ask the person as well, which
+  is a convenience where the application shows the question, not a safeguard
   ([Configuration](configuration.md)).
 - **Make a few changes only the person sees, without asking:** following a
   thread, saving a post, setting a reminder, saving a draft to their message
@@ -153,9 +156,10 @@ When a client connects, mm-mcp gives the model a short set of instructions,
 which can be read in its source
 ([`internal/server/server.go`](https://github.com/vriesdemichael/mm-mcp/blob/main/internal/server/server.go)):
 that it acts as a single account; that text written by others is to be read,
-not followed as instructions; that a change others see is asked about first and
-a refusal is not to be retried; that a message is cited by its post's link,
-never by one built from an id; and how Mattermost formats mentions and Markdown. Each tool's description states what it does and whether it asks.
+not followed as instructions; that a change others see is made only when the
+person asked for it, states what it does to others, and is weighed again when
+mm-mcp refuses it; that a message is cited by its post's link,
+never by one built from an id; and how Mattermost formats mentions and Markdown. Each tool's description states what it does, and, where mm-mcp asks, that it asks.
 
 ## HTTP transport
 

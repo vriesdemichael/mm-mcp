@@ -130,7 +130,7 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 ## Every tool
 
 Grouped as above. A badge says when a tool does more than read:
-<span class="mm-badge mm-badge--asks">asks you first</span> for what others see,
+<span class="mm-badge mm-badge--asks">others see it</span> for what others see,
 <span class="mm-badge mm-badge--yours">yours alone</span> for what only you see
 or is gone in seconds, and <span class="mm-badge mm-badge--disk">your disk</span>.
 The tools that write are offered only once you allow writes, with
@@ -267,8 +267,8 @@ The tools that write are offered only once you allow writes, with
 
 ### Post, reply and react
 
-Each of these asks you first, showing exactly what will happen
-([below](#how-a-write-is-asked)).
+Your MCP client's approval of each call decides, and mm-mcp checks what each
+states before it acts ([below](#how-a-write-is-checked)).
 
 `create_post`: Create post { #create_post .mm-asks }
 :   Posts a message in a channel, or with `root_id` replies in the thread of any
@@ -558,43 +558,43 @@ What a page holds when `limit` is not given, and the most it can hold.
 | [`list_saved`](#list_saved), [`list_threads`](#list_threads), [`list_drafts`](#list_drafts), [`search_users`](#search_users) | 20 | 100 |
 | [`get_user_teams`](#get_user_teams), [`get_user_channels`](#get_user_channels), [`search_channels`](#search_channels), [`list_team_channels`](#list_team_channels), [`list_archived_channels`](#list_archived_channels) | 50 | 200 |
 
-### How a write is asked
+### How a write is checked
 
-Each tool that changes what others see asks you through your MCP client: it
-shows what will change, where, and under whose name, and acts only when you
-tick the box and accept
-([ADR-021](adr/021-read-only-by-default.md)). The question
-is an MCP elicitation, a form the client shows, so these tools need a client
-that shows one, such as Claude Code. A client that declares it cannot gets an
-error that says so, and nothing is written; `save_draft`, which does not ask,
-still puts a message in your message box for you to send. Some clients declare
-that they can and never show the form, and decline it at once, as Claude Code
-does in the Claude desktop app's Code tab; the rest of the Claude desktop app is
-untested. `diagnose` with `ask_test_question` tells you whether yours shows it.
+Your MCP client's own approval of each call decides whether a change others see
+goes ahead: its prompt, its permission rules or its auto mode
+([ADR-033](adr/033-the-client-decides-whether-a-write-runs.md)). mm-mcp does
+not ask you by default. What it controls is what it checks itself, on every
+call, whoever approved it: how far a post goes and what a call takes away, each
+stated in the call and counted again just before the write; where it goes, by
+address; and the message itself. A refusal gives the real number and tells the
+model to weigh whether that is what you meant.
 
-`MM_MCP_ASK_BEFORE_WRITES` decides who asks
-([Configuration](configuration.md),
-[ADR-033](adr/033-who-asks-before-a-write-is-a-setting.md)). Everything here is
-how mm-mcp asks, its default. Set to `false`, mm-mcp asks nothing, and your MCP
-client's own approval of each tool call, if it asks, is the only check;
-`MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE` then has Claude Code ask on
-every call. The checks on a message below hold either way.
+With `MM_MCP_ELICITATION_OPT_IN=true`, mm-mcp asks you as well
+([Configuration](configuration.md)): it shows what will change, where, and under
+whose name, and acts only when you tick the box and accept. The question is an
+MCP elicitation, a form the client shows, so these tools then need a client that
+shows one; a client that declares it cannot gets an error that says so, and
+nothing is written. Some clients declare that they can and decline the form
+without showing it, as Claude Code does in the Claude desktop app's Code tab.
+`diagnose` with `ask_test_question` tells you whether yours shows it.
+`MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE` has Claude Code ask on every
+call instead.
 
-Every message is checked before you are asked
-([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)):
-one longer than the server takes is refused with its length and the limit, an
-@mention of someone nobody is is refused with the closest usernames, and the
-question says how many people `@here`, `@channel` and `@all` reach, who of
-those mentioned is deactivated, and, on a licensed server with user groups, how
-many a group's mention notifies. Mentions are found as Mattermost finds them, so
-code mentions nobody and `@here.` ending a sentence is `@here`. What a post
-does, and every file it carries, comes before the message in the question.
+Every message is checked before the write
+([ADR-031](adr/031-a-message-is-checked-before-it-is-posted.md)): one longer
+than the server takes is refused with its length and the limit, and an @mention
+of someone nobody is is refused with the closest usernames. Where mm-mcp asks,
+the question says how many people `@here`, `@channel` and `@all` reach, who
+of those mentioned is deactivated, and, on a licensed server with user groups,
+how many a group's mention notifies, and puts what a post does, and every file
+it carries, before the message. Mentions are found as Mattermost finds them, so
+code mentions nobody and `@here.` ending a sentence is `@here`.
 
 #### How far a message goes
 
 `create_post` states in its call how far the message goes, as two numbers
 mm-mcp counts itself
-([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)):
+([ADR-031](adr/031-a-message-is-checked-before-it-is-posted.md)):
 
 - `reaches`, on every post: how many members the channel has. Everyone in it
   can read the message, whatever it mentions.
@@ -640,7 +640,7 @@ both are right.
 
 `update_post` states the post's current text in full, `old_message`, alongside
 its replacement
-([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)).
+([ADR-031](adr/031-a-message-is-checked-before-it-is-posted.md)).
 The model cannot edit a post without writing out all of what it replaces, and
 your client's approval shows both texts. An `old_message` that differs from the
 post's current text, because you edited the post after the model read it or
@@ -671,7 +671,7 @@ A deletion states how much goes in its call, as a number mm-mcp counts itself:
 wrong number is refused with the real one and the start of what would go, and
 the model is told to weigh whether you meant to lose it. Each is counted again
 just before the write, so a draft you typed on or a reply that arrived since
-the model read it stops the write, whether or not anyone is asked.
+the model read it stops the write.
 
 For example, deleting a post that started a thread of 12 replies, without
 `deletes`:
@@ -709,8 +709,9 @@ and a reply to a post named by its link:
 The model reads the address, `mattermost://chat.example.com/eng/channels/town-square`,
 and calls again with it.
 
-What a write acts on is what you were asked about: a reply posted, a file
-rewritten or a draft typed on while you read the question stops the write.
+Where mm-mcp asks, what a write acts on is what you were asked about: a reply
+posted, a file rewritten or a draft typed on while you read the question stops
+the write.
 Posts and edits are marked as written with AI, as Mattermost shows it, unless
 `MM_MCP_MARK_AI_GENERATED` is false.
 

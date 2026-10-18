@@ -24,21 +24,21 @@
     "allow_writes": {
       "type": "boolean",
       "title": "Allow posting",
-      "description": "Offer the tools that post and change things. Each change others see asks you first.",
+      "description": "Offer the tools that post and change things. Claude Code's own approval of each call decides, and mm-mcp checks what each states before it acts.",
       "required": false,
       "default": false
     },
-    "ask_before_writes": {
+    "elicitation_opt_in": {
       "type": "boolean",
-      "title": "Ask before posting",
-      "description": "mm-mcp asks you before each change others see. In the Claude desktop app's Code tab, Claude Code declines that question without showing it, so turn this off there: Claude Code's own permission prompt is then the check, and a rule or mode that allows the tool posts as you unseen.",
+      "title": "mm-mcp asks as well",
+      "description": "Have mm-mcp ask you too, through a question Claude Code shows, before each change others see. A convenience where it shows it, not a safeguard: in the Claude desktop app's Code tab, Claude Code declines the question without showing it, so leave this off there.",
       "required": false,
-      "default": true
+      "default": false
     },
     "force_human_in_the_loop_in_claude_code": {
       "type": "boolean",
       "title": "Force a human in the loop in Claude Code",
-      "description": "Only with Ask before posting off: Claude Code asks you before every change others see, in every permission mode, whatever its rules allow. An agent cannot post on its own while it is on.",
+      "description": "Not with mm-mcp asks as well: Claude Code asks you before every change others see, in every permission mode, whatever its rules allow. An agent cannot post on its own while it is on.",
       "required": false,
       "default": false
     }
@@ -51,7 +51,7 @@
         "MM_URL": "${user_config.mm_url}",
         "MM_TOKEN": "${user_config.mm_token}",
         "MM_MCP_ALLOW_WRITES": "${user_config.allow_writes}",
-        "MM_MCP_ASK_BEFORE_WRITES": "${user_config.ask_before_writes}",
+        "MM_MCP_ELICITATION_OPT_IN": "${user_config.elicitation_opt_in}",
         "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE": "${user_config.force_human_in_the_loop_in_claude_code}"
       }
     }

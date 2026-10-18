@@ -20,7 +20,7 @@ they reach Mattermost:
 |---|---|---|
 | What it reads | Whatever is on the screen, Mattermost or not | Mattermost, through its API, nothing else |
 | Posting | As the person, unmarked | Not offered until writes are allowed |
-| Before a post others see | Nobody is asked | A person is asked by default |
+| Before a post others see | Nothing is checked | Its reach, what it takes away and where it goes are stated and checked; the AI application's approval decides |
 | Telling its posts apart | Not possible | Marked as written with AI, by default |
 | Telling its requests apart | Not possible | `User-Agent: mm-mcp/<version>` |
 | Ending it | Ending the person's own session | Deleting its OAuth app, or ending its session |

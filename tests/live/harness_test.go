@@ -196,7 +196,9 @@ func mcpWriting(t *testing.T, token string, answer func(*mcp.ElicitParams) *mcp.
 			return answer(request.Params), nil
 		}}
 	}
-	return mcpWith(t, config.Config{URL: liveURL, Token: token, AllowWrites: true, MarkAIGenerated: true}, options)
+	// Most tests watch the question mm-mcp asks where it is set to; a test of
+	// the default, which asks nothing, builds its own server.
+	return mcpWith(t, config.Config{URL: liveURL, Token: token, AllowWrites: true, Elicit: true, MarkAIGenerated: true}, options)
 }
 
 func mcpWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {

@@ -96,11 +96,14 @@ task pr:rebase
 `mcp.CallToolParams{Name: "..."}` literal, so the check can read it, and assert
 on what it returned.
 
-**A tool that writes is gated, and asks when others see the change.** Annotate
-it as not read-only. When what it changes is seen by others, confirm each call
-with the person; when it is the user's alone or gone in seconds, such as
-following a thread or showing them typing, say why it does not ask
-([ADR-021](docs/site/adr/021-read-only-by-default.md)).
+**A tool that writes is gated, and checked when others see the change.**
+Annotate it as not read-only. When what it changes is seen by others, have the
+call state what it does to them as numbers mm-mcp counts, take its places by
+address, and confirm each call with the person while the server is set to ask;
+when it is the user's alone or gone in seconds, such as following a thread or
+showing them typing, say why it does not ask
+([ADR-021](docs/site/adr/021-read-only-by-default.md),
+[ADR-033](docs/site/adr/033-the-client-decides-whether-a-write-runs.md)).
 
 ## Before opening a pull request
 

@@ -16,9 +16,12 @@ import (
 
 // The variables mm-mcp reads.
 const (
-	EnvURL                             = "MM_URL"
-	EnvToken                           = "MM_TOKEN"
-	EnvAllowWrites                     = "MM_MCP_ALLOW_WRITES"
+	EnvURL              = "MM_URL"
+	EnvToken            = "MM_TOKEN"
+	EnvAllowWrites      = "MM_MCP_ALLOW_WRITES"
+	EnvElicitationOptIn = "MM_MCP_ELICITATION_OPT_IN"
+	// EnvAskBeforeWrites is read only to stop a server started with it, and
+	// say what replaced it (ADR-033).
 	EnvAskBeforeWrites                 = "MM_MCP_ASK_BEFORE_WRITES"
 	EnvForceHumanInTheLoopInClaudeCode = "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE"
 	EnvDownloadDir                     = "MM_MCP_DOWNLOAD_DIR"
@@ -44,7 +47,7 @@ const maxMB = math.MaxInt64 >> 20
 // empties each of them, and a governance test fails when the source names one
 // that is not listed here (ADR-006).
 var EnvironmentVariables = []string{
-	EnvURL, EnvToken, EnvAllowWrites, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
+	EnvURL, EnvToken, EnvAllowWrites, EnvElicitationOptIn, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
 	EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
 }
 
@@ -59,13 +62,15 @@ type Config struct {
 	// diagnose tool reads it to find a login MM_TOKEN hides.
 	Stored      Stored
 	AllowWrites bool
-	// SkipAsking says mm-mcp does not ask before a write others see, and
-	// leaves it to the MCP client's own approval of the tool call:
-	// MM_MCP_ASK_BEFORE_WRITES=false (ADR-033). Its zero value asks.
-	SkipAsking bool
-	// ForceHumanInTheLoopInClaudeCode marks each tool that would ask so that the MCP client
-	// asks a person on every call, whatever its permission rules allow:
-	// MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE=true, only with SkipAsking (ADR-033).
+	// Elicit says mm-mcp also asks the person before a write others see,
+	// through MCP elicitation, as a convenience in a client that shows the
+	// question: MM_MCP_ELICITATION_OPT_IN=true. Its zero value asks nothing,
+	// and the MCP client's own approval of each call decides (ADR-033).
+	Elicit bool
+	// ForceHumanInTheLoopInClaudeCode marks each tool that would ask so that
+	// Claude Code asks a person on every call, whatever its permission rules
+	// allow: MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE=true, only without
+	// Elicit (ADR-033).
 	ForceHumanInTheLoopInClaudeCode bool
 	// MarkAIGenerated marks every post and edit the model writes as written
 	// with AI, as Mattermost shows it. On unless turned off.
@@ -101,8 +106,8 @@ func (c Config) ResourceBytes() int64 {
 
 // String leaves the token out, so a Config can be logged or printed in an error.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, SkipAsking: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
-		c.URL, c.AllowWrites, c.SkipAsking, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
+	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, Elicit: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
+		c.URL, c.AllowWrites, c.Elicit, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
 }
 
 // GoString is String, so %#v leaves the token out too.
@@ -151,21 +156,25 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	ask := true
-	if raw := lookup(EnvAskBeforeWrites); strings.TrimSpace(raw) != "" {
-		if ask, err = ParseBool(EnvAskBeforeWrites, raw); err != nil {
-			return Config{}, err
-		}
+	if strings.TrimSpace(lookup(EnvAskBeforeWrites)) != "" {
+		// A setting that once meant mm-mcp asked would now be silently ignored.
+		return Config{}, errorf("%s is gone. mm-mcp no longer asks before a write unless told to: your MCP client's own approval "+
+			"of each call decides, and mm-mcp checks what it can itself. Remove %s; set %s=true if you want mm-mcp to ask "+
+			"through MCP elicitation as well, which is a convenience in a client that shows the question, not a safeguard.",
+			EnvAskBeforeWrites, EnvAskBeforeWrites, EnvElicitationOptIn)
+	}
+	elicit, err := ParseBool(EnvElicitationOptIn, lookup(EnvElicitationOptIn))
+	if err != nil {
+		return Config{}, err
 	}
 	force, err := ParseBool(EnvForceHumanInTheLoopInClaudeCode, lookup(EnvForceHumanInTheLoopInClaudeCode))
 	if err != nil {
 		return Config{}, err
 	}
-	if force && ask {
+	if force && elicit {
 		// mm-mcp's question and the client's prompt would both come for one write.
-		return Config{}, errorf("%s=true needs %s=false. While mm-mcp asks you before each write itself, a client that "+
-			"prompts as well would ask twice; %s is for when your MCP client does the asking.",
-			EnvForceHumanInTheLoopInClaudeCode, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode)
+		return Config{}, errorf("%s=true and %s=true would ask twice for one write: mm-mcp's question, and Claude Code's "+
+			"prompt as well. Keep one.", EnvForceHumanInTheLoopInClaudeCode, EnvElicitationOptIn)
 	}
 	markAI := true
 	if raw := lookup(EnvMarkAIGenerated); strings.TrimSpace(raw) != "" {
@@ -191,7 +200,7 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		resourceMax = -1
 	}
 	return Config{
-		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, SkipAsking: !ask, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
+		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, Elicit: elicit, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
 		DownloadDir:   downloadDir,
 		CAFile:        strings.TrimSpace(lookup(EnvCAFile)),
 		ResourceMaxMB: resourceMax,

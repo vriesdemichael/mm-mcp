@@ -23,7 +23,7 @@ import (
 func unaskedSession(t *testing.T, admin *model.Client4, user *model.User) *mcp.ClientSession {
 	t.Helper()
 	return mcpWith(t, config.Config{
-		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, SkipAsking: true,
+		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true,
 	}, nil)
 }
 

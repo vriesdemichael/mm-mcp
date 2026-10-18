@@ -23,9 +23,12 @@ from CONTRIBUTING.md an agent must not lose
 - **No fake Mattermost in unit tests.** No httptest.Server answering a
   Mattermost route, no fake of internal/mattermost
   ([ADR-005](docs/site/adr/005-unit-tests-do-not-simulate-mattermost.md)).
-- **Read-only by default; every write others see asks**, and a change that is
-  the user's alone or gone in seconds says why it does not
-  ([ADR-021](docs/site/adr/021-read-only-by-default.md)).
+- **Read-only by default; the client decides each write, and mm-mcp checks
+  what it states.** A write others see states what it does to them, as numbers
+  mm-mcp counts, and names its places by address; mm-mcp asks the person only
+  with MM_MCP_ELICITATION_OPT_IN
+  ([ADR-021](docs/site/adr/021-read-only-by-default.md),
+  [ADR-033](docs/site/adr/033-the-client-decides-whether-a-write-runs.md)).
 - **No credential in a flag, an argument, a log line, an error or a tool result**
   ([ADR-019](docs/site/adr/019-credentials-are-supplied-not-acquired.md)).
 - **Temporary files go in `.tmp/`**; tests use t.TempDir()
@@ -105,9 +108,13 @@ Then break each new test by reverting its fix and watch it fail.
    ([ADR-020](docs/site/adr/020-stdio-and-streamable-http-single-tenant-first.md)).
    A tool that writes takes `writes` instead. When others see what it changes,
    it wraps its handler in `asking` with a question naming what it writes,
-   where, and as whom; when the change is the user's alone or gone in seconds,
-   its spec is marked `unasked` with the reason
-   ([ADR-021](docs/site/adr/021-read-only-by-default.md)).
+   where, and as whom, its spec is `asked` with the sentence its description
+   says while the server asks, and it takes its channels, posts and teams by
+   address and states what it does to others as arguments in `Checks`; when
+   the change is the user's alone or gone in seconds, its spec is marked
+   `unasked` with the reason
+   ([ADR-021](docs/site/adr/021-read-only-by-default.md),
+   [ADR-033](docs/site/adr/033-the-client-decides-whether-a-write-runs.md)).
    A tool that answers with a list embeds `pageArgs` and `pageInfo` and pages
    with `openCursor` ([ADR-032](docs/site/adr/032-every-list-pages-by-an-opaque-cursor.md)).
 3. Declare its `Uses`: every operation it calls, by operationId in

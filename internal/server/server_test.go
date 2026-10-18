@@ -104,15 +104,20 @@ func TestTheServerIconIsTheSites(t *testing.T) {
 	}
 }
 
-// A server that does not ask says so; one that cannot write has nothing to say.
-func TestAServerThatDoesNotAskSaysSo(t *testing.T) {
+// A server that writes says who decides on a write, and whether it asks as
+// well; one that cannot write has nothing to say (ADR-033).
+func TestAServerThatWritesSaysWhoDecides(t *testing.T) {
 	t.Parallel()
-	skipping := config.Config{URL: "https://chat.example.com", Token: "t", AllowWrites: true, SkipAsking: true}
-	if got := connect(t, skipping).InitializeResult().Instructions; got != server.Instructions+"\n\n"+server.SkippingInstructions {
-		t.Errorf("writing without asking: %q", got)
+	writing := config.Config{URL: "https://chat.example.com", Token: "t", AllowWrites: true}
+	if got := connect(t, writing).InitializeResult().Instructions; got != server.Instructions+"\n\n"+server.WritingInstructions {
+		t.Errorf("writing: %q", got)
 	}
-	skipping.AllowWrites = false
-	if got := connect(t, skipping).InitializeResult().Instructions; got != server.Instructions {
+	writing.Elicit = true
+	if got := connect(t, writing).InitializeResult().Instructions; got != server.Instructions+"\n\n"+server.WritingInstructions+"\n\n"+server.ElicitingInstructions {
+		t.Errorf("writing and asking: %q", got)
+	}
+	writing.AllowWrites = false
+	if got := connect(t, writing).InitializeResult().Instructions; got != server.Instructions {
 		t.Errorf("read-only: %q", got)
 	}
 }
