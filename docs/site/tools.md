@@ -684,6 +684,31 @@ For example, deleting a post that started a thread of 12 replies, without
 A thirteenth reply arriving before the model calls again with `deletes: 13`
 gets the same refusal, with 14.
 
+#### Where a write goes
+
+A write others see names its channel, post or team by its address
+([above](#works-the-same-everywhere),
+[ADR-030](adr/030-names-are-matched-leniently-and-a-refusal-names-the-next-step.md)),
+so your client's approval shows where it goes by name. A post to ~Town Square
+named by its channel's name, on a server at chat.example.com, is refused with:
+
+> channel_id: ~town-square is a name, but this takes an address,
+> mattermost://chat.example.com/<team>/channels/<channel>, or
+> <team>/messages/@<username> for a direct message, which names the place
+> exactly and shows it to whoever approves the call; get_user_channels,
+> get_channel_info and every post give each channel's address
+
+and a reply to a post named by its link:
+
+> post_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
+> but this takes an address, mattermost://chat.example.com/<team>/channels/<channel>/<post id>:
+> its channel's address, then its id, which names the place exactly and shows it
+> to whoever approves the call; read_post, read_channel and search_posts give
+> each post's address
+
+The model reads the address, `mattermost://chat.example.com/eng/channels/town-square`,
+and calls again with it.
+
 What a write acts on is what you were asked about: a reply posted, a file
 rewritten or a draft typed on while you read the question stops the write.
 Posts and edits are marked as written with AI, as Mattermost shows it, unless
