@@ -26,8 +26,13 @@ const defaultShownPage = 30
 // noViewsHere is show's answer to a client that renders no views.
 const noViewsHere = "Nothing was shown: this MCP client renders no MCP Apps views. Give the person what they asked to see in your answer."
 
-// The kinds of view show draws.
-var showKinds = []any{"thread"}
+// The kinds of view show draws, and what a person does in one. The input's
+// schema holds each to these, and a call that names another is refused
+// before it is answered.
+var (
+	showKinds   = []any{"thread"}
+	viewActions = []any{"more"}
+)
 
 type showInput struct {
 	Kind          string `json:"kind" jsonschema:"what to show; thread: a post and the thread it is in, or the post alone with include_thread false"`
@@ -64,9 +69,6 @@ func showSpec() Spec {
 		readPostUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[showInput, PostWithThread] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input showInput) (*mcp.CallToolResult, PostWithThread, error) {
-				if input.Kind != "thread" {
-					return nil, PostWithThread{}, fmt.Errorf("show shows kind thread; %q is not a kind of view it draws", input.Kind)
-				}
 				if !rendersViews(request) {
 					return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: noViewsHere}}}, PostWithThread{}, nil
 				}
@@ -82,14 +84,19 @@ func showSpec() Spec {
 			}
 		},
 	), showShapes)
-	if schema, ok := spec.Tool.InputSchema.(*jsonschema.Schema); ok {
-		schema.Properties["kind"].Enum = showKinds
-	}
+	only(spec, "kind", showKinds)
 	return spec
 }
 
+// only holds a tool's argument to the values given.
+func only(spec Spec, argument string, values []any) {
+	if schema, ok := spec.Tool.InputSchema.(*jsonschema.Schema); ok {
+		schema.Properties[argument].Enum = values
+	}
+}
+
 func viewActionSpec() Spec {
-	return shaping(toolSpec(
+	spec := shaping(toolSpec(
 		&mcp.Tool{
 			Name:        "view_action",
 			Description: "Only mm-mcp's MCP Apps views call this, for what the person does in one. Never call it yourself.",
@@ -102,9 +109,6 @@ func viewActionSpec() Spec {
 				if !rendersViews(request) {
 					return nil, PostWithThread{}, fmt.Errorf("view_action is called by mm-mcp's views alone, from a client that renders them")
 				}
-				if input.Action != "more" {
-					return nil, PostWithThread{}, fmt.Errorf("view_action does %q in no view; a thread's view asks for more", input.Action)
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, PostWithThread{}, err
@@ -116,6 +120,8 @@ func viewActionSpec() Spec {
 			}
 		},
 	), viewActionShapes)
+	only(spec, "action", viewActions)
+	return spec
 }
 
 // shown is what show tells the model it put in front of the person, without
