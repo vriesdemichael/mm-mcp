@@ -356,9 +356,3 @@ func (c *Client) RolesByNames(ctx context.Context, names []string) ([]*model.Rol
 func (c *Client) ChannelMemberCountsByGroup(ctx context.Context, channelID string) ([]*model.ChannelMemberCountByGroup, error) {
 	return result(c.api.GetChannelMemberCountsByGroup(ctx, channelID, false, ""))
 }
-
-// ClientLicense is the part of the server's licence it tells every client,
-// such as whether it covers LDAP groups. GetClientLicense.
-func (c *Client) ClientLicense(ctx context.Context) (map[string]string, error) {
-	return result(c.api.GetOldClientLicense(ctx, ""))
-}
