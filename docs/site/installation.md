@@ -120,13 +120,13 @@ such as `mm-mcp_<version>_darwin_arm64.mcpb` for an Apple silicon Mac or
 `mm-mcp_<version>_windows_amd64.mcpb` for Windows, and open it. Claude Desktop
 asks for the address and a token, which you leave empty once `mm-mcp login`
 keeps one ([above](#get-a-token)); whether to allow posting; whether mm-mcp asks
-before posting; whether to mark posts as written with AI; and where to save
-files. mm-mcp's question before a post has been tried in the Claude desktop
-app only in its Code tab, where Claude Code declines it without showing it.
-Where your app does not show it either, turn asking off, and the app's own
-approval of each tool call is the check instead
-([Configuration](configuration.md)); the `diagnose` tool, with
-`ask_test_question`, tells you which ([Tools](tools.md#diagnose)).
+as well, off unless you turn it on; whether to mark posts as written with AI;
+and where to save files. Claude Desktop's own approval of each tool call
+decides whether a post goes ahead. mm-mcp's question has been tried in the
+Claude desktop app only in its Code tab, where Claude Code declines it without
+showing it, so leave asking off unless the `diagnose` tool, with
+`ask_test_question`, shows that yours shows it ([Tools](tools.md#diagnose),
+[Configuration](configuration.md)).
 
 ## Any MCP client
 
@@ -182,7 +182,7 @@ the [tools](tools.md) it reaches for:
 | What mentions me since Monday? | `list_mentions` |
 | What did we decide about the release date? | `search_posts`, and `read_post` for the thread around a match |
 | Draft a reply to Sam in ~release-planning that I can send myself. | Puts a draft in your message box in Mattermost, with `save_draft`, once writes are allowed |
-| Reply in that thread that the notes are ready. | Posts with `create_post`, once writes are allowed, asking you first |
+| Reply in that thread that the notes are ready. | Posts with `create_post`, once writes are allowed and your app approves the call |
 
 Writes are off until you allow them, with `MM_MCP_ALLOW_WRITES` or your app's
 "Allow posting" setting ([Configuration](configuration.md)).

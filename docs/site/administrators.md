@@ -20,7 +20,7 @@ they reach Mattermost:
 |---|---|---|
 | What it reads | Whatever is on the screen, Mattermost or not | Mattermost, through its API, nothing else |
 | Posting | As the person, unmarked | Not offered until writes are allowed |
-| Before a post others see | Nothing is checked | Its reach, what it takes away and where it goes are stated and checked; the AI application's approval decides |
+| Before a post others see | Nothing is checked | Its reach, the text an edit replaces, what a deletion takes away and where it goes are stated and checked; the AI application's approval decides |
 | Telling its posts apart | Not possible | Marked as written with AI, by default |
 | Telling its requests apart | Not possible | `User-Agent: mm-mcp/<version>` |
 | Ending it | Ending the person's own session | Deleting its OAuth app, or ending its session |
@@ -115,7 +115,7 @@ logged in to Mattermost approves it.
 mm-mcp sends its requests one at a time, never in parallel, and caches nothing
 between tool calls. A tool call makes a small number of API requests: about
 five to read a channel; for a search, one plus one for each channel and team in
-the results; about a dozen for a post, across asking and posting. On a `429`
+the results; about a dozen for a post, across checking and posting. On a `429`
 response, it waits as `Retry-After` indicates, up to ten seconds and at most
 three times, then reports the error. A request times out after 30 seconds, a
 file transfer after 15 minutes.

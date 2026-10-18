@@ -31,7 +31,7 @@ A person takes in a thread faster laid out as Mattermost lays it out than from a
 - **The view's data in `_meta`**: Goose replaces a result's `_meta` with its own before the view sees it.
 - **A shape of the view's own beside the data tool's**: Two shapes of the same thread drift apart, and in VS Code the model would read whatever the view's shape added.
 - **Images in the result**: A client that hands `structuredContent` to its model would fill its context with megabytes the model cannot use.
-- **Images through the tool only views call**: A client that declares views but ignores `visibility` would offer every input of that tool to its model, and a resource read lists nothing.
+- **Images through a tool only views call**: A client that declares views but ignores `visibility` would offer every input of that tool to its model, and a resource read lists nothing.
 - **An image as base64 in a text resource, which reaches a Goose view intact where a binary resource does not**: A resource that declares one type and holds another, to work around one client.
 - **A view's own reads, such as paging a thread, as resources, which Goose's approval modes still pass on**: Paging or opening something is a query with arguments, which is a tool's, and as resources they would be listed, and attachable to the model, in every client.
 - **A component library rendered on the server**: A thread and a composer need control over layout and Markdown rendering that a library constrains.

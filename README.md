@@ -12,11 +12,11 @@ supported by Mattermost, Inc.; Mattermost is a trademark of Mattermost, Inc.
 The tools read channels, threads, unread posts, mentions and files, search
 posts, files, people and channels, and, once you allow writes, post, reply,
 edit, react, pin, keep drafts, join, leave and create channels, and set your
-status. A link pasted from Mattermost works wherever a tool wants an id, every
-answer links each post, channel and team it names, and attached files, their
-previews, profile pictures and custom emoji are MCP resources your client can
-read too. The [tools page](docs/site/tools.md) lists
-every tool. In a client that renders MCP Apps views, a thread can be shown in
+status. A link pasted from Mattermost works wherever a tool that reads wants an
+id, every answer links each post, channel and team it names and gives the
+address a write others see takes, and attached files, their previews, profile
+pictures and custom emoji are MCP resources your client can read too. The
+[tools page](docs/site/tools.md) lists every tool. In a client that renders MCP Apps views, a thread can be shown in
 the chat as Mattermost lays it out; more views are planned, and the
 [issues](https://github.com/vriesdemichael/mm-mcp/issues) are the plan.
 
@@ -25,10 +25,11 @@ the chat as Mattermost lays it out; more views are planned, and the
 - **Read-only unless you say otherwise.** The tools that post or change anything
   are not offered until `MM_MCP_ALLOW_WRITES` is true. Then your MCP client's
   own approval of each call decides, and mm-mcp checks what each change others
-  see states before it acts: how many people a post reaches and notifies, how
-  much it takes away, and where it goes, by address. Every post and edit is
-  marked as written with AI. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp ask
-  you as well, in a client that shows its question.
+  see states before it acts: how many people a post or an edit reaches and a
+  post notifies, the text an edit replaces, what a deletion takes away, and
+  where it goes, by address. By default, every post and edit is marked as
+  written with AI. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp ask you as well,
+  in a client that shows its question.
 - **Your token, a bot's, or your own login.** A personal access token, a bot
   token, or your own login through `mm-mcp login`, single sign-on included,
   kept in your system's credential store, for servers where

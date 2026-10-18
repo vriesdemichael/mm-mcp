@@ -13,23 +13,24 @@ hide:
 
 <p class="mm-hero__lead">mm-mcp is an MCP server for Mattermost. It lets an AI
 agent read and search your Mattermost, and, when you allow it, post and reply,
-as you or as a bot. By default, each post others will see waits for your yes.</p>
+as you or as a bot. Each post states how far it goes, and mm-mcp checks that
+before it is sent.</p>
 
 [Install mm-mcp](installation.md){ .md-button .md-button--primary }
 [Connect your account](login.md){ .md-button }
 
 </div>
 
-<div class="mm-chat" role="img" aria-label="A conversation: you ask your agent what you missed in a channel, it reads the unread posts through mm-mcp and sums them up, and before it replies for you, mm-mcp asks whether to post.">
+<div class="mm-chat" role="img" aria-label="A conversation: you ask your agent what you missed in a channel, it reads the unread posts through mm-mcp and sums them up, and before it replies for you, your AI app asks whether to allow the post, which states where it goes and how many people it reaches.">
 <div class="mm-chat__bar"><span class="mm-chat__dot"></span>Your agent, with mm-mcp</div>
 <div class="mm-chat__body">
 <div class="mm-msg mm-msg--you">What did I miss in ~release-planning?</div>
 <div class="mm-tool">read_unread ~release-planning</div>
 <div class="mm-msg mm-msg--agent">Two threads since Friday. The release moved to Thursday, and Sam asks whether the 2.4 notes are ready.</div>
 <div class="mm-msg mm-msg--you">Tell Sam they are.</div>
-<div class="mm-tool">create_post ~release-planning</div>
-<div class="mm-msg mm-msg--agent mm-ask">Post in ~release-planning as @you?<br><em>“The 2.4 notes are ready, Sam.”</em>
-<div class="mm-ask__buttons"><span>Post</span><span>Cancel</span></div>
+<div class="mm-tool">create_post …/channels/release-planning, reaches: 14</div>
+<div class="mm-msg mm-msg--agent mm-ask">Allow create_post in ~release-planning, reaching 14 people?<br><em>“The 2.4 notes are ready, Sam.”</em>
+<div class="mm-ask__buttons"><span>Allow</span><span>Deny</span></div>
 </div>
 </div>
 </div>
@@ -52,15 +53,15 @@ as you or as a bot. By default, each post others will see waits for your yes.</p
     ---
 
     Posts, replies, edits, reactions and pins, joining and creating channels,
-    and your status, once you allow writes, each confirmed by you before it is
-    sent, by default.
+    and your status, once you allow writes, each approved by your AI app and
+    checked by mm-mcp before it is sent.
 
 -   :material-bookmark-outline:{ .lg .middle } **Your own things**
 
     ---
 
     Following threads, saved posts, reminders, drafts, the typing indicator and
-    marking a channel read, without a question each time.
+    marking a channel read, which change only what is yours.
 
 -   :material-paperclip:{ .lg .middle } **Files and attachments**
 
@@ -85,9 +86,10 @@ Mattermost lays it out, and a draft that appears before it is posted is planned
 
     The tools that post or change anything are not even offered until you
     allow writes. Then your AI app's own approval of each call decides, and
-    mm-mcp checks what each post states before it goes out: how many people it
-    reaches and notifies, what it takes away, and where it goes. Each post is
-    marked as written with AI ([Configuration](configuration.md)).
+    mm-mcp checks what each change states before it goes out: how many people a
+    post reaches and notifies, the text an edit replaces, what a deletion takes
+    away, and where it goes. Each post is marked as written with AI, unless you
+    turn that off ([Configuration](configuration.md)).
 
 -   :material-account-key-outline:{ .lg .middle } **One account, yours or a bot's**
 
@@ -119,9 +121,10 @@ Mattermost lays it out, and a draft that appears before it is posted is planned
 
 - **Nothing to install on the server.** mm-mcp talks to Mattermost's API as its
   own apps do, so it needs no plugin, and works with the free Team Edition too.
-- **Shows what it will post before it posts.** The question says what, where and
-  as whom, how many people an `@channel` reaches, and who of those mentioned is
-  deactivated, before you say yes.
+- **States what each post does.** A post names where it goes by its address,
+  and how many people it reaches and an `@channel` notifies; an edit writes out
+  the whole text it replaces. mm-mcp checks each against Mattermost before it
+  acts, and a refusal says what it found.
 - **Answers shaped for an agent.** A post comes with its author, channel, team,
   files and reactions; channels, teams and people are found by the names you use,
   and a name that matches nothing comes back with the closest ones.

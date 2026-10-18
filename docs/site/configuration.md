@@ -28,8 +28,9 @@ setting left empty, counts as unset.
     whether a change goes ahead: its prompt, its permission rules or its auto
     mode ([ADR-033](adr/033-the-client-decides-whether-a-write-runs.md)).
     mm-mcp checks what each call states before it acts: how many people a post
-    reaches and notifies, how much an edit or a deletion takes away, and where
-    it goes, by address ([Tools](tools.md#how-a-write-is-checked)). A change
+    or an edit reaches and a post notifies, the text an edit replaces and the
+    reactions and replies that answer it, how much a deletion takes away, and
+    where it goes, by address ([Tools](tools.md#how-a-write-is-checked)). A change
     that is yours alone or gone in seconds, such as following a thread, saving a
     post or a draft, or showing that you are typing, is a write all the same
     ([ADR-021](adr/021-read-only-by-default.md)). Accepts `true`, `false`, `1`,

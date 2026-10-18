@@ -9,9 +9,9 @@ Whether a write runs is the MCP client's to decide: its prompt, its permission r
 
 - It writes nothing until `MM_MCP_ALLOW_WRITES` is true (ADR-021).
 - A message is checked before it is posted, and each post and edit is marked as written with AI, on by default (ADR-031, ADR-034).
-- Each write others see states what it does to them, as numbers mm-mcp counts itself: how many people a post reaches and notifies, and how many characters or posts a call takes away (ADR-031). A missing or wrong number is refused with the real one, and the refusal tells the model to consider whether that is what the person meant before it calls again.
+- Each write others see states what it does to them, as values mm-mcp reads itself: how many people a post or an edit reaches and a post notifies, the full text an edit replaces and how many reactions and replies answer it, and how many characters or posts a deletion takes away (ADR-031). A missing or wrong value is refused with the real one, and the refusal tells the model to consider whether that is what the person meant before it calls again.
 - Each write others see names its places by address, matched exactly (ADR-030).
-- Each number is counted again just before the write, so a call made on an outdated reading is refused: members who joined, a reply that arrived, a post edited or a draft typed on since the model read it.
+- Each value is read again just before the write, so a call made on an outdated reading is refused: members who joined, a reply that arrived, a post edited or reacted to, or a draft typed on since the model read it.
 
 The client's approval sees the tool's name and its arguments, and in Claude Code's auto mode nothing else, so what the write does to others is put in its arguments rather than in a question only some clients show.
 
@@ -30,7 +30,7 @@ The names say what the person gets. "Elicitation opt-in" names the mechanism and
 ## Not chosen
 
 - **Asking by default, as the safety mechanism**: An answer through the protocol is no proof a person saw anything, and in the client that answers unseen nothing could be written at all.
-- **A step that has the model check its own plan, or an acknowledgement it sets**: Such as answering ABORT or CONFIRMED, or `target_audience_ack` ([mm-mcp#42](https://github.com/vriesdemichael/mm-mcp/issues/42)): the model grading its own work, where a number mm-mcp counts cannot be set without looking.
+- **A step that has the model check its own plan, or an acknowledgement it sets**: Such as answering ABORT or CONFIRMED, or `target_audience_ack` ([mm-mcp#42](https://github.com/vriesdemichael/mm-mcp/issues/42)): the model grading its own work, where a value mm-mcp reads cannot be stated without looking.
 - **One setting with three values**: Values naming who asks, such as `mm-mcp` or `client`, read as something to install or connect rather than as a choice.
 - **The mark on every write by default**: It overrides allow rules, so no agent could write unattended.
 - **The mark while mm-mcp asks too**: The person would be asked twice for one post, wearing out the attention a question depends on.

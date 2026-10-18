@@ -98,7 +98,7 @@ on what it returned.
 
 **A tool that writes is gated, and checked when others see the change.**
 Annotate it as not read-only. When what it changes is seen by others, have the
-call state what it does to them as numbers mm-mcp counts, take its places by
+call state what it does to them as values mm-mcp reads, take its places by
 address, and confirm each call with the person while the server is set to ask;
 when it is the user's alone or gone in seconds, such as following a thread or
 showing them typing, say why it does not ask
