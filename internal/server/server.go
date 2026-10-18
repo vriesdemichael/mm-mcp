@@ -3,6 +3,8 @@ package server
 
 import (
 	"context"
+	_ "embed"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -15,6 +17,23 @@ import (
 
 // Name is the server's name in the MCP handshake.
 const Name = "mm-mcp"
+
+// icon is the documentation site's favicon, kept the same by a test.
+//
+//go:embed icon.svg
+var icon []byte
+
+// Icon is the server's icon in the MCP handshake, which a client may show
+// beside its name. It travels as a data URI, so showing it fetches nothing.
+// Tools carry none of their own: one icon names the server, and forty copies
+// of it would name nothing more.
+func Icon() mcp.Icon {
+	return mcp.Icon{
+		Source:   "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString(icon),
+		MIMEType: "image/svg+xml",
+		Sizes:    []string{"any"},
+	}
+}
 
 // Instructions is what the server tells every client about itself.
 const Instructions = `This server works in Mattermost as one identity: a person
@@ -269,7 +288,7 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 	capabilities := &mcp.ServerCapabilities{Logging: &mcp.LoggingCapabilities{}} //nolint:staticcheck // deprecated in 2026-07-28, still offered to clients that use it
 	capabilities.AddExtension(views.Extension, map[string]any{})
 	server := mcp.NewServer(
-		&mcp.Implementation{Name: Name, Version: version.Version, WebsiteURL: "https://github.com/vriesdemichael/mm-mcp"},
+		&mcp.Implementation{Name: Name, Version: version.Version, WebsiteURL: "https://github.com/vriesdemichael/mm-mcp", Icons: []mcp.Icon{Icon()}},
 		&mcp.ServerOptions{Instructions: instructions, CompletionHandler: completion(clientFor, cfg, resources), Capabilities: capabilities},
 	)
 	registerResources(server, clientFor, cfg, resources)

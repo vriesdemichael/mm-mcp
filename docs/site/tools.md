@@ -593,8 +593,12 @@ allowed or not: they reach your disk, not Mattermost
 Every tool declares a title and the four MCP annotations: whether it only reads,
 whether it may destroy something, whether repeating it changes nothing more, and
 that it works in a closed domain, your one Mattermost server
-([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)). A client
-may use them to decide what to ask you about.
+([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)). They are
+hints: a client may use them to decide what to ask you about, or ignore them,
+and none of them is a security control. Some clients run a tool marked
+read-only without asking you or their AI reviewer, so only a tool that changes
+nothing in Mattermost is marked so, and a test holds each one to the endpoints
+it calls.
 
 Each tool also accounts for every parameter of the Mattermost endpoints it
 calls: which argument sets it, or why it is fixed or left out
