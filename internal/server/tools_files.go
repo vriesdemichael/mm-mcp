@@ -201,14 +201,19 @@ func fileResult(fileID, uri, postID string, request fileview.Request, view filev
 // FoundFile is a file a search found, with where it was posted.
 type FoundFile struct {
 	Attachment
-	PostID     string `json:"post_id"`
-	PostURL    string `json:"post_url" jsonschema:"the link of the post the file is attached to, which opens it in Mattermost"`
-	ChannelID  string `json:"channel_id"`
-	Channel    string `json:"channel" jsonschema:"the channel's display name; a direct message is named after the person on the other side"`
-	ChannelURL string `json:"channel_url,omitempty" jsonschema:"the channel's link, which opens it in Mattermost"`
-	Team       string `json:"team,omitempty"`
-	Author     string `json:"author" jsonschema:"the username of whoever posted it"`
-	CreatedAt  string `json:"created_at"`
+	PostID  string `json:"post_id"`
+	PostURL string `json:"post_url" jsonschema:"the link of the post the file is attached to, which opens it in Mattermost"`
+	// PostAddress is the address of the post the file is attached to (ADR-030).
+	PostAddress string `json:"post_address,omitempty" jsonschema:"the address of the post the file is attached to, which a tool that changes it or replies to it takes"`
+	ChannelID   string `json:"channel_id"`
+	Channel     string `json:"channel" jsonschema:"the channel's display name; a direct message is named after the person on the other side"`
+	ChannelURL  string `json:"channel_url,omitempty" jsonschema:"the channel's link, which opens it in Mattermost"`
+	// ChannelAddress is the channel's address, which a tool that posts there
+	// takes (ADR-030).
+	ChannelAddress string `json:"channel_address,omitempty" jsonschema:"the channel's address, which a tool that posts there takes"`
+	Team           string `json:"team,omitempty"`
+	Author         string `json:"author" jsonschema:"the username of whoever posted it"`
+	CreatedAt      string `json:"created_at"`
 }
 
 // FileResults is a page of files a search found.
@@ -307,13 +312,13 @@ func searchFilesSpec() Spec {
 					out.Files = append(out.Files, FoundFile{
 						Attachment: toAttachment(client, file),
 						PostID:     file.PostId,
-						PostURL:    described[i].URL,
+						PostURL:    described[i].URL, PostAddress: described[i].Address,
 						ChannelID:  file.ChannelId,
 						Channel:    described[i].Channel,
-						ChannelURL: described[i].ChannelURL,
-						Team:       described[i].Team,
-						Author:     described[i].Author,
-						CreatedAt:  timestamp(file.CreateAt, zone),
+						ChannelURL: described[i].ChannelURL, ChannelAddress: described[i].ChannelAddress,
+						Team:      described[i].Team,
+						Author:    described[i].Author,
+						CreatedAt: timestamp(file.CreateAt, zone),
 					})
 				}
 				return nil, out, nil

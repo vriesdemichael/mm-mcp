@@ -205,7 +205,9 @@ func TestSearchFilesAndCompletionPointAtEachFile(t *testing.T) {
 		return len(found.Files) == 1, fmt.Sprint(found.Files)
 	})
 	file := found.Files[0]
-	if file.URI != liveFile(id) || file.PostURL != liveURL+"/"+team.Name+"/pl/"+post.Id || file.ChannelURL != liveURL+"/"+team.Name+"/channels/"+channel.Name {
+	channelAt := addressOf(liveURL + "/" + team.Name + "/channels/" + channel.Name)
+	if file.URI != liveFile(id) || file.PostURL != liveURL+"/"+team.Name+"/pl/"+post.Id || file.ChannelURL != liveURL+"/"+team.Name+"/channels/"+channel.Name ||
+		file.PostAddress != channelAt+"/"+post.Id || file.ChannelAddress != channelAt {
 		t.Errorf("search_files names the file %+v", file)
 	}
 	if !slices.ContainsFunc(result.Content, func(content mcp.Content) bool {
