@@ -667,6 +667,7 @@ type updatePostInput struct {
 	PostID  string `json:"post_id" jsonschema:"the post to edit, which must be the user's own"`
 	Message string `json:"message" jsonschema:"the post's new text in full, in Mattermost Markdown; it replaces the old text"`
 	reachField
+	discardField
 }
 
 // editReaches refuses an edit whose reaches is not the member count of the
@@ -685,7 +686,8 @@ func updatePostSpec() Spec {
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
 				"newly mentions. The new text must fit the server's limit. Every call states reaches, how many members the post's " +
-				"channel has, since an edit reaches everyone the post does; it is checked against mm-mcp's own count. The person is asked to confirm each edit, seeing the old text " +
+				"channel has, since an edit reaches everyone the post does, and discards, how many characters the post holds now; " +
+				"each is checked against mm-mcp's own count, read again just before the edit. The person is asked to confirm each edit, seeing the old text " +
 				"and the new; if they decline or close the question, do not edit it again unless they ask.",
 			Annotations: overwrites("Update post"),
 		},
@@ -736,6 +738,9 @@ func updatePostSpec() Spec {
 					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
 						return confirmation{}, err
 					}
+					if err := checkDiscards("update_post", "your post in "+p.in, p.post.Message, 0, input.Discards); err != nil {
+						return confirmation{}, err
+					}
 					_, marked := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
 					return confirmation{
 						Message: fmt.Sprintf("Edit your post in %s as @%s. An edit notifies nobody.%s\n\nIt reads now:\n\n%s\n\nIt will read:\n\n%s",
@@ -758,6 +763,9 @@ func updatePostSpec() Spec {
 					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
 						return nil, Post{}, err
 					}
+					if err := checkDiscards("update_post", "your post in "+p.in, p.post.Message, 0, input.Discards); err != nil {
+						return nil, Post{}, err
+					}
 					props, _ := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
 					edited, err := client.EditPost(ctx, input.PostID, input.Message, props)
 					if err != nil {
@@ -770,7 +778,7 @@ func updatePostSpec() Spec {
 					return nil, posts[0], nil
 				})
 		},
-	), map[string]string{"reaches": reachCheck})
+	), map[string]string{"reaches": reachCheck, "discards": discardCheck})
 }
 
 // markablePostProps are the properties an edit may send back unchanged with
@@ -824,14 +832,25 @@ type Deleted struct {
 
 type deletePostInput struct {
 	PostID string `json:"post_id" jsonschema:"the post to delete, which must be the user's own; deleting the post that starts a thread deletes its replies too"`
+	deleteField
+}
+
+// replies is how many replies go with a post that is deleted: those in its
+// thread when it starts one.
+func replies(post *model.Post) int64 {
+	if post.RootId != "" {
+		return 0
+	}
+	return post.ReplyCount
 }
 
 func deletePostSpec() Spec {
-	return toolSpec(
+	return checking(toolSpec(
 		&mcp.Tool{
 			Name: "delete_post",
 			Description: "Delete one of the user's own posts. Deleting the post that starts a thread deletes every reply in it, " +
-				"other people's included. The person is asked to confirm each deletion, seeing the post and how many replies go with it; " +
+				"other people's included. Every call states deletes, how many posts go: 1 for a reply, or the post and its replies; " +
+				"it is checked against mm-mcp's own count, read again just before the deletion. The person is asked to confirm each deletion, seeing the post and how many replies go with it; " +
 				"if they decline or close the question, do not delete it again unless they ask.",
 			Annotations: overwrites("Delete post"),
 		},
@@ -864,6 +883,9 @@ func deletePostSpec() Spec {
 					if err != nil {
 						return confirmation{}, err
 					}
+					if err := checkDeletes("delete_post", "your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+						return confirmation{}, err
+					}
 					message := fmt.Sprintf("Delete your post in %s:\n“%s”", p.in, excerpt(p.post.Message))
 					label := "Delete your post in " + p.in
 					if p.post.RootId == "" && p.post.ReplyCount > 0 {
@@ -885,6 +907,9 @@ func deletePostSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_post", state(p.post)); err != nil {
 						return nil, Deleted{}, err
 					}
+					if err := checkDeletes("delete_post", "your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+						return nil, Deleted{}, err
+					}
 					if err := client.DeletePost(ctx, input.PostID); err != nil {
 						return nil, Deleted{}, err
 					}
@@ -895,7 +920,7 @@ func deletePostSpec() Spec {
 					return nil, Deleted{PostID: input.PostID, Replies: replies}, nil
 				})
 		},
-	)
+	), map[string]string{"deletes": deleteCheck})
 }
 
 func plural(n int64, one, many string) string {

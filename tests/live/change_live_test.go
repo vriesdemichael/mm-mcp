@@ -26,7 +26,7 @@ func TestUpdatePostReplacesTheUsersOwnTextShowingTheOldAndTheNew(t *testing.T) {
 
 	var edited server.Post
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-		"post_id": original.Id, "message": "Release at 4pm", "reaches": members(t, channel.Id),
+		"post_id": original.Id, "message": "Release at 4pm", "reaches": members(t, channel.Id), "discards": chars("Release at 3pm"),
 	}}), &edited)
 
 	question := questions.only(t)
@@ -81,7 +81,7 @@ func TestDeletePostSaysHowManyRepliesGoWithIt(t *testing.T) {
 	session, questions := writingSession(t, admin, user, accept)
 
 	var deleted server.Deleted
-	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": root.Id}}), &deleted)
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": root.Id, "deletes": 3}}), &deleted)
 
 	mustContain(t, "question", questions.only(t).Message, "Lunch order?", "2 replies")
 	if deleted.Replies != 2 {

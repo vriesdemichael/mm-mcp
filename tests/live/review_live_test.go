@@ -39,7 +39,7 @@ func TestDeletePostStopsWhenAReplyArrivesWhileThePersonIsAsked(t *testing.T) {
 	replier := clientAs(t, other)
 	session := answeringAfter(t, admin, user, func() { postAs(t, replier, channel.Id, post.Id, "me!") }, accept)
 
-	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": post.Id}})
+	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": post.Id, "deletes": 1}})
 	if err == nil && !result.IsError {
 		t.Fatal("the post was deleted with a reply the person was never shown")
 	}
@@ -64,7 +64,7 @@ func TestUpdatePostStopsWhenThePostChangesWhileThePersonIsAsked(t *testing.T) {
 		}
 	}, accept)
 
-	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version", "reaches": members(t, post.ChannelId)}})
+	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version", "reaches": members(t, post.ChannelId), "discards": chars("first version")}})
 	if err == nil && !result.IsError {
 		t.Fatal("an edit replaced text the person was never shown")
 	}
@@ -94,7 +94,7 @@ func TestDeleteDraftStopsWhenTheDraftChangesWhileThePersonIsAsked(t *testing.T) 
 		return accept
 	})
 
-	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id}})
+	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id, "discards": chars("half a thought")}})
 	if err == nil && !result.IsError {
 		t.Fatal("a draft was deleted with words the person was never shown")
 	}

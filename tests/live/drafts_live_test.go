@@ -124,13 +124,13 @@ func TestDeleteDraftAsksAndDeletesOnlyThatDraft(t *testing.T) {
 	saveDraft(t, writer, map[string]any{"channel_id": direct.Id, "message": "the direct draft"})
 
 	declining, _ := writingSession(t, admin, user, decline)
-	if result := callTool(t, declining, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"root_id": root.Id}}); !result.IsError {
+	if result := callTool(t, declining, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"root_id": root.Id, "discards": chars("the thread's draft")}}); !result.IsError {
 		t.Fatal("a declined deletion ran")
 	}
 	deleter, questions := writingSession(t, admin, user, accept)
-	callTool(t, deleter, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"root_id": root.Id}})
+	callTool(t, deleter, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"root_id": root.Id, "discards": chars("the thread's draft")}})
 	mustContain(t, "question", questions.only(t).Message, "the thread's draft")
-	callTool(t, deleter, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"channel_id": direct.Id}})
+	callTool(t, deleter, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"channel_id": direct.Id, "discards": chars("the direct draft")}})
 
 	byPlace := draftsOf(t, user, team.Id)
 	switch {

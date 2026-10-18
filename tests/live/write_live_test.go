@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
@@ -92,6 +93,10 @@ func members(t *testing.T, channelID string) int64 {
 	check(t, err)
 	return stats.MemberCount
 }
+
+// chars is how long a text is, as Mattermost counts a message's length: the
+// discards a call states that replaces or deletes it (ADR-031).
+func chars(text string) int64 { return int64(utf8.RuneCountInString(text)) }
 
 // messagesIn is every message in a channel, read by admin.
 func messagesIn(t *testing.T, admin *model.Client4, channelID string) []*model.Post {
@@ -289,7 +294,7 @@ func TestAServerThatDoesNotAskWritesWithoutAQuestion(t *testing.T) {
 				"channel_id": channel.Id, "message": "first draft", "reaches": members(t, channel.Id),
 			}}), &posted)
 			callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-				"post_id": posted.ID, "message": "posted unasked", "reaches": members(t, channel.Id),
+				"post_id": posted.ID, "message": "posted unasked", "reaches": members(t, channel.Id), "discards": chars("first draft"),
 			}})
 			callTool(t, session, &mcp.CallToolParams{Name: "add_reaction", Arguments: map[string]any{
 				"post_id": target.Id, "emoji": "thumbsup",

@@ -156,7 +156,7 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink, "stop": true}},
 		{Name: "save_draft", Arguments: map[string]any{"channel_id": channelLink, "message": "a draft found by its link"}},
-		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channelLink}},
+		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channelLink, "discards": chars("a draft found by its link")}},
 		{Name: "add_channel_members", Arguments: map[string]any{"channel_id": channelLink, "usernames": []string{p.third.Username}}},
 		{Name: "join_channel", Arguments: map[string]any{"channel_id": joinableLink}},
 		{Name: "leave_channel", Arguments: map[string]any{"channel_id": joinableLink}},
@@ -292,7 +292,7 @@ func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
 		t.Errorf("the question names the group as:\n%s", question.Message)
 	}
 	for _, call := range []*mcp.CallToolParams{
-		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited", "reaches": members(t, group.Id)}},
+		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited", "reaches": members(t, group.Id), "discards": chars("the user's own post in the group")}},
 		{Name: "add_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "remove_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "pin_post", Arguments: map[string]any{"post_id": theirs.Id}},
@@ -335,8 +335,8 @@ func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
 	inGroup("search_files", map[string]any{"terms": "notes"})
 	inGroup("search_posts", map[string]any{"terms": "group"})
 	inGroup("read_unread", map[string]any{"channel_id": group.Id})
-	inGroup("delete_draft", map[string]any{"channel_id": group.Id})
-	if result := callTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": posted.ID}}); result.IsError {
+	inGroup("delete_draft", map[string]any{"channel_id": group.Id, "discards": chars("a draft for the group")})
+	if result := callTool(t, session, &mcp.CallToolParams{Name: "delete_post", Arguments: map[string]any{"post_id": posted.ID, "deletes": 1}}); result.IsError {
 		t.Errorf("delete_post: %s", errorText(result))
 	}
 }

@@ -303,15 +303,17 @@ Each of these asks you first, showing exactly what will happen
 
 `update_post`: Update post { #update_post .mm-asks }
 :   Replaces the text of one of your own posts. The question shows the old text
-    and the new. An edit notifies nobody, so only its length is checked, and
-    `reaches`, how many members the post's channel has, since an edit reaches
-    everyone the post does. Another person's post is refused, even with an
-    administrator's credential.
+    and the new. An edit notifies nobody, so only its length is checked. The
+    call states `reaches`, how many members the post's channel has, since an
+    edit reaches everyone the post does, and `discards`, how many characters
+    the post holds now ([below](#what-a-write-takes-away)). Another person's
+    post is refused, even with an administrator's credential.
 
 `delete_post`: Delete post { #delete_post .mm-asks }
 :   Deletes one of your own posts. Deleting the post that starts a thread
     deletes its replies, other people's included, and the question says how
-    many.
+    many. The call states `deletes`, how many posts go: 1 for a reply, or the
+    post and its replies ([below](#what-a-write-takes-away)).
 
 `add_reaction`: Add reaction { #add_reaction .mm-asks }
 :   Reacts to a post with an emoji, by name, such as `thumbsup`, or as itself,
@@ -407,7 +409,8 @@ Each of these asks you first, showing exactly what will happen
 `delete_draft`: Delete draft { #delete_draft .mm-asks }
 :   Deletes your draft in a channel or thread. Nobody else sees a draft, but it
     may hold words you have not sent, so the question shows it and where it is
-    first.
+    first, and the call states `discards`, how many characters the draft
+    holds ([below](#what-a-write-takes-away)).
 
 `set_post_reminder`: Set post reminder { #set_post_reminder .mm-yours }
 :   Has Mattermost remind you of a post at a time, as its "Remind me" does. A
@@ -618,6 +621,20 @@ alerting the whole channel:
 The model then calls again with `reaches: 512` and `notifies: 511`, which
 your client's approval shows you, or asks you first. Nothing is posted until
 both are right.
+
+#### What a write takes away
+
+A write that replaces or deletes words, or deletes posts, states how much in its
+call, as a number mm-mcp counts itself
+([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)):
+`discards`, the characters of text `update_post` replaces or `delete_draft`
+deletes, counted as Mattermost counts a message's length; and `deletes`, the
+posts `delete_post` removes, the post and every reply in its thread. A
+missing or wrong number is refused with the real one and the start of what
+would go, and the model is told to weigh whether you meant to lose it. Each is
+counted again just before the write, so a post you edited, a draft you typed on
+or a reply that arrived since the model read it stops the write, whether or not
+anyone is asked.
 
 What a write acts on is what you were asked about: a reply posted, a file
 rewritten or a draft typed on while you read the question stops the write.

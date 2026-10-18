@@ -332,12 +332,32 @@ func listDraftsSpec() Spec {
 	), pagingShapes)
 }
 
+// deleteDraftInput is the draft to delete, and how much of the person's text
+// goes with it.
+type deleteDraftInput struct {
+	draftTarget
+	discardField
+}
+
+// draftPlace names where a draft waits, as a question names it.
+func draftPlace(described Draft, draft *model.Draft) string {
+	where := oneLine(described.Channel)
+	if described.Team != "" {
+		where += " in " + oneLine(described.Team)
+	}
+	if draft.RootId != "" {
+		where = "a thread in " + where
+	}
+	return where
+}
+
 func deleteDraftSpec() Spec {
-	return toolSpec(
+	return checking(toolSpec(
 		&mcp.Tool{
 			Name: "delete_draft",
 			Description: "Delete the user's draft in a channel or a thread. A draft may hold words the person wrote and has not sent, so " +
-				"the person is asked to confirm, seeing the draft; if they decline or close the question, do not try again unless they ask.",
+				"every call states discards, how many characters the draft holds, checked against mm-mcp's own count just before " +
+				"it is deleted; read it with list_drafts first. The person is asked to confirm, seeing the draft; if they decline or close the question, do not try again unless they ask.",
 			Annotations: overwrites("Delete draft"),
 		},
 		uses([]Use{
@@ -359,8 +379,8 @@ func deleteDraftSpec() Spec {
 				Releases: "11.7 serves DELETE /api/v4/users/{user_id}/channels/{channel_id}/drafts/{thread_id}, as its router shows, though its specification leaves it out; nothing differs in use",
 			},
 		}, draftsUses(), describeUses(true)),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[draftTarget, Draft] {
-			find := func(ctx context.Context, client *mattermost.Client, input draftTarget) (*model.User, *model.Draft, error) {
+		func(clientFor ClientFor) mcp.ToolHandlerFor[deleteDraftInput, Draft] {
+			find := func(ctx context.Context, client *mattermost.Client, input deleteDraftInput) (*model.User, *model.Draft, error) {
 				channelID, rootID, err := threadOf(ctx, client, input.ChannelID, input.RootID)
 				if err != nil {
 					return nil, nil, err
@@ -385,7 +405,7 @@ func deleteDraftSpec() Spec {
 			// A deletion is bound to the draft's text: the person may be writing
 			// it in Mattermost while they are asked, and words added since are not
 			// theirs to lose unseen.
-			bind := func(ctx context.Context, request *mcp.CallToolRequest, input draftTarget) (string, error) {
+			bind := func(ctx context.Context, request *mcp.CallToolRequest, input deleteDraftInput) (string, error) {
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return "", err
@@ -397,7 +417,7 @@ func deleteDraftSpec() Spec {
 				return draft.Message, nil
 			}
 			return askingBound("delete_draft", bind,
-				func(ctx context.Context, request *mcp.CallToolRequest, input draftTarget) (confirmation, error) {
+				func(ctx context.Context, request *mcp.CallToolRequest, input deleteDraftInput) (confirmation, error) {
 					client, err := clientFor(ctx, request)
 					if err != nil {
 						return confirmation{}, err
@@ -410,19 +430,16 @@ func deleteDraftSpec() Spec {
 					if err != nil {
 						return confirmation{}, err
 					}
-					where := oneLine(described[0].Channel)
-					if described[0].Team != "" {
-						where += " in " + oneLine(described[0].Team)
-					}
-					if draft.RootId != "" {
-						where = "a thread in " + where
+					where := draftPlace(described[0], draft)
+					if err := checkDiscards("delete_draft", "the unsent draft in "+where, draft.Message, len(draft.FileIds), input.Discards); err != nil {
+						return confirmation{}, err
 					}
 					return confirmation{
 						Message: fmt.Sprintf("Delete your unsent draft in %s:\n\n%s", where, draft.Message),
 						Label:   "Delete the draft in " + where + " and its text",
 					}, nil
 				},
-				func(ctx context.Context, request *mcp.CallToolRequest, input draftTarget) (*mcp.CallToolResult, Draft, error) {
+				func(ctx context.Context, request *mcp.CallToolRequest, input deleteDraftInput) (*mcp.CallToolResult, Draft, error) {
 					client, err := clientFor(ctx, request)
 					if err != nil {
 						return nil, Draft{}, err
@@ -439,11 +456,14 @@ func deleteDraftSpec() Spec {
 					if err != nil {
 						return nil, Draft{}, err
 					}
+					if err := checkDiscards("delete_draft", "the unsent draft in "+draftPlace(described[0], draft), draft.Message, len(draft.FileIds), input.Discards); err != nil {
+						return nil, Draft{}, err
+					}
 					if err := client.DeleteDraft(ctx, self.Id, draft.ChannelId, draft.RootId); err != nil {
 						return nil, Draft{}, err
 					}
 					return nil, described[0], nil
 				})
 		},
-	)
+	), map[string]string{"discards": discardCheck})
 }
