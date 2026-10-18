@@ -154,6 +154,45 @@ func TestAMessageLongerThanTheServerTakesIsRefusedWithItsLength(t *testing.T) {
 	noQuestions(t, questions)
 }
 
+// The checks are mm-mcp's own, not part of the question: a server that leaves
+// asking to the client runs them all the same, before anything is posted,
+// uploaded or edited (ADR-031).
+func TestAMessageIsCheckedWhenNobodyIsAsked(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other, third := seedUser(t, admin), seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other)
+	channel := seedChannel(t, admin, team, user, other)
+	mine := postAs(t, clientAs(t, user), channel.Id, "", "first draft")
+	session := mcpWith(t, config.Config{
+		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, SkipAsking: true,
+	}, nil)
+	nobody := "ping @" + uniqueName("nobody")
+	tooLong := strings.Repeat("é", 16384)
+
+	for _, c := range []struct {
+		call *mcp.CallToolParams
+		says string
+	}{
+		{&mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": nobody}}, "nobody is called"},
+		{&mcp.CallToolParams{Name: "dm", Arguments: map[string]any{"username": other.Username, "message": nobody}}, "nobody is called"},
+		{&mcp.CallToolParams{Name: "group_message", Arguments: map[string]any{"usernames": []string{other.Username, third.Username}, "message": tooLong}}, "16384 characters"},
+		{&mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": mine.Id, "message": tooLong}}, "16384 characters"},
+	} {
+		if result := callTool(t, session, c.call); !result.IsError || !strings.Contains(errorText(result), c.says) {
+			t.Errorf("%s: got %q; want it refused, saying %q", c.call.Name, errorText(result), c.says)
+		}
+	}
+	if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 || posts[0].Message != "first draft" {
+		t.Errorf("the channel holds %d posts; want only the user's own, unedited", len(posts))
+	}
+	direct, _, err := admin.CreateDirectChannel(t.Context(), user.Id, other.Id)
+	check(t, err)
+	if posts := messagesIn(t, admin, direct.Id); len(posts) != 0 {
+		t.Errorf("the direct message holds %d posts", len(posts))
+	}
+}
+
 func TestAPostAndAnEditAreMarkedAsWrittenWithAIKeepingOtherProps(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)

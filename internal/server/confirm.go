@@ -71,6 +71,14 @@ func askingBound[In, Out any](tool string, bind func(context.Context, *mcp.CallT
 	return func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Out, error) {
 		var none Out
 		if skipping(ctx) {
+			// Nobody is asked, but what the question checks is mm-mcp's own
+			// and holds all the same: a message's length and mentions, a
+			// reaction's emoji, a channel's name (ADR-031). confirm only
+			// reads, so building the question and showing it to no one runs
+			// every refusal before anything is written.
+			if _, err := confirm(ctx, request, input); err != nil {
+				return nil, none, err
+			}
 			return handler(ctx, request, input)
 		}
 		if !canConfirm(request) {
