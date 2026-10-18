@@ -183,7 +183,7 @@ func TestForcingAHumanInTheLoopWhileMmMcpAsksStopsTheServer(t *testing.T) {
 	}
 }
 
-func TestTheOldAskBeforeWritesStopsTheServerNamingWhatReplacedIt(t *testing.T) {
+func TestAskBeforeWritesStopsTheServerNamingElicitationOptIn(t *testing.T) {
 	t.Parallel()
 	got := runCLI(t, map[string]string{
 		config.EnvURL: "https://chat.example.com", config.EnvToken: "token-value",

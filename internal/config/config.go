@@ -20,8 +20,8 @@ const (
 	EnvToken            = "MM_TOKEN"
 	EnvAllowWrites      = "MM_MCP_ALLOW_WRITES"
 	EnvElicitationOptIn = "MM_MCP_ELICITATION_OPT_IN"
-	// EnvAskBeforeWrites is read only to stop a server started with it, and
-	// say what replaced it (ADR-033).
+	// EnvAskBeforeWrites sets nothing; it is read only to stop a server
+	// started with it, naming EnvElicitationOptIn (ADR-033).
 	EnvAskBeforeWrites                 = "MM_MCP_ASK_BEFORE_WRITES"
 	EnvForceHumanInTheLoopInClaudeCode = "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE"
 	EnvDownloadDir                     = "MM_MCP_DOWNLOAD_DIR"
@@ -157,11 +157,11 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		return Config{}, err
 	}
 	if strings.TrimSpace(lookup(EnvAskBeforeWrites)) != "" {
-		// A setting that once meant mm-mcp asked would now be silently ignored.
-		return Config{}, errorf("%s is gone. mm-mcp no longer asks before a write unless told to: your MCP client's own approval "+
-			"of each call decides, and mm-mcp checks what it can itself. Remove %s; set %s=true if you want mm-mcp to ask "+
-			"through MCP elicitation as well, which is a convenience in a client that shows the question, not a safeguard.",
-			EnvAskBeforeWrites, EnvAskBeforeWrites, EnvElicitationOptIn)
+		// Starting anyway would leave whoever set it believing it decides who asks.
+		return Config{}, errorf("%s sets nothing: mm-mcp asks before a write only with %s=true, a convenience in a client that "+
+			"shows the question, not a safeguard, and otherwise your MCP client's own approval of each call decides, while "+
+			"mm-mcp checks what it can itself. Remove %s.",
+			EnvAskBeforeWrites, EnvElicitationOptIn, EnvAskBeforeWrites)
 	}
 	elicit, err := ParseBool(EnvElicitationOptIn, lookup(EnvElicitationOptIn))
 	if err != nil {

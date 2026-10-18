@@ -54,9 +54,8 @@ setting left empty, counts as unset.
     alone or gone in seconds never asks.
 
 `MM_MCP_ASK_BEFORE_WRITES`
-:   Gone. It made mm-mcp ask by default. A server started with it set stops,
-    and says to remove it; set `MM_MCP_ELICITATION_OPT_IN=true` to have mm-mcp
-    ask as well.
+:   Sets nothing. A server started with it set stops and says to remove it;
+    `MM_MCP_ELICITATION_OPT_IN` decides whether mm-mcp asks.
 
 `MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE`
 :   Optional, `false` by default, and not with `MM_MCP_ELICITATION_OPT_IN=true`:
