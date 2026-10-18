@@ -7,7 +7,7 @@ search:
 
 A governance test asserts an invariant over everything of one kind the repository holds, rather than a behaviour of one function, so that one added later is held to it without anyone remembering to. Each lives in a file whose name ends in governance_test.go, beside what it guards, and runs with the unit suite. Three rules govern them. Break a guard before trusting it. Prefer making a contradiction unrepresentable over testing for it: when two declarations answer the same question, derive one from the other. And keep the set listed here, which `TestTheGovernanceRecordListsExactlyTheGovernanceTests` holds in both directions. The set:
 
-- `TestEveryToolDeclaresItsHintsAndTitle`: every MCP tool states a title and all four hints.
+- `TestEveryToolDeclaresItsHintsAndTitle`: every MCP tool sends a title, a title in its annotations and all four hints, each true or false, as tools/list crosses the wire.
 - `TestNoToolIsOpenWorld`: no MCP tool is annotated open-world.
 - `TestAReadOnlyServerListsOnlyReadOnlyTools`: without writes allowed, no tool that writes is offered.
 - `TestAllowingWritesAddsExactlyTheToolsThatWrite`: allowing writes adds exactly the tools not annotated read-only.
