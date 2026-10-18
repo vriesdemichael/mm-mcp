@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -125,10 +126,6 @@ func resolveAddress(ctx context.Context, request *mcp.CallToolRequest, clientFor
 	if err != nil {
 		return "", err
 	}
-	l, isLink, err := parseLink(client, given)
-	if err != nil {
-		return "", err
-	}
 	server, err := url.Parse(client.Address())
 	if err != nil {
 		return "", err
@@ -137,6 +134,14 @@ func resolveAddress(ctx context.Context, request *mcp.CallToolRequest, clientFor
 	refuse := func(what string) error {
 		return fmt.Errorf("%s is %s, but this takes an address, %s/%s, which names the place exactly and shows it to whoever approves the call; %s",
 			strings.TrimSpace(given), what, resourceBase(server), wanted.shape, wanted.where)
+	}
+	l, isLink, err := parseLink(client, given)
+	var foreign foreignLinkError
+	if errors.As(err, &foreign) {
+		return "", refuse("a link to " + foreign.host)
+	}
+	if err != nil {
+		return "", err
 	}
 	switch {
 	case !isLink && mattermostID.MatchString(bareName(given)):
