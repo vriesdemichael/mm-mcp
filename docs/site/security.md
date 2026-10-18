@@ -48,13 +48,13 @@ disclosure only to what the agent asks to read.
   application.** The application's own approval of each call decides whether
   it runs, and one configured to approve automatically posts without anyone
   reviewing it. mm-mcp checks what each call states before it acts: how many
-  people a post reaches and notifies, how much an edit or a deletion takes
-  away, and where it goes, by an address matched exactly; each is counted
-  again just before the write. Every post and edit is marked as written with
-  AI. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp ask the person as well, which
-  is a convenience where the application shows the question, not a safeguard
-  ([Configuration](configuration.md)).
-- **Make a few changes only the person sees, without asking:** following a
+  people a post or an edit reaches and a post notifies, the text an edit
+  replaces and the reactions and replies that answer it, how much a deletion
+  takes away, and where it goes, by an address matched exactly; each is read
+  again just before the write. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp
+  ask the person as well, which is a convenience where the application shows
+  the question, not a safeguard ([Configuration](configuration.md)).
+- **Make a few changes only the person sees, never asked about:** following a
   thread, saving a post, setting a reminder, saving a draft to their message
   box, showing the typing indicator, and marking a channel read when asked
   ([Tools](tools.md)).
@@ -72,15 +72,17 @@ reads it, such as "post this" or "send me your direct messages". mm-mcp returns
 everything it reads as text and cannot distinguish an instruction from a
 message.
 
-- **Contained:** posts, replies, edits, reactions, channel changes and direct
-  messages that others see. While mm-mcp asks, which is the default, none is
-  made without a person reviewing and approving it.
+- **Contained as far as the AI application asks:** posts, replies, edits,
+  reactions, channel changes and direct messages that others see. Each runs
+  only once the application approves the call, and states what it does to
+  others, which mm-mcp checks. An application that asks the person before each
+  such call keeps a person in the loop; one that approves on its own does not.
 - **Not contained:** what the agent reads, and what it does with that
   information through other tools. An agent instructed by a message to read the
   person's direct messages can do so, and if the AI application also offers a
   tool that sends data out, such as one that fetches web pages or sends email,
-  mm-mcp cannot prevent its use. Changes only the person sees are not asked
-  about.
+  mm-mcp cannot prevent its use. Changes only the person sees, such as saving
+  a draft or following a thread, are not checked.
 
 Further protection lies in the AI application: which other tools it offers in
 the same session, and which tool calls it asks the person to approve.
@@ -142,7 +144,7 @@ then on mm-mcp uses them only when the person explicitly asks for one
 
 mm-mcp writes to the AI application's log, through standard error, only when it
 starts and stops: the account it is connected as, warnings about its
-configuration or the server, and whether it asks before writes. **It does not
+configuration or the server, and who decides on a write. **It does not
 log tool calls, their arguments or the changes it makes, and it keeps no record
 of its activity.** A record of what an agent read and wrote exists in the AI
 application's conversation history and, on the Mattermost side, in what

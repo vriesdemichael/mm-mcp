@@ -11,8 +11,8 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 <div class="mm-stats">
 <a class="mm-stat" href="#every-tool"><strong>47</strong> tools</a>
 <span class="mm-stat mm-stat--read"><strong>26</strong> only read</span>
-<span class="mm-stat mm-stat--asks"><strong>14</strong> ask you first</span>
-<span class="mm-stat mm-stat--yours"><strong>6</strong> yours alone, not asked</span>
+<span class="mm-stat mm-stat--checked"><strong>14</strong> checked writes</span>
+<span class="mm-stat mm-stat--yours"><strong>6</strong> yours alone</span>
 <span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
 </div>
 
@@ -82,12 +82,12 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
     ---
 
     Messages, replies, direct and group messages, edits and reactions, each
-    shown to you before it goes out.
+    approved by your AI app and checked by mm-mcp before it goes out.
 
     “Tell Sam in the thread that the notes are ready.”
     { .mm-example }
 
-    [`create_post`](#create_post){ .mm-chip .mm-chip--asks } [`dm`](#dm){ .mm-chip .mm-chip--asks } [`group_message`](#group_message){ .mm-chip .mm-chip--asks } [`update_post`](#update_post){ .mm-chip .mm-chip--asks } [`delete_post`](#delete_post){ .mm-chip .mm-chip--asks } [`add_reaction`](#add_reaction){ .mm-chip .mm-chip--asks } [`remove_reaction`](#remove_reaction){ .mm-chip .mm-chip--asks } [`pin_post`](#pin_post){ .mm-chip .mm-chip--asks }
+    [`create_post`](#create_post){ .mm-chip .mm-chip--checked } [`dm`](#dm){ .mm-chip .mm-chip--checked } [`group_message`](#group_message){ .mm-chip .mm-chip--checked } [`update_post`](#update_post){ .mm-chip .mm-chip--checked } [`delete_post`](#delete_post){ .mm-chip .mm-chip--checked } [`add_reaction`](#add_reaction){ .mm-chip .mm-chip--checked } [`remove_reaction`](#remove_reaction){ .mm-chip .mm-chip--checked } [`pin_post`](#pin_post){ .mm-chip .mm-chip--checked }
 
 -   :material-account-group-outline:{ .lg .middle } **Channels and people**
 
@@ -99,26 +99,27 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
     “Is Sam online, and who else is in ~release-planning?”
     { .mm-example }
 
-    [`get_me`](#get_me){ .mm-chip } [`get_users`](#get_users){ .mm-chip } [`get_status`](#get_status){ .mm-chip } [`get_user_teams`](#get_user_teams){ .mm-chip } [`get_team_info`](#get_team_info){ .mm-chip } [`get_channel_info`](#get_channel_info){ .mm-chip } [`list_team_channels`](#list_team_channels){ .mm-chip } [`list_archived_channels`](#list_archived_channels){ .mm-chip } [`get_channel_stats`](#get_channel_stats){ .mm-chip } [`join_channel`](#join_channel){ .mm-chip .mm-chip--asks } [`leave_channel`](#leave_channel){ .mm-chip .mm-chip--asks } [`add_channel_members`](#add_channel_members){ .mm-chip .mm-chip--asks } [`create_channel`](#create_channel){ .mm-chip .mm-chip--asks } [`set_status`](#set_status){ .mm-chip .mm-chip--asks }
+    [`get_me`](#get_me){ .mm-chip } [`get_users`](#get_users){ .mm-chip } [`get_status`](#get_status){ .mm-chip } [`get_user_teams`](#get_user_teams){ .mm-chip } [`get_team_info`](#get_team_info){ .mm-chip } [`get_channel_info`](#get_channel_info){ .mm-chip } [`list_team_channels`](#list_team_channels){ .mm-chip } [`list_archived_channels`](#list_archived_channels){ .mm-chip } [`get_channel_stats`](#get_channel_stats){ .mm-chip } [`join_channel`](#join_channel){ .mm-chip .mm-chip--checked } [`leave_channel`](#leave_channel){ .mm-chip .mm-chip--checked } [`add_channel_members`](#add_channel_members){ .mm-chip .mm-chip--checked } [`create_channel`](#create_channel){ .mm-chip .mm-chip--checked } [`set_status`](#set_status){ .mm-chip .mm-chip--checked }
 
 -   :material-bookmark-outline:{ .lg .middle } **Your own things**
 
     ---
 
     A draft in your message box to send yourself, reminders, saved posts and
-    followed threads. Nobody else sees them, so nothing is asked.
+    followed threads. Nobody else sees them; deleting a draft, which loses your
+    words, is checked.
 
     “Draft a reply I can send myself, and remind me at nine tomorrow.”
     { .mm-example }
 
-    [`save_draft`](#save_draft){ .mm-chip .mm-chip--yours } [`list_drafts`](#list_drafts){ .mm-chip } [`delete_draft`](#delete_draft){ .mm-chip .mm-chip--asks } [`set_post_reminder`](#set_post_reminder){ .mm-chip .mm-chip--yours } [`save_post`](#save_post){ .mm-chip .mm-chip--yours } [`follow_thread`](#follow_thread){ .mm-chip .mm-chip--yours } [`mark_channel_read`](#mark_channel_read){ .mm-chip .mm-chip--yours } [`typing`](#typing){ .mm-chip .mm-chip--yours }
+    [`save_draft`](#save_draft){ .mm-chip .mm-chip--yours } [`list_drafts`](#list_drafts){ .mm-chip } [`delete_draft`](#delete_draft){ .mm-chip .mm-chip--checked } [`set_post_reminder`](#set_post_reminder){ .mm-chip .mm-chip--yours } [`save_post`](#save_post){ .mm-chip .mm-chip--yours } [`follow_thread`](#follow_thread){ .mm-chip .mm-chip--yours } [`mark_channel_read`](#mark_channel_read){ .mm-chip .mm-chip--yours } [`typing`](#typing){ .mm-chip .mm-chip--yours }
 
 -   :material-stethoscope:{ .lg .middle } **Check the setup**
 
     ---
 
-    When something fails: the connection, the login, and whether your app shows
-    mm-mcp's questions.
+    When something fails: the connection, the login, and who decides on a
+    write.
 
     “Why can't you post?”
     { .mm-example }
@@ -130,9 +131,11 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 ## Every tool
 
 Grouped as above. A badge says when a tool does more than read:
-<span class="mm-badge mm-badge--asks">others see it</span> for what others see,
+<span class="mm-badge mm-badge--checked">checked</span> for a change others see,
+or words of yours it deletes, which the call states and mm-mcp checks
+([below](#how-a-write-is-checked));
 <span class="mm-badge mm-badge--yours">yours alone</span> for what only you see
-or is gone in seconds, and <span class="mm-badge mm-badge--disk">your disk</span>.
+or is gone in seconds; and <span class="mm-badge mm-badge--disk">your disk</span>.
 The tools that write are offered only once you allow writes, with
 `MM_MCP_ALLOW_WRITES` ([Configuration](configuration.md)).
 
@@ -270,11 +273,11 @@ The tools that write are offered only once you allow writes, with
 Your MCP client's approval of each call decides, and mm-mcp checks what each
 states before it acts ([below](#how-a-write-is-checked)).
 
-`create_post`: Create post { #create_post .mm-asks }
+`create_post`: Create post { #create_post .mm-checked }
 :   Posts a message in a channel, or with `root_id` replies in the thread of any
-    post in it. The question shows the message as it will be sent, the channel
-    and, for a reply, the start of the thread. Posting takes down the typing
-    indicator `typing` put up there. Returns the post.
+    post in it. Where mm-mcp asks, its question shows the message as it will be
+    sent, the channel and, for a reply, the start of the thread. Posting takes
+    down the typing indicator `typing` put up there. Returns the post.
 
     Every call states how far the message goes
     ([below](#how-far-a-message-goes)): `reaches`, how many members the
@@ -283,51 +286,52 @@ states before it acts ([below](#how-a-write-is-checked)).
 
     `files` attaches up to ten files: text the model writes, given a `name` and
     `content`, or, when the server runs on your machine over stdio, a file by
-    its full `path`. The question lists each file with its size, type and the
-    path it was read from, and the box you tick names every file read from
-    your disk by its path. The files are uploaded only once you accept, and a
-    file changed after you were asked is refused. A file where credentials are
-    kept is never attached ([Security](security.md#credentials)); attach such
-    a file in Mattermost yourself if you mean to. `dm` and `group_message`
-    take `files` too.
+    its full `path`. Where mm-mcp asks, its question lists each file with its
+    size, type and the path it was read from, the box you tick names every file
+    read from your disk by its path, the files are uploaded only once you
+    accept, and a file changed after you were asked is refused. A file where
+    credentials are kept is never attached
+    ([Security](security.md#credentials)); attach such a file in Mattermost
+    yourself if you mean to. `dm` and `group_message` take `files` too.
 
-`dm`: Send direct message { #dm .mm-asks }
-:   Sends a direct message to one person, by username or email address, or to
-    yourself when none is given. This is how to message people: "message Alice
-    and Bob" is two direct messages.
+`dm`: Send direct message { #dm .mm-checked }
+:   Sends a direct message to one person, by username or email address, or a
+    note to yourself by your own username. The username is required, so
+    whatever approves the call sees who it goes to. This is how to message
+    people: "message Alice and Bob" is two direct messages.
 
-`group_message`: Send group message { #group_message .mm-asks }
+`group_message`: Send group message { #group_message .mm-checked }
 :   Sends one message to two to seven people together, in the group conversation
     Mattermost keeps for exactly them. Only when you ask for a group
     conversation.
 
-`update_post`: Update post { #update_post .mm-asks }
-:   Replaces the text of one of your own posts. The question shows the current
-    text and its replacement. An edit notifies nobody, so its mentions are not
-    checked, only its length. The call states `reaches`, how many members the
-    post's channel has, since an edit reaches everyone the post does;
-    `old_message`, the post's current text in full; and, for a post with
-    reactions or replies, `responses`, their number
+`update_post`: Update post { #update_post .mm-checked }
+:   Replaces the text of one of your own posts. Where mm-mcp asks, its question
+    shows the current text and its replacement. An edit notifies nobody, so
+    its mentions are not checked, only its length. The call states `reaches`,
+    how many members the post's channel has, since an edit reaches everyone the
+    post does; `old_message`, the post's current text in full; and, for a post
+    with reactions or replies, `responses`, their number
     ([below](#what-an-edit-changes)). Another person's post is refused, even
     with an administrator's credential.
 
-`delete_post`: Delete post { #delete_post .mm-asks }
+`delete_post`: Delete post { #delete_post .mm-checked }
 :   Deletes one of your own posts. Deleting the post that starts a thread
-    deletes its replies, other people's included, and the question says how
-    many. The call states `deletes`, how many posts go: 1 for a reply, or the
-    post and its replies ([below](#what-a-write-takes-away)).
+    deletes its replies, other people's included. The call states `deletes`, how
+    many posts go: 1 for a reply, or the post and its replies
+    ([below](#what-a-write-takes-away)).
 
-`add_reaction`: Add reaction { #add_reaction .mm-asks }
+`add_reaction`: Add reaction { #add_reaction .mm-checked }
 :   Reacts to a post with an emoji, by name, such as `thumbsup`, or as itself,
     such as 👍. An unknown name is refused with the closest ones. A reaction
     joins one others gave under another name of the same emoji, so
     `thumbsup` beside a `+1` is the one 👍. Reacting again with the same
     emoji changes nothing.
 
-`remove_reaction`: Remove reaction { #remove_reaction .mm-asks }
+`remove_reaction`: Remove reaction { #remove_reaction .mm-checked }
 :   Takes back one of your reactions.
 
-`pin_post`: Pin post { #pin_post .mm-asks }
+`pin_post`: Pin post { #pin_post .mm-checked }
 :   Pins a post to its channel for everyone, or unpins it with `pinned` false.
 
 ### Channels and people
@@ -353,7 +357,7 @@ states before it acts ([below](#how-a-write-is-checked)).
 
 `get_team_info`: Get team { #get_team_info }
 :   A team by id, name or link. An open team you are not in is found by the
-    exact name in its address.
+    exact name in its link.
 
 `get_channel_info`: Get channel { #get_channel_info }
 :   A channel by id, name or link, among your own channels and the public
@@ -371,25 +375,26 @@ states before it acts ([below](#how-a-write-is-checked)).
 :   How many people belong to a channel, how many are guests, and how many posts
     are pinned and files shared in it.
 
-`join_channel`: Join channel { #join_channel .mm-asks }
+`join_channel`: Join channel { #join_channel .mm-checked }
 :   Joins a public channel of one of your teams. Everyone in it sees that you
     joined. A private channel is joined only by being added.
 
-`leave_channel`: Leave channel { #leave_channel .mm-asks }
-:   Leaves a channel you belong to. Everyone in it sees that you left, and the
-    question says when the channel is private, where only being added brings
-    you back.
+`leave_channel`: Leave channel { #leave_channel .mm-checked }
+:   Leaves a channel you belong to. Everyone in it sees that you left, and
+    only being added brings you back to a private one, which mm-mcp's question
+    says where it asks.
 
-`add_channel_members`: Add channel members { #add_channel_members .mm-asks }
+`add_channel_members`: Add channel members { #add_channel_members .mm-checked }
 :   Adds up to twenty people, by username, user id or email address, to a
-    channel you belong to. Each is notified, and the question names each.
+    channel you belong to. Each is notified, and where mm-mcp asks, its question
+    names each.
 
-`create_channel`: Create channel { #create_channel .mm-asks }
+`create_channel`: Create channel { #create_channel .mm-checked }
 :   Creates a public or private channel in one of your teams, with you in it,
-    its address made from its name as Mattermost's own app makes it, and its
-    purpose and header when given.
+    the name in its link made from its display name as Mattermost's own app
+    makes it, and its purpose and header when given.
 
-`set_status`: Set status { #set_status .mm-asks }
+`set_status`: Set status { #set_status .mm-checked }
 :   Sets your status as everyone sees it beside your name: online, away, do not
     disturb until a time, or offline, and a status message with an emoji, until
     a time or until changed; or clears the message. A time without an offset
@@ -402,18 +407,19 @@ states before it acts ([below](#how-a-write-is-checked)).
     a thread, for you to change and send yourself. The message is checked as a
     post's is, and its notes say what its mentions will do. A different draft
     already there is never replaced, and a draft is refused when your drafts do
-    not sync, since you would never see it. Where your app does not show
-    mm-mcp's question, this is still a way to post only what you send.
+    not sync, since you would never see it. Whatever your app approves, it is a
+    way to post only what you send yourself.
 
 `list_drafts`: List drafts { #list_drafts }
-:   Your drafts, in channels and threads, with where each is.
+:   Your drafts, in channels and threads, with where each is, by link and
+    address, and its `length`, which `delete_draft` states.
 
-`delete_draft`: Delete draft { #delete_draft .mm-asks }
+`delete_draft`: Delete draft { #delete_draft .mm-checked }
 :   Deletes your draft in a channel or thread. Nobody else sees a draft, but it
-    may hold words you have not sent, so the question shows it and where it is
-    first, and the call states `discards`, how many characters the draft
-    holds, as `list_drafts` gives its length
-    ([below](#what-a-write-takes-away)).
+    may hold words you have not sent, so the call states `discards`, how many
+    characters the draft holds, as `list_drafts` gives its length
+    ([below](#what-a-write-takes-away)), and where mm-mcp asks, its question
+    shows the draft and where it is.
 
 `set_post_reminder`: Set post reminder { #set_post_reminder .mm-yours }
 :   Has Mattermost remind you of a post at a time, as its "Remind me" does. A
@@ -444,9 +450,9 @@ states before it acts ([below](#how-a-write-is-checked)).
     which credential it acts with, a login `mm-mcp login` stored and whether
     `MM_TOKEN` hides it, the proxy, whether the server answers as a supported
     Mattermost, whose credential it is and whether that user belongs to a team.
-    It adds what only the client shows: its name and protocol version, and
-    whether it can show the question mm-mcp asks before each write, or that
-    mm-mcp leaves the asking to it. With `ask_test_question`, it shows you a
+    It adds what only the client shows: its name and protocol version, who
+    decides on a write, and, where mm-mcp is set to ask, whether the client can
+    show its question. With `ask_test_question`, it shows you a
     test question and reports how it was answered: an answer within a few
     seconds came from the client itself, which then answers every question
     before a write without showing it. Each check says what it found, and a
@@ -460,9 +466,10 @@ states before it acts ([below](#how-a-write-is-checked)).
 - **Names and links work where ids do, for a tool that reads.** Every
   `channel_id` and `team_id` of a tool that reads, or that changes only what is
   yours, takes a name as well as an id, a channel's with `~` or `#` before it or not.
-  Every id argument takes the link Mattermost shows you: a channel's, a direct
-  or group message's, a team's, a post's, Copy Link's or the one a thread opens
-  at, and a file's, or its [resource](#files-as-resources) address. A name of a
+  Every id argument takes the place's address, and the link Mattermost shows
+  you: a channel's, a direct or group message's, a team's, a post's, Copy
+  Link's or the one a thread opens at, and a file's, or its
+  [resource](#files-as-resources) address. A name of a
   channel, a team or a person matches in any case, whole or in part; an
   ambiguous one is refused with every candidate, and an unknown one with the
   closest names. A link is never fetched, and one to another server is refused
@@ -478,7 +485,8 @@ states before it acts ([below](#how-a-write-is-checked)).
   where to read the address, and so is the old address of a renamed channel.
 - **Every place comes with its link and its address.** Each post, channel,
   team and draft an answer describes carries its address, and the link it opens
-  at, made from names: a channel's in its
+  at, and so do the post and channel of each file `search_files` finds, made
+  from names: a channel's in its
   team, a direct or group message's in your first team, as
   `/<team>/messages/@<username>`, and a post's in its channel's team, as
   Copy Link gives it. Asked where something was said, the agent links the post,
@@ -489,11 +497,12 @@ states before it acts ([below](#how-a-write-is-checked)).
   answer ends with back as `cursor`, with the same other arguments, for the next
   page, until an answer has none
   ([ADR-032](adr/032-every-list-pages-by-an-opaque-cursor.md)).
-- **Every post comes back in one shape:** its link, its author's username and
-  name, its channel by name and link and its team by name, its files with their
-  ids and resource addresses, reactions with who reacted, whether it is pinned
-  or marked as written with AI, its thread, and when it was edited. An answer
-  whose posts are all in one channel names the channel and team once.
+- **Every post comes back in one shape:** its link and address, its author's
+  username and name, its channel by name, link and address and its team by
+  name, its files with their ids and resource addresses, reactions with who
+  reacted, `responses`, how many reactions and replies it has, whether it is
+  pinned or marked as written with AI, its thread, and when it was edited. An
+  answer whose posts are all in one channel names the channel and team once.
 - **A list cuts a long message short.** A message longer than 4,000 characters
   is cut, with its whole length said; `read_post` reads it whole.
 - **Times are your own.** A time in an answer is in the timezone you set in
@@ -564,10 +573,11 @@ Your MCP client's own approval of each call decides whether a change others see
 goes ahead: its prompt, its permission rules or its auto mode
 ([ADR-033](adr/033-the-client-decides-whether-a-write-runs.md)). mm-mcp does
 not ask you by default. What it controls is what it checks itself, on every
-call, whoever approved it: how far a post goes and what a call takes away, each
-stated in the call and counted again just before the write; where it goes, by
-address; and the message itself. A refusal gives the real number and tells the
-model to weigh whether that is what you meant.
+call, whoever approved it: how far a post or an edit goes, the text an edit
+replaces and the reactions and replies that answer it, and what a deletion
+takes away, each stated in the call and read again just before the write;
+where it goes, by address; and the message itself. A refusal says what mm-mcp
+found and tells the model to weigh whether that is what you meant.
 
 With `MM_MCP_ELICITATION_OPT_IN=true`, mm-mcp asks you as well
 ([Configuration](configuration.md)): it shows what will change, where, and under
@@ -633,8 +643,8 @@ alerting the whole channel:
 > meant, post somewhere narrower, or ask them
 
 The model then calls again with `reaches: 512` and `notifies: 511`, which
-your client's approval shows you, or asks you first. Nothing is posted until
-both are right.
+your client's approval shows you, as does mm-mcp's question where it asks.
+Nothing is posted until both are right.
 
 #### What an edit changes
 
@@ -664,7 +674,7 @@ A post without reactions or replies takes no `responses`.
 
 #### What a write takes away
 
-A deletion states how much goes in its call, as a number mm-mcp counts itself:
+A deletion states how much goes in its call, as a number mm-mcp reads itself:
 `discards`, the characters of the draft `delete_draft` deletes, as
 `list_drafts` gives each draft's length; and `deletes`, the posts
 `delete_post` removes, the post and every reply in its thread. A missing or
@@ -676,10 +686,11 @@ the model read it stops the write.
 For example, deleting a post that started a thread of 12 replies, without
 `deletes`:
 
-> delete_post did not run: it deletes 13 posts, your post in ~Town Square and
-> the 12 replies in its thread, other people's included, and the call left the
-> number out. Consider whether the person meant to delete all of them. If they
-> did, call again with deletes: 13. If not, leave it, or ask the person
+> delete_post did not run: it deletes 13 posts, your post in ~Town Square,
+> which begins “Who is in for the release party on Friday? I'll book a table”,
+> and the 12 replies in its thread, other people's included, and the call left
+> the number out. Consider whether the person meant to delete all of them. If
+> they did, call again with deletes: 13. If not, leave it, or ask the person
 
 A thirteenth reply arriving before the model calls again with `deletes: 13`
 gets the same refusal, with 14.
@@ -698,9 +709,9 @@ named by its channel's name, on a server at chat.example.com, is refused with:
 > exactly and shows it to whoever approves the call; get_user_channels,
 > get_channel_info and every post give each channel's address
 
-and a reply to a post named by its link:
+and a reply whose `root_id` names the post by its link:
 
-> post_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
+> root_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
 > but this takes an address, mattermost://chat.example.com/<team>/channels/<channel>/<post id>:
 > its channel's address, then its id, which names the place exactly and shows it
 > to whoever approves the call; read_post, read_channel and search_posts give

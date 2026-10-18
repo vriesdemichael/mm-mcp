@@ -24,8 +24,8 @@ from CONTRIBUTING.md an agent must not lose
   Mattermost route, no fake of internal/mattermost
   ([ADR-005](docs/site/adr/005-unit-tests-do-not-simulate-mattermost.md)).
 - **Read-only by default; the client decides each write, and mm-mcp checks
-  what it states.** A write others see states what it does to them, as numbers
-  mm-mcp counts, and names its places by address; mm-mcp asks the person only
+  what it states.** A write others see states what it does to them, as values
+  mm-mcp reads, and names its places by address; mm-mcp asks the person only
   with MM_MCP_ELICITATION_OPT_IN
   ([ADR-021](docs/site/adr/021-read-only-by-default.md),
   [ADR-033](docs/site/adr/033-the-client-decides-whether-a-write-runs.md)).

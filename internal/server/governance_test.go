@@ -511,13 +511,14 @@ func TestEveryListPagesByCursor(t *testing.T) {
 }
 
 // toolKind is what a tool does beyond reading, as the tools page marks it:
-// changes what others see, changes only what is theirs, or reaches their disk.
+// checked, as a change others see or words of theirs it deletes are; yours
+// alone, changing only what is theirs; or reaching their disk.
 func toolKind(spec server.Spec) string {
 	switch {
 	case spec.Local:
 		return "disk"
 	case spec.Asks():
-		return "asks"
+		return "checked"
 	case !spec.ReadOnly():
 		return "yours"
 	}
@@ -527,7 +528,7 @@ func toolKind(spec server.Spec) string {
 // TestTheToolsPageLinksAndMarksEveryTool holds the tools page's overview to
 // the tools: each has a chip that links to its entry, the entry has the
 // anchor, both say what kind of tool it is, and the counts add up. A tool
-// added, or one that starts to ask, without its page changing would show a
+// added, or one whose kind changes, without its page changing would show a
 // person the wrong thing.
 func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 	t.Parallel()
@@ -558,8 +559,8 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 	}{
 		{"tools", len(server.AllSpecs())},
 		{"only read", counts[""]},
-		{"ask you first", counts["asks"]},
-		{"yours alone, not asked", counts["yours"]},
+		{"checked writes", counts["checked"]},
+		{"yours alone", counts["yours"]},
 		{"saves to your disk", counts["disk"]},
 	} {
 		if want := fmt.Sprintf("<strong>%d</strong> %s", stat.count, stat.label); !strings.Contains(page, want) {

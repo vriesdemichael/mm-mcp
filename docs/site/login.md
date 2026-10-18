@@ -281,8 +281,8 @@ the server can be reached and still accepts the session, and how
 
 The command reads your terminal's environment, not your MCP client's. From
 inside the client, ask the model to call the `diagnose` tool: it makes the same
-checks with the client's own configuration, and says whether the client can
-show the question mm-mcp asks before each write.
+checks with the client's own configuration, and says who decides on a write
+and, where mm-mcp is set to ask, whether the client can show its question.
 
 ## What to ask your administrator
 

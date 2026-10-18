@@ -54,7 +54,8 @@ There are no maintenance branches. A security fix ships in the next release.
 - Credential handling: how a token is read, sent, and kept out of logs, errors
   and tool results
 - The write safeguards: a tool that writes being offered while writes are off,
-  or acting without the person's confirmation
+  acting on a call whose stated reach, text or count mm-mcp should have refused,
+  or, where mm-mcp is set to ask, acting without the person's confirmation
 - Text from Mattermost being interpreted as anything but text, by a tool result
   or by a view
 - The HTTP transport, including reaching it from beyond the machine
@@ -68,8 +69,9 @@ There are no maintenance branches. A security fix ships in the next release.
 - Vulnerabilities in Mattermost itself. Report those to
   [Mattermost](https://mattermost.com/security-vulnerability-report/).
 - An agent being talked into misusing a tool by text it read, when the tool
-  behaved as documented: that is prompt injection, which the write confirmations
-  exist to contain. A way around a confirmation is in scope.
+  behaved as documented: that is prompt injection, which the AI application's
+  approval of each call and mm-mcp's checks exist to contain. A way around those
+  checks, or around mm-mcp's question where it asks, is in scope.
 
 ## Verifying a release
 

@@ -4,7 +4,7 @@
   "display_name": "mm-mcp for Mattermost",
   "version": "0.0.0",
   "description": "Read, search and post in Mattermost as yourself or a bot.",
-  "long_description": "mm-mcp connects an MCP client to one Mattermost server, as the person or bot whose token it is given. It is read-only unless writes are allowed. Then a change others see, such as a post, a reply, an edit, a reaction or a pin, asks you before it acts; following a thread, saving a post, a reminder, a draft only you see and the typing indicator do not.",
+  "long_description": "mm-mcp connects an MCP client to one Mattermost server, as the person or bot whose token it is given. It is read-only unless writes are allowed. Then your client's own approval of each call decides, and each change others see, such as a post, a reply, an edit, a reaction or a pin, states what it does to them, which mm-mcp checks before it acts; following a thread, saving a post, a reminder, a draft only you see and the typing indicator change only what is yours.",
   "author": {
     "name": "Michaël de Vries",
     "url": "https://github.com/vriesdemichael"
@@ -52,7 +52,7 @@
     "allow_writes": {
       "type": "boolean",
       "title": "Allow posting",
-      "description": "Offer the tools that post and change things. Each change others see asks you before it acts, which needs a client that shows MCP elicitation questions; following a thread, saving a post or a draft, reminders and typing do not ask.",
+      "description": "Offer the tools that post and change things. Your client's own approval of each call decides, and mm-mcp checks what each change others see states before it acts.",
       "default": false,
       "required": false
     },
