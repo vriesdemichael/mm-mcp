@@ -21,7 +21,7 @@ It is a convenience in a client that shows the question, not a safeguard. The an
 
 `MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE`, `false` by default, marks each write others see with `_meta["anthropic/requiresUserInteraction"]: true`. Claude Code then shows its own prompt on every call, in every permission mode, and no allow rule or "don't ask again" skips it. It is Claude Code's own mark, which no other client reads, so it is documented as a Claude Code feature, not a guarantee. With `MM_MCP_ELICITATION_OPT_IN=true` as well, the server stops at start with what to change: the person would be asked twice for one write.
 
-`MM_MCP_ASK_BEFORE_WRITES`, which made mm-mcp ask by default, is gone. A server started with it set stops, naming what replaced it, because a setting that once meant mm-mcp asked would otherwise be ignored without a word. The server says at start who decides on a write.
+`MM_MCP_ASK_BEFORE_WRITES` sets nothing. A server started with it set stops and names `MM_MCP_ELICITATION_OPT_IN`, so nobody believes a setting decides who asks when it does not. The server says at start who decides on a write.
 
 Not every write has a person in the loop. An agent that works alone, such as a scheduled report, needs only to be allowed by the client's rules. That is why forcing a human in the loop is a setting of its own: a mark that overrides allow rules makes unattended writing impossible. A change that is the user's alone or gone in seconds never asks, whatever the settings (ADR-021).
 
@@ -35,4 +35,4 @@ The names say what the person gets. "Elicitation opt-in" names the mechanism and
 - **The mark on every write by default**: It overrides allow rules, so no agent could write unattended.
 - **The mark while mm-mcp asks too**: The person would be asked twice for one post, wearing out the attention a question depends on.
 - **Detect the client and stop asking it**: A client's name says nothing reliable about whether it shows questions, and the same client behaves differently from one mode to another.
-- **Ignore the old setting**: A server that once asked because of it would start writing without a word of the change.
+- **Start with `MM_MCP_ASK_BEFORE_WRITES` set, ignoring it**: Whoever set it would believe it decides who asks.

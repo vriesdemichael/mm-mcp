@@ -610,8 +610,8 @@ the call because that is what your MCP client's own approval shows you, or its
 AI reviewer, and the model cannot state them without looking. A missing or wrong
 number is refused with the real one, and the model is told to weigh whether you
 meant the message for that many people before it calls again. Each is counted
-again just before the post goes out, so members who joined while you read the
-question stop it.
+again just before the post goes out, so members who joined since the count was
+read stop it.
 
 For example, when the model posts `@channel the release is out` in ~Town
 Square, a channel of 512 members, without stating the numbers, the call is

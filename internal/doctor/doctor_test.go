@@ -295,7 +295,7 @@ func TestSettingsSayWhoDecidesOnAWrite(t *testing.T) {
 		t.Errorf("forcing while opted in: %+v", got)
 	}
 	if got := find(t, settings("", "", "false"), config.EnvAskBeforeWrites); got.Status != Failed || !strings.Contains(got.Next, config.EnvElicitationOptIn) {
-		t.Errorf("the old setting: %+v", got)
+		t.Errorf("MM_MCP_ASK_BEFORE_WRITES: %+v", got)
 	}
 }
 

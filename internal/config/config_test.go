@@ -139,13 +139,13 @@ func TestWritesAreAskedAboutOnlyWithElicitationOptedIn(t *testing.T) {
 	}
 }
 
-// The setting that once meant mm-mcp asked stops the server, naming what
-// replaced it, rather than being ignored.
-func TestTheOldAskBeforeWritesStopsTheServer(t *testing.T) {
+// MM_MCP_ASK_BEFORE_WRITES sets nothing, so a server started with it stops and
+// names MM_MCP_ELICITATION_OPT_IN rather than leave it believed to decide.
+func TestAskBeforeWritesSetsNothingAndStopsTheServer(t *testing.T) {
 	t.Parallel()
 	for _, value := range []string{"true", "false"} {
 		_, err := config.FromEnv(testsupport.Env(with(config.EnvAskBeforeWrites, value)))
-		if err == nil || !strings.Contains(err.Error(), config.EnvAskBeforeWrites+" is gone") || !strings.Contains(err.Error(), config.EnvElicitationOptIn) {
+		if err == nil || !strings.Contains(err.Error(), config.EnvAskBeforeWrites+" sets nothing") || !strings.Contains(err.Error(), config.EnvElicitationOptIn) {
 			t.Errorf("%q: got %v", value, err)
 		}
 	}

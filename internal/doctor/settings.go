@@ -31,7 +31,7 @@ func Settings(lookup func(string) string, urlGiven bool) []Check {
 	if raw := given(lookup(config.EnvAskBeforeWrites)); raw != "" {
 		checks = append(checks, Check{
 			Name: config.EnvAskBeforeWrites, Status: Failed,
-			Detail: "is set, and it is gone, so mm-mcp does not start: mm-mcp no longer asks before a write unless told to",
+			Detail: "is set, and sets nothing, so mm-mcp does not start: whoever set it would believe it decides who asks",
 			Next:   fmt.Sprintf("Remove it. Set %s=true to have mm-mcp ask through MCP elicitation as well, a convenience in a client that shows the question.", config.EnvElicitationOptIn),
 		})
 	}
