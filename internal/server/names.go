@@ -19,7 +19,7 @@ type ambiguous struct{ error }
 // named is one thing a name may mean, with every name it goes by.
 type named[T any] struct {
 	value T
-	names []string // what it is called: its display name, its address name
+	names []string // what it is called: its display name, its URL name
 	label string   // how a candidate is shown when the name is ambiguous
 }
 

@@ -278,7 +278,7 @@ func messageUses(stats bool) []Use {
 	if stats {
 		out = append(out, Use{
 			Operation: "GetChannelStats",
-			Params:    map[string]Coverage{"channel_id": Fixed("the post's channel", "the question says how many people @channel, @all and @here reach")},
+			Params:    map[string]Coverage{"channel_id": Fixed("the post's channel", "reaches is checked against its member count, which the question also gives for @channel, @all and @here where mm-mcp asks")},
 		})
 	}
 	return out

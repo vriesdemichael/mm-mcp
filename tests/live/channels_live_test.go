@@ -150,7 +150,7 @@ func TestGetChannelStatsCountsMembersPinsAndFiles(t *testing.T) {
 	}
 }
 
-func TestGetTeamInfoFindsATeamByIdOrNameAndAnOpenTeamByItsAddress(t *testing.T) {
+func TestGetTeamInfoFindsATeamByIdOrNameAndAnOpenTeamByItsExactName(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user := seedUser(t, admin)

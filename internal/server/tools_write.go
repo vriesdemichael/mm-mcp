@@ -144,11 +144,11 @@ func postContextUses() []Use {
 		},
 		{
 			Operation: "GetChannel",
-			Params:    map[string]Coverage{"channel_id": Fixed("the post's channel", "the question says where the post is")},
+			Params:    map[string]Coverage{"channel_id": Fixed("the post's channel", "a refusal says where the post is, and so does the question where mm-mcp asks")},
 		},
 		{
 			Operation: "GetUser",
-			Params:    map[string]Coverage{"user_id": Fixed("me", "the change is made under the user's name, and the question says whose")},
+			Params:    map[string]Coverage{"user_id": Fixed("me", "a direct message is named after the person on the other side, and the user's own post is told from another's")},
 		},
 		{
 			Operation: "GetUsersByIds",
@@ -263,8 +263,8 @@ func inChannel(ctx context.Context, client *mattermost.Client, channelID, rootID
 	}, nil
 }
 
-// postingSpec is a tool that posts what the person accepts: the message, the
-// files it carries, and where it goes (ADR-021, ADR-029, ADR-031). channel and
+// postingSpec is a tool that posts a message, with the files it carries,
+// where it goes (ADR-029, ADR-031, ADR-033). channel and
 // root say what sets the post's channel and thread, and inTeams whether its
 // posts can be in a team's channel.
 func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, inTeams bool) Spec {
@@ -281,7 +281,7 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 						"marks the post as written with AI, which Mattermost shows; MM_MCP_MARK_AI_GENERATED=false leaves it out"),
 					"body.metadata": Omitted("metadata such as a post's priority is a Mattermost feature beyond posting text, which the person is not shown"),
 					"set_online":    Omitted("Mattermost's default marks the user online when they post, as its own client does"),
-					"silent":        Omitted("a silent post notifies nobody it mentions, which the person would have to be told about when confirming"),
+					"silent":        Omitted("a silent post notifies nobody it mentions, unlike a post from Mattermost's own message box, and notifies counts whom a post notifies"),
 				},
 				Releases: "11.7 has no silent parameter, which the tool never sends",
 			},

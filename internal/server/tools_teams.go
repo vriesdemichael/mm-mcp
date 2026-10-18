@@ -96,7 +96,7 @@ func getUserTeamsSpec() Spec {
 }
 
 type getTeamInfoInput struct {
-	Team string `json:"team" jsonschema:"the team's id, its name: its display name or the name in its address, whole or in part, in any case, or a link to it or into it"`
+	Team string `json:"team" jsonschema:"the team's id, its name: its display name or the name in its link, whole or in part, in any case, or a link to it or into it"`
 }
 
 func getTeamInfoSpec() Spec {
@@ -104,7 +104,7 @@ func getTeamInfoSpec() Spec {
 		&mcp.Tool{
 			Name: "get_team_info",
 			Description: "Find a team by its id, its name or a link into it. A name matches the user's teams whole or in part, in any case; an open team " +
-				"the user is not in is found by the exact name in its address. An ambiguous name is refused with every team it could mean.",
+				"the user is not in is found by the exact name in its link. An ambiguous name is refused with every team it could mean.",
 			Annotations: readOnly("Get team"),
 		},
 		[]Use{
@@ -173,7 +173,7 @@ func findTeam(ctx context.Context, client *mattermost.Client, name string) (*mod
 	if errors.As(matchErr, &several) {
 		return nil, matchErr
 	}
-	// A team the user is not in is found only by its exact address name, as
+	// A team the user is not in is found only by its exact URL name, as
 	// Mattermost finds it.
 	if outside, err := client.TeamByName(ctx, strings.ToLower(name)); err == nil {
 		return outside, nil
@@ -182,7 +182,7 @@ func findTeam(ctx context.Context, client *mattermost.Client, name string) (*mod
 }
 
 // teamByLink is the team a link is in: one of the user's teams, or another
-// Mattermost finds by the exact name in its address. A link's name is never
+// Mattermost finds by the exact name in its link. A link's name is never
 // matched in part, which could find another team.
 func teamByLink(ctx context.Context, client *mattermost.Client, l link) (*model.Team, error) {
 	name, err := teamOfLink(l)
@@ -624,7 +624,7 @@ func findChannel(ctx context.Context, client *mattermost.Client, name, teamID st
 }
 
 type getChannelInfoInput struct {
-	Channel string `json:"channel" jsonschema:"the channel's id, its name: its display name or the name in its address, whole or in part, in any case, or its link, a direct or group message's included"`
+	Channel string `json:"channel" jsonschema:"the channel's id, its name: its display name or the name in its link, whole or in part, in any case, or its link, a direct or group message's included"`
 	TeamID  string `json:"team_id,omitempty" jsonschema:"look for the name in this team only; in every team of the user's when not given"`
 }
 

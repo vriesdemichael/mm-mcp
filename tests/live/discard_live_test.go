@@ -13,10 +13,11 @@ import (
 )
 
 // What a call takes away, stated in the call and checked against mm-mcp's own
-// count just before it acts: the characters an edit or a draft's deletion
-// discards, and the posts a deletion removes (ADR-031). The count binds the
-// call to what the model read, so these run through a server that does not
-// ask, where no question's fingerprint does.
+// reading just before it acts: the whole text an edit replaces and how many
+// reactions and replies answer it, the characters a draft's deletion discards,
+// and the posts a deletion removes (ADR-031). What the call states binds it to
+// what the model read, so these run through a server that does not ask, where
+// no question's fingerprint does.
 
 // unaskedSession is a writing session through a server that leaves asking to
 // the MCP client.

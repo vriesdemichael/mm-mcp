@@ -14,8 +14,9 @@ import (
 )
 
 // Drafts: the model writes into the person's own message box, and the person
-// sends. Saving one is the user's alone and does not ask; deleting one loses
-// words the person may have written, so it does (ADR-021).
+// sends. Saving one is the user's alone and never asks; deleting one loses
+// words the person may have written, so it states how many and asks where
+// mm-mcp is set to (ADR-031, ADR-033).
 
 // Draft is a draft in the user's message box.
 type Draft struct {
@@ -464,7 +465,7 @@ func deleteDraftSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_draft", draft.Message); err != nil {
 						return nil, Draft{}, err
 					}
-					// Named before it goes, as the question named it.
+					// Named before it goes, when there is still a draft to read.
 					described, err := describeDrafts(ctx, client, []*model.Draft{draft})
 					if err != nil {
 						return nil, Draft{}, err
