@@ -736,7 +736,8 @@ allowed or not: they reach your disk, not Mattermost
 
 Every tool declares a title and the four MCP annotations: whether it only reads,
 whether it may destroy something, whether repeating it changes nothing more, and
-that it works in a closed domain, your one Mattermost server
+that it works in a closed domain, your one Mattermost server, which the MCP
+specification counts as closed however freely people write in it
 ([ADR-021](adr/021-read-only-by-default.md)). They are
 hints: a client may use them to decide what to ask you about, or ignore them,
 and none of them is a security control. Some clients run a tool marked
