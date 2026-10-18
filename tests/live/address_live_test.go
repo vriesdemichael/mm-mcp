@@ -100,3 +100,10 @@ func TestAWriteOthersSeeTakesItsPlacesByAddressAlone(t *testing.T) {
 	check(t, err)
 	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": channelAt}), "no channel is at "+channelAt)
 }
+
+// addressOf is the address of a link into the instance: the link under the
+// mattermost scheme.
+func addressOf(link string) string {
+	_, rest, _ := strings.Cut(link, "://")
+	return "mattermost://" + rest
+}

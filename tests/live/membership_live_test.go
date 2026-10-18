@@ -39,7 +39,7 @@ func TestJoinAndLeaveAChannelAskingEachTime(t *testing.T) {
 
 	var joined server.Membership
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "join_channel", Arguments: map[string]any{"channel_id": channel.Id}}), &joined)
-	if !joined.Member || joined.ChannelID != channel.Id || !member(t, admin, channel.Id, user.Id) {
+	if !joined.Member || joined.ChannelID != channel.Id || joined.ChannelAddress != addressOf(liveURL+"/"+team.Name+"/channels/"+channel.Name) || !member(t, admin, channel.Id, user.Id) {
 		t.Fatalf("joined %+v", joined)
 	}
 	mustContain(t, "question", questions.only(t).Message, "Join ~"+channel.DisplayName, "sees that you joined")
