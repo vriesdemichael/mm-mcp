@@ -27,7 +27,7 @@ holds and why, and the alternatives it turned down.
 - [ADR-018: Agents and tasks write temporary files to .tmp](018-agents-write-temporary-files-to-tmp.md)
 - [ADR-019: The server is given a credential; acquiring one is a separate concern](019-credentials-are-supplied-not-acquired.md)
 - [ADR-020: stdio and Streamable HTTP from one server, single-tenant first](020-stdio-and-streamable-http-single-tenant-first.md)
-- [ADR-021: Read-only by default, and every write others see asks the person](021-read-only-by-default-and-every-write-asks.md)
+- [ADR-021: Read-only by default](021-read-only-by-default.md)
 - [ADR-022: MCP Apps views, on show and on every post](022-mcp-apps-views-on-show-and-on-every-post.md)
 - [ADR-023: Distributed as signed binaries, .mcpb bundles, and through the MCP Registry](023-distributed-as-signed-binaries-mcpb-bundles-and-the-mcp-registry.md)
 - [ADR-024: Mattermost is reached through its own client, at the commit of the newest supported release](024-mattermosts-client-at-the-newest-release.md)

@@ -100,7 +100,7 @@ on what it returned.
 it as not read-only. When what it changes is seen by others, confirm each call
 with the person; when it is the user's alone or gone in seconds, such as
 following a thread or showing them typing, say why it does not ask
-([ADR-021](docs/site/adr/021-read-only-by-default-and-every-write-asks.md)).
+([ADR-021](docs/site/adr/021-read-only-by-default.md)).
 
 ## Before opening a pull request
 

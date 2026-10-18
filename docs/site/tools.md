@@ -539,7 +539,7 @@ What a page holds when `limit` is not given, and the most it can hold.
 Each tool that changes what others see asks you through your MCP client: it
 shows what will change, where, and under whose name, and acts only when you
 tick the box and accept
-([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)). The question
+([ADR-021](adr/021-read-only-by-default.md)). The question
 is an MCP elicitation, a form the client shows, so these tools need a client
 that shows one, such as Claude Code. A client that declares it cannot gets an
 error that says so, and nothing is written; `save_draft`, which does not ask,
@@ -586,14 +586,14 @@ allowed or not: they reach your disk, not Mattermost
 - **Marking what the model read as read, or anything unread.** What you have
   read is yours to record, and a model reading a channel is not you reading
   it; `mark_channel_read` marks a channel read when you ask
-  ([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)).
+  ([ADR-021](adr/021-read-only-by-default.md)).
 
 ### How the tools are built
 
 Every tool declares a title and the four MCP annotations: whether it only reads,
 whether it may destroy something, whether repeating it changes nothing more, and
 that it works in a closed domain, your one Mattermost server
-([ADR-021](adr/021-read-only-by-default-and-every-write-asks.md)). They are
+([ADR-021](adr/021-read-only-by-default.md)). They are
 hints: a client may use them to decide what to ask you about, or ignore them,
 and none of them is a security control. Some clients run a tool marked
 read-only without asking you or their AI reviewer, so only a tool that changes
