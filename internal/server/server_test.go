@@ -1,8 +1,12 @@
 package server_test
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"maps"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -36,6 +40,12 @@ func rendersViews() *mcp.ClientOptions {
 
 func connectWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {
 	t.Helper()
+	return connectThrough(t, cfg, options, func(transport mcp.Transport) mcp.Transport { return transport })
+}
+
+// connectThrough is connectWith, with the client's transport wrapped.
+func connectThrough(t *testing.T, cfg config.Config, options *mcp.ClientOptions, wrap func(mcp.Transport) mcp.Transport) *mcp.ClientSession {
+	t.Helper()
 	client := mattermost.New(cfg.URL, cfg.Token, network.NewSafeTransport())
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
 	serverSession, err := server.New(cfg, server.Single(client)).Connect(t.Context(), serverTransport, nil)
@@ -43,7 +53,7 @@ func connectWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *m
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = serverSession.Close() })
-	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, options).Connect(t.Context(), clientTransport, nil)
+	session, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "0"}, options).Connect(t.Context(), wrap(clientTransport), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,6 +77,30 @@ func TestTheServerIntroducesItself(t *testing.T) {
 	result := connect(t, readOnlyConfig).InitializeResult()
 	if result.ServerInfo.Name != server.Name || result.Instructions != server.Instructions {
 		t.Fatalf("got %+v", result)
+	}
+	if len(result.ServerInfo.Icons) != 1 || result.ServerInfo.Icons[0].Source != server.Icon().Source {
+		t.Errorf("the server's icons: %+v", result.ServerInfo.Icons)
+	}
+}
+
+// The server's icon is the documentation site's, carried in the handshake.
+func TestTheServerIconIsTheSites(t *testing.T) {
+	t.Parallel()
+	site, err := os.ReadFile(filepath.Join(repoRoot(t), "docs", "site", "assets", "favicon.svg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	icon := server.Icon()
+	data, found := strings.CutPrefix(icon.Source, "data:image/svg+xml;base64,")
+	if !found || icon.MIMEType != "image/svg+xml" {
+		t.Fatalf("the icon is not an SVG data URI: %s, %.40s", icon.MIMEType, icon.Source)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(decoded, site) {
+		t.Error("internal/server/icon.svg differs from docs/site/assets/favicon.svg; copy the site's over it")
 	}
 }
 

@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
@@ -36,23 +38,94 @@ func repoRoot(t *testing.T) string {
 	return root
 }
 
+// TestEveryToolDeclaresItsHintsAndTitle reads tools/list as it crosses the
+// wire, where a hint left out and a hint sent as false differ: clients read a
+// missing hint as they please, some as the opposite of the specification's
+// default, so every tool sends both titles and all four hints (ADR-021).
 func TestEveryToolDeclaresItsHintsAndTitle(t *testing.T) {
 	t.Parallel()
-	tools := listTools(t, writingConfig)
+	tools := wireTools(t, writingConfig)
 	if len(tools) == 0 {
 		t.Fatal("the server offers no tools; the check has nothing to hold")
 	}
 	for _, tool := range tools {
-		hints := tool.Annotations
-		switch {
-		case tool.Title == "":
-			t.Errorf("%s has no title", tool.Name)
-		case hints == nil:
-			t.Errorf("%s declares no annotations", tool.Name)
-		case hints.DestructiveHint == nil || hints.OpenWorldHint == nil:
-			t.Errorf("%s leaves destructiveHint or openWorldHint unset", tool.Name)
+		var name string
+		_ = json.Unmarshal(tool["name"], &name)
+		if !nonEmptyString(tool["title"]) {
+			t.Errorf("%s sends no title", name)
+		}
+		var hints map[string]json.RawMessage
+		if err := json.Unmarshal(tool["annotations"], &hints); err != nil || hints == nil {
+			t.Errorf("%s sends no annotations", name)
+			continue
+		}
+		if !nonEmptyString(hints["title"]) {
+			t.Errorf("%s sends no title in its annotations", name)
+		}
+		for _, hint := range []string{"readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"} {
+			if value := string(hints[hint]); value != "true" && value != "false" {
+				t.Errorf("%s sends %s as %q, not true or false", name, hint, value)
+			}
 		}
 	}
+}
+
+func nonEmptyString(raw json.RawMessage) bool {
+	var s string
+	return json.Unmarshal(raw, &s) == nil && s != ""
+}
+
+// wireTools is the tools a server lists to a client that renders views, each
+// as the JSON object the server sent.
+func wireTools(t *testing.T, cfg config.Config) []map[string]json.RawMessage {
+	t.Helper()
+	wire := &lockedBuffer{}
+	session := connectThrough(t, cfg, rendersViews(), func(transport mcp.Transport) mcp.Transport {
+		return &mcp.LoggingTransport{Transport: transport, Writer: wire}
+	})
+	if _, err := session.ListTools(t.Context(), nil); err != nil {
+		t.Fatal(err)
+	}
+	for line := range strings.Lines(wire.String()) {
+		message, found := strings.CutPrefix(line, "read: ")
+		if !found {
+			continue
+		}
+		var response struct {
+			Result struct {
+				Tools      []map[string]json.RawMessage `json:"tools"`
+				NextCursor string                       `json:"nextCursor"`
+			} `json:"result"`
+		}
+		if json.Unmarshal([]byte(message), &response) != nil || response.Result.Tools == nil {
+			continue
+		}
+		if response.Result.NextCursor != "" {
+			t.Fatal("tools/list answered in pages; read every page")
+		}
+		return response.Result.Tools
+	}
+	t.Fatal("no tools/list answer crossed the wire")
+	return nil
+}
+
+// lockedBuffer is a buffer the transport's reader may write to while the test
+// reads it.
+type lockedBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 func TestNoToolIsOpenWorld(t *testing.T) {
