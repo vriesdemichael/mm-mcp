@@ -12,14 +12,14 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestAReadOnlyServerListsOnlyReadOnlyTools`: without writes allowed, no tool that writes is offered.
 - `TestAllowingWritesAddsExactlyTheToolsThatWrite`: allowing writes adds exactly the tools not annotated read-only.
 - `TestEveryListPagesByCursor`: every tool that answers with a list takes limit and cursor and answers with next_cursor, unless its input bounds it.
-- `TestEveryToolThatWritesAsksFirst`: every tool that changes what others see refuses a client that cannot be asked, before it reaches Mattermost, unless the server is set not to ask.
-- `TestAServerThatDoesNotAskLeavesTheCallToTheClient`: a server that does not ask lets each call that would through, tells the model nobody asks, and marks those tools for the client to ask a person on every call only when forced to (ADR-033).
+- `TestEveryToolThatWritesAsksFirstWhenOptedIn`: on a server set to ask, every tool that changes what others see refuses a client that cannot be asked, before it reaches Mattermost.
+- `TestAServerThatDoesNotAskLeavesTheCallToTheClient`: a server that does not ask, the default, lets each call through and says in no description or instruction that the person is asked; one set to ask says so of each tool that does; and only forcing a human in the loop marks those tools for Claude Code to ask on every call (ADR-033).
 - `TestAToolThatDoesNotAskChangesNothingOfOthers`: a tool that changes Mattermost without asking says why, and is not destructive.
 - `TestEveryWriteOthersSeeTakesItsPlacesByAddress`: a tool that changes what others see takes each channel, post and team by address alone, and says so in its input schema; no other tool does (ADR-030).
 - `TestOnlyALocalServerOffersTheToolsThatWriteItsFiles`: a tool that writes this machine's files is offered by a local server only, whether writes are allowed or not.
 - `TestEveryToolIsCalledByALiveTest`: every MCP tool is called by name in tests/live.
 - `TestTheToolsPageDocumentsEveryToolAndOnlyThose`: the tools page documents exactly the tools the server has.
-- `TestTheConfigurationPageAsksForEveryToolThatWouldAsk`: the Claude Code ask rules the configuration page gives name exactly the tools that ask (ADR-033).
+- `TestTheConfigurationPageAsksForEveryToolThatWouldAsk`: the Claude Code ask rules the configuration page gives name exactly the tools that change what others see (ADR-033).
 - `TestTheToolsPageLinksAndMarksEveryTool`: every tool on the tools page has a chip that links to its entry, both say whether it asks, is yours alone or reaches the disk, and the counts at the top add up.
 - `TestEveryToolDeclaresTheOperationsItCalls`: every tool declares the operations it calls, each in the newest specification and served by the newest router.
 - `TestAReadOnlyToolCallsOnlyOperationsThatRead`: a tool annotated read-only calls only operations that read: GET, HEAD, or a search or lookup that takes a POST.

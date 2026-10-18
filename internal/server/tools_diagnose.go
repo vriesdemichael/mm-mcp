@@ -106,43 +106,39 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 	}, viewsCheck(request)}
 	const name = "confirmations"
 	switch {
-	case cfg.AllowWrites && cfg.ForceHumanInTheLoopInClaudeCode:
+	case !cfg.AllowWrites:
+		checks = append(checks, doctor.Check{Name: name, Status: doctor.OK, Detail: "writes are not allowed, so nothing is changed and nothing is asked"})
+	case cfg.ForceHumanInTheLoopInClaudeCode:
 		checks = append(checks, doctor.Check{
 			Name: name, Status: doctor.OK,
-			Detail: fmt.Sprintf("%s is false, so mm-mcp asks nothing before a change others see, and %s marks each such tool for the MCP "+
-				"client to ask the person on every call, whatever its permission rules allow; a client that does not read the mark asks as its rules say",
-				config.EnvAskBeforeWrites, config.EnvForceHumanInTheLoopInClaudeCode),
+			Detail: fmt.Sprintf("mm-mcp does not ask; %s marks each change others see for Claude Code to ask the person on every call, "+
+				"whatever its permission rules allow. Another client does not read the mark, and approves as its own rules say", config.EnvForceHumanInTheLoopInClaudeCode),
 		})
-	case cfg.AllowWrites && cfg.SkipAsking:
+	case !cfg.Elicit:
 		checks = append(checks, doctor.Check{
 			Name: name, Status: doctor.OK,
-			Detail: fmt.Sprintf("%s is false, so mm-mcp asks nothing before a change others see: the MCP client's own approval of each tool "+
-				"call is the only check, and a client that approves tools by itself posts with nobody seeing it first", config.EnvAskBeforeWrites),
-			Next: fmt.Sprintf("Make sure the client asks the person before these tools, or set %s=true to have it ask on every call.", config.EnvForceHumanInTheLoopInClaudeCode),
-		})
-	case !canConfirm(request) && cfg.AllowWrites:
-		checks = append(checks, doctor.Check{
-			Name: name, Status: doctor.Failed,
-			Detail: "this client does not declare form elicitation, so it cannot show the question mm-mcp asks before each change others see: " +
-				"every post, reply, edit, deletion, reaction, pin and channel change is refused before anything is written",
-			Next: "Tell the person. They can use an MCP client that supports elicitation, post in Mattermost themselves, or have save_draft " +
-				"put the message in their Mattermost message box for them to send." + letTheClientAsk,
+			Detail: "mm-mcp does not ask: the MCP client's own approval of each call decides, and mm-mcp checks what each call states, " +
+				"how far a post goes, what a call takes away and where it goes, before it acts. A client set to approve calls by itself " +
+				"writes with nobody seeing them first",
+			Next: fmt.Sprintf("Have the client ask before these tools if a person should approve each one. %s=true has mm-mcp ask as well, "+
+				"in a client that shows its question.", config.EnvElicitationOptIn),
 		})
 	case !canConfirm(request):
 		checks = append(checks, doctor.Check{
-			Name: name, Status: doctor.OK,
-			Detail: "writes are not allowed, so nothing is asked; this client does not declare form elicitation, so with writes allowed it could not be asked either",
+			Name: name, Status: doctor.Failed,
+			Detail: fmt.Sprintf("%s is true, but this client does not declare form elicitation, so it cannot show mm-mcp's question: "+
+				"every post, reply, edit, deletion, reaction, pin and channel change is refused before anything is written", config.EnvElicitationOptIn),
+			Next: "Tell the person. They can use an MCP client that supports elicitation, or have save_draft put the message in their " +
+				"Mattermost message box for them to send." + letTheClientAsk,
 		})
-	case cfg.AllowWrites && !asked:
+	case !asked:
 		checks = append(checks, doctor.Check{
 			Name: name, Status: doctor.OK,
 			Detail: "this client declares form elicitation, so mm-mcp asks the person before each change others see. Some clients declare it and " +
 				"answer the question themselves without showing it; diagnose with ask_test_question checks that the person sees it.",
 		})
-	case cfg.AllowWrites:
-		checks = append(checks, doctor.Check{Name: name, Status: doctor.OK, Detail: "this client declares form elicitation, so mm-mcp asks the person before each change others see"})
 	default:
-		checks = append(checks, doctor.Check{Name: name, Status: doctor.OK, Detail: "writes are not allowed, so nothing is asked; this client declares form elicitation"})
+		checks = append(checks, doctor.Check{Name: name, Status: doctor.OK, Detail: "this client declares form elicitation, so mm-mcp asks the person before each change others see"})
 	}
 	if asked && !canConfirm(request) {
 		checks = append(checks, doctor.Check{Name: "test question", Status: doctor.Skipped, Detail: "this client cannot show a question"})
@@ -169,8 +165,8 @@ func viewsCheck(request *mcp.CallToolRequest) doctor.Check {
 
 // letTheClientAsk ends the advice to a person whose client does not show
 // mm-mcp's questions (ADR-033).
-const letTheClientAsk = " Or they can set " + config.EnvAskBeforeWrites + "=false, so that their client's own approval of each " +
-	"tool call is the check instead."
+const letTheClientAsk = " Or they can unset " + config.EnvElicitationOptIn + ", so that their client's own approval of each " +
+	"call decides."
 
 // testQuestion is the call's answer that asks the person the test question,
 // with the time it was asked, signed, as its request state.

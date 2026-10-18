@@ -149,24 +149,25 @@ func TestPlainHTTPBeyondTheMachineIsWarnedAbout(t *testing.T) {
 	}
 }
 
-func TestAServerThatWritesWithoutAskingSaysSoAtStart(t *testing.T) {
+// A server that writes says at start who decides on a write (ADR-033).
+func TestAServerThatWritesSaysAtStartWhoDecides(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
-		allow, ask, force string
-		said              string
+		allow, elicit, force string
+		said                 string
 	}{
-		{"true", "false", "", "warning: MM_MCP_ASK_BEFORE_WRITES=false"},
-		{"true", "false", "true", "a person on every call"},
-		{"true", "", "", ""},
-		{"false", "false", "", ""},
+		{"true", "", "", "mm-mcp does not ask"},
+		{"true", "true", "", "has mm-mcp ask the person as well"},
+		{"true", "", "true", "has Claude Code ask a person before every post"},
+		{"false", "", "", ""},
 	} {
 		got := runCLI(t, map[string]string{
 			config.EnvURL: "https://chat.example.com", config.EnvToken: "token-value",
-			config.EnvAllowWrites: c.allow, config.EnvAskBeforeWrites: c.ask, config.EnvForceHumanInTheLoopInClaudeCode: c.force,
+			config.EnvAllowWrites: c.allow, config.EnvElicitationOptIn: c.elicit, config.EnvForceHumanInTheLoopInClaudeCode: c.force,
 		}, "serve")
-		said := strings.Contains(got.stderr, "does not ask")
+		said := strings.Contains(got.stderr, "writes are allowed")
 		if got.code != cli.ExitOK || said != (c.said != "") || !strings.Contains(got.stderr, c.said) {
-			t.Errorf("writes %q, ask %q, force %q: got %+v", c.allow, c.ask, c.force, got)
+			t.Errorf("writes %q, elicit %q, force %q: got %+v", c.allow, c.elicit, c.force, got)
 		}
 	}
 }
@@ -175,9 +176,20 @@ func TestForcingAHumanInTheLoopWhileMmMcpAsksStopsTheServer(t *testing.T) {
 	t.Parallel()
 	got := runCLI(t, map[string]string{
 		config.EnvURL: "https://chat.example.com", config.EnvToken: "token-value",
-		config.EnvAllowWrites: "true", config.EnvForceHumanInTheLoopInClaudeCode: "true",
+		config.EnvAllowWrites: "true", config.EnvForceHumanInTheLoopInClaudeCode: "true", config.EnvElicitationOptIn: "true",
 	}, "serve")
-	if got.code != cli.ExitConfig || got.servers != 0 || !strings.Contains(got.stderr, config.EnvAskBeforeWrites+"=false") {
+	if got.code != cli.ExitConfig || got.servers != 0 || !strings.Contains(got.stderr, "would ask twice") {
+		t.Fatalf("got %+v", got)
+	}
+}
+
+func TestTheOldAskBeforeWritesStopsTheServerNamingWhatReplacedIt(t *testing.T) {
+	t.Parallel()
+	got := runCLI(t, map[string]string{
+		config.EnvURL: "https://chat.example.com", config.EnvToken: "token-value",
+		config.EnvAllowWrites: "true", config.EnvAskBeforeWrites: "false",
+	}, "serve")
+	if got.code != cli.ExitConfig || got.servers != 0 || !strings.Contains(got.stderr, config.EnvElicitationOptIn) {
 		t.Fatalf("got %+v", got)
 	}
 }

@@ -23,15 +23,12 @@ the chat as Mattermost lays it out; more views are planned, and the
 ## Why it works the way it does
 
 - **Read-only unless you say otherwise.** The tools that post or change anything
-  are not offered until `MM_MCP_ALLOW_WRITES` is true. Then, by default, every
-  change others see asks you first: an agent acting with your token speaks as
-  you to your colleagues. Following a thread, saving a post, a reminder, a draft
-  only you see and the typing indicator are yours alone or gone in seconds, and
-  do not ask. The question is a form your MCP client shows (an MCP
-  elicitation), so posting needs a client that shows one, such as Claude Code in
-  a terminal. `MM_MCP_ASK_BEFORE_WRITES=false` leaves the asking to your
-  client's own approval instead, for a client that does not show the question,
-  such as Claude Code in the Claude desktop app's Code tab.
+  are not offered until `MM_MCP_ALLOW_WRITES` is true. Then your MCP client's
+  own approval of each call decides, and mm-mcp checks what each change others
+  see states before it acts: how many people a post reaches and notifies, how
+  much it takes away, and where it goes, by address. Every post and edit is
+  marked as written with AI. `MM_MCP_ELICITATION_OPT_IN=true` has mm-mcp ask
+  you as well, in a client that shows its question.
 - **Your token, a bot's, or your own login.** A personal access token, a bot
   token, or your own login through `mm-mcp login`, single sign-on included,
   kept in your system's credential store, for servers where

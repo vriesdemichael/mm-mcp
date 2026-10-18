@@ -18,8 +18,9 @@ import (
 )
 
 // The tools that change what other people see. Each is offered only when
-// writes are allowed, and each call asks the person first, showing what will
-// change, where and under whose name (ADR-021).
+// writes are allowed, and each call states what it does to others, which is
+// checked before it acts; on a server that asks, the person is shown what will
+// change, where and under whose name, first (ADR-033).
 
 // writes is the annotation of a tool that adds to Mattermost without removing
 // or overwriting anything. idempotent says whether repeating a call changes
@@ -267,7 +268,7 @@ func inChannel(ctx context.Context, client *mattermost.Client, channelID, rootID
 // root say what sets the post's channel and thread, and inTeams whether its
 // posts can be in a team's channel.
 func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, inTeams bool) Spec {
-	return configuredToolSpec(tool,
+	return asked(configuredToolSpec(tool,
 		uses(own, []Use{
 			{
 				Operation: "CreatePost",
@@ -398,7 +399,7 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 				return result, posted, err
 			}
 		},
-	)
+	), postingAsking)
 }
 
 // checkPost is what is checked of a post before it goes further: its message
@@ -441,8 +442,12 @@ func postQuestion(ctx context.Context, client *mattermost.Client, where destinat
 
 // postingDescription ends the description of every tool that posts.
 const postingDescription = " The message is Mattermost Markdown, at most as long as the server takes, and every @mention must name someone who exists. " +
-	"The person is asked to confirm each post, seeing the message, where it goes and every file it carries, before anything is sent or uploaded; " +
-	"if they decline or close the question, do not post it again unless they ask. Posting takes down the typing indicator shown there."
+	"Posting takes down the typing indicator shown there."
+
+// postingAsking is what a tool that posts says of mm-mcp's question, while the
+// server asks.
+const postingAsking = "The person is asked to confirm each post, seeing the message, where it goes and every file it carries, before anything " +
+	"is sent or uploaded; if they decline or close the question, do not post it again unless they ask."
 
 // filesField is the files argument every tool that posts takes.
 type filesField struct {
@@ -700,15 +705,14 @@ func editReaches(ctx context.Context, client *mattermost.Client, p postInContext
 }
 
 func updatePostSpec() Spec {
-	return checking(configuredToolSpec(
+	return asked(checking(configuredToolSpec(
 		&mcp.Tool{
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
 				"newly mentions. The replacement must fit the server's limit. Every call states reaches, how many members the post's " +
 				"channel has, since an edit reaches everyone the post does; old_message, the post's current text in full; and, for a " +
 				"post with reactions or replies, responses, their number, since an edit leaves them under the replacing text. " +
-				"Each is checked against the post, read again just before the edit. The person is asked to confirm each edit, seeing the current text " +
-				"and its replacement; if they decline or close the question, do not edit it again unless they ask.",
+				"Each is checked against the post, read again just before the edit.",
 			Annotations: overwrites("Update post"),
 		},
 		uses([]Use{{
@@ -792,7 +796,7 @@ func updatePostSpec() Spec {
 					return nil, posts[0], nil
 				})
 		},
-	), map[string]string{"reaches": reachCheck, "old_message": oldMessageCheck, "responses": responsesCheck})
+	), map[string]string{"reaches": reachCheck, "old_message": oldMessageCheck, "responses": responsesCheck}), "The person is asked to confirm each edit, seeing the current text and its replacement; if they decline or close the question, do not edit it again unless they ask.")
 }
 
 // markablePostProps are the properties an edit may send back unchanged with
@@ -859,13 +863,12 @@ func replies(post *model.Post) int64 {
 }
 
 func deletePostSpec() Spec {
-	return checking(toolSpec(
+	return asked(checking(toolSpec(
 		&mcp.Tool{
 			Name: "delete_post",
-			Description: "Delete one of the user's own posts. Deleting the post that starts a thread deletes every reply in it, " +
-				"other people's included. Every call states deletes, how many posts go: 1 for a reply, or the post and its replies; " +
-				"it is checked against mm-mcp's own count, read again just before the deletion. The person is asked to confirm each deletion, seeing the post and how many replies go with it; " +
-				"if they decline or close the question, do not delete it again unless they ask.",
+			Description: "Delete one of the user's own posts. Deleting the post that starts a thread deletes every reply in it, other " +
+				"people's included. Every call states deletes, how many posts go: 1 for a reply, or the post and its replies; " +
+				"it is checked against mm-mcp's own count, read again just before the deletion.",
 			Annotations: overwrites("Delete post"),
 		},
 		uses([]Use{{
@@ -934,7 +937,7 @@ func deletePostSpec() Spec {
 					return nil, Deleted{PostID: input.PostID, Replies: replies}, nil
 				})
 		},
-	), map[string]string{"deletes": deleteCheck})
+	), map[string]string{"deletes": deleteCheck}), "The person is asked to confirm each deletion, seeing the post and how many replies go with it; if they decline or close the question, do not delete it again unless they ask.")
 }
 
 func plural(n int64, one, many string) string {
@@ -957,11 +960,11 @@ type pinPostInput struct {
 }
 
 func pinPostSpec() Spec {
-	return shaping(toolSpec(
+	return asked(shaping(toolSpec(
 		&mcp.Tool{
 			Name: "pin_post",
 			Description: "Pin a post to its channel, where everyone in the channel sees it among the pinned messages, or unpin it with " +
-				"pinned false. The person is asked to confirm, seeing the post; if they decline or close the question, do not try again unless they ask.",
+				"pinned false.",
 			Annotations: writes("Pin post", true),
 		},
 		uses([]Use{
@@ -999,7 +1002,7 @@ func pinPostSpec() Spec {
 					return nil, Pinned{PostID: input.PostID, URL: client.Permalink(input.PostID), Pinned: pinning(input.Pinned)}, nil
 				})
 		},
-	), map[string]string{"pinned": "chooses between PinPost and UnpinPost"})
+	), map[string]string{"pinned": "chooses between PinPost and UnpinPost"}), "The person is asked to confirm, seeing the post; if they decline or close the question, do not try again unless they ask.")
 }
 
 // pinning is a pinned argument, true when left out.

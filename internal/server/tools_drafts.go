@@ -365,12 +365,12 @@ func draftPlace(described Draft, draft *model.Draft) string {
 }
 
 func deleteDraftSpec() Spec {
-	return checking(toolSpec(
+	return asked(checking(toolSpec(
 		&mcp.Tool{
 			Name: "delete_draft",
-			Description: "Delete the user's draft in a channel or a thread. A draft may hold words the person wrote and has not sent, so " +
-				"every call states discards, how many characters the draft holds, checked against mm-mcp's own count just before " +
-				"it is deleted; read it with list_drafts first. The person is asked to confirm, seeing the draft; if they decline or close the question, do not try again unless they ask.",
+			Description: "Delete the user's draft in a channel or a thread. A draft may hold words the person wrote and has not sent, " +
+				"so every call states discards, how many characters the draft holds, checked against mm-mcp's own count just " +
+				"before it is deleted; read it with list_drafts first.",
 			Annotations: overwrites("Delete draft"),
 		},
 		uses([]Use{
@@ -478,5 +478,5 @@ func deleteDraftSpec() Spec {
 					return nil, described[0], nil
 				})
 		},
-	), map[string]string{"discards": discardCheck})
+	), map[string]string{"discards": discardCheck}), "The person is asked to confirm, seeing the draft; if they decline or close the question, do not try again unless they ask.")
 }

@@ -84,11 +84,10 @@ Mattermost lays it out, and a draft that appears before it is posted is planned
     ---
 
     The tools that post or change anything are not even offered until you
-    allow writes. Then each post others will see asks you first, by default;
-    following a thread, saving a post, a reminder, a draft only you see and the
-    typing indicator do not. Where your AI app does not show mm-mcp's question,
-    its own approval can be the check instead
-    ([Configuration](configuration.md)).
+    allow writes. Then your AI app's own approval of each call decides, and
+    mm-mcp checks what each post states before it goes out: how many people it
+    reaches and notifies, what it takes away, and where it goes. Each post is
+    marked as written with AI ([Configuration](configuration.md)).
 
 -   :material-account-key-outline:{ .lg .middle } **One account, yours or a bot's**
 

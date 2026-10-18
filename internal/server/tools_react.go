@@ -180,12 +180,11 @@ func reactionQuestion(clientFor ClientFor, ask func(context.Context, *mattermost
 }
 
 func addReactionSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
 			Name: "add_reaction",
 			Description: "React to a post with an emoji, given by name or as the emoji itself, under the user's name. An unknown name " +
-				"is refused with the closest ones. The person is asked to confirm each reaction, seeing the emoji and the post, before it " +
-				"is added; if they decline or close the question, do not react again unless they ask.",
+				"is refused with the closest ones.",
 			Annotations: writes("Add reaction", true),
 		},
 		uses([]Use{
@@ -238,15 +237,14 @@ func addReactionSpec() Spec {
 					return nil, Reaction{PostID: reaction.PostId, URL: client.Permalink(reaction.PostId), EmojiName: reaction.EmojiName}, nil
 				})
 		},
-	)
+	), "The person is asked to confirm each reaction, seeing the emoji and the post, before it is added; if they decline or close the question, do not react again unless they ask.")
 }
 
 func removeReactionSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
-			Name: "remove_reaction",
-			Description: "Take back one of the user's reactions to a post, given by name or as the emoji itself. The person is asked to " +
-				"confirm, seeing the emoji and the post; if they decline or close the question, do not try again unless they ask.",
+			Name:        "remove_reaction",
+			Description: "Take back one of the user's reactions to a post, given by name or as the emoji itself.",
 			Annotations: overwrites("Remove reaction"),
 		},
 		uses([]Use{{
@@ -292,7 +290,7 @@ func removeReactionSpec() Spec {
 					return nil, Reaction{PostID: input.PostID, URL: client.Permalink(input.PostID), EmojiName: made}, nil
 				})
 		},
-	)
+	), "The person is asked to confirm, seeing the emoji and the post; if they decline or close the question, do not try again unless they ask.")
 }
 
 // emojiAutocompletePage is the most custom emoji Mattermost answers an

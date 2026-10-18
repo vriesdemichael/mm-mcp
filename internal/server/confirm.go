@@ -20,15 +20,15 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/config"
 )
 
-// Every tool that writes asks the person to confirm each call before it acts,
-// through the MCP client (ADR-021). The question is an elicitation with one
+// On a server set to ask, every tool that changes what others see asks the
+// person to confirm each call before it acts, through the MCP client (ADR-033). The question is an elicitation with one
 // required checkbox and no default, so accepting takes a tick: a client whose
 // approvals are set to automatic accepts a form with no fields without anyone
 // seeing it. A client that cannot show a form is refused with the error MCP
 // defines for a missing client capability, and nothing is written.
 //
-// A server configured with MM_MCP_ASK_BEFORE_WRITES=false asks nothing, and
-// leaves the check to the client's own approval of the tool call (ADR-033).
+// A server asks only with MM_MCP_ELICITATION_OPT_IN=true; otherwise the
+// client's own approval of the tool call decides (ADR-033).
 //
 // A client on the 2026-07-28 revision sees two calls: the first answers with
 // the form and a signed request state, and the retry carries the answer and
@@ -161,13 +161,13 @@ func declined(tool string) error {
 	return fmt.Errorf("%s did not run, and nothing was written: the confirmation was answered no. Either the person declined, "+
 		"or their MCP client answered the question without showing it to them. Do not call it again unless they ask. If they "+
 		"say they saw no question, tell them their client does not show mm-mcp's questions: save_draft can put a message in "+
-		"their Mattermost message box for them to send, or they can set %s=false so that their client's own approval of "+
-		"each tool call is the check instead", tool, config.EnvAskBeforeWrites)
+		"their Mattermost message box for them to send, or they can unset %s so that their client's own approval of each "+
+		"call decides instead", tool, config.EnvElicitationOptIn)
 }
 
 // skippingKey marks a call whose server is configured not to ask: the
 // person's MCP client approves each tool call itself, or nobody does
-// (MM_MCP_ASK_BEFORE_WRITES=false, ADR-033). A call without it asks.
+// (MM_MCP_ELICITATION_OPT_IN unset, ADR-033). A call without it asks.
 type skippingKey struct{}
 
 // skipping reports whether this call's server is configured not to ask.

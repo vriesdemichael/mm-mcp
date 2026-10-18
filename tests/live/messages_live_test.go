@@ -165,7 +165,7 @@ func TestAMessageIsCheckedWhenNobodyIsAsked(t *testing.T) {
 	channel := seedChannel(t, admin, team, user, other)
 	mine := postAs(t, clientAs(t, user), channel.Id, "", "first draft")
 	session := mcpWith(t, config.Config{
-		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, SkipAsking: true,
+		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true,
 	}, nil)
 	nobody := "ping @" + uniqueName("nobody")
 	tooLong := strings.Repeat("é", 16384)
@@ -250,7 +250,7 @@ func TestTheAIMarkerCanBeTurnedOff(t *testing.T) {
 	channel := seedChannel(t, admin, team, user)
 	questions := &asked{}
 	session := mcpWith(t, config.Config{
-		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, MarkAIGenerated: false,
+		URL: liveURL, Token: personalAccessToken(t, admin, user.Id).Token, AllowWrites: true, Elicit: true, MarkAIGenerated: false,
 	}, &mcp.ClientOptions{ElicitationHandler: func(_ context.Context, request *mcp.ElicitRequest) (*mcp.ElicitResult, error) {
 		return questions.answer(accept)(request.Params), nil
 	}})

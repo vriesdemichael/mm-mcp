@@ -37,6 +37,7 @@ func localSession(t *testing.T, admin *model.Client4, user *model.User, answer f
 		URL:             liveURL,
 		Token:           personalAccessToken(t, admin, user.Id).Token,
 		AllowWrites:     true,
+		Elicit:          true,
 		MarkAIGenerated: true,
 		Local:           true,
 		DownloadDir:     downloads,

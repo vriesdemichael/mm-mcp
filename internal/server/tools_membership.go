@@ -62,12 +62,11 @@ type channelInput struct {
 }
 
 func joinChannelSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
 			Name: "join_channel",
 			Description: "Join a public channel of one of the user's teams, so they can post in it and it shows in their sidebar. " +
-				"Everyone in the channel sees that they joined, so the person is asked to confirm first; if they decline or close the " +
-				"question, do not try again unless they ask. A private channel is joined only by being added.",
+				"Everyone in the channel sees that they joined. A private channel is joined only by being added.",
 			Annotations: writes("Join channel", true),
 		},
 		uses([]Use{
@@ -120,7 +119,7 @@ func joinChannelSpec() Spec {
 					return nil, membership(ctx, client, input.ChannelID, true, nil), nil
 				})
 		},
-	)
+	), "The person is asked to confirm first; if they decline or close the question, do not try again unless they ask.")
 }
 
 // membership is what a tool answers once it changed who is in a channel.
@@ -133,12 +132,11 @@ func membership(ctx context.Context, client *mattermost.Client, channelID string
 }
 
 func leaveChannelSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
 			Name: "leave_channel",
 			Description: "Leave a channel the user belongs to. Everyone in it sees that they left, and a private channel can be joined " +
-				"again only by being added, so the person is asked to confirm first; if they decline or close the question, do not try " +
-				"again unless they ask. Mattermost keeps everyone in a team's town square.",
+				"again only by being added. Mattermost keeps everyone in a team's town square.",
 			Annotations: overwrites("Leave channel"),
 		},
 		uses([]Use{
@@ -194,7 +192,7 @@ func leaveChannelSpec() Spec {
 					return nil, out, nil
 				})
 		},
-	)
+	), "The person is asked to confirm first; if they decline or close the question, do not try again unless they ask.")
 }
 
 type addMembersInput struct {
@@ -203,12 +201,11 @@ type addMembersInput struct {
 }
 
 func addChannelMembersSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
 			Name: "add_channel_members",
-			Description: "Add people to a channel the user belongs to. Each is notified, and everyone in the channel sees who was added, " +
-				"so the person is asked to confirm first, seeing who goes where; if they decline or close the question, do not try " +
-				"again unless they ask. Someone outside the channel's team cannot be added.",
+			Description: "Add people to a channel the user belongs to. Each is notified, and everyone in the channel sees who was " +
+				"added. Someone outside the channel's team cannot be added.",
 			Annotations: writes("Add channel members", true),
 		},
 		uses([]Use{
@@ -301,7 +298,7 @@ func addChannelMembersSpec() Spec {
 					return nil, membership(ctx, client, input.ChannelID, true, added), nil
 				})
 		},
-	)
+	), "The person is asked to confirm first, seeing who goes where; if they decline or close the question, do not try again unless they ask.")
 }
 
 type createChannelInput struct {
@@ -313,12 +310,11 @@ type createChannelInput struct {
 }
 
 func createChannelSpec() Spec {
-	return toolSpec(
+	return asked(toolSpec(
 		&mcp.Tool{
 			Name: "create_channel",
-			Description: "Create a channel in one of the user's teams, public unless private is true, with the user as its first member. " +
-				"Its address is made from its name. The person is asked to confirm first, seeing the name, the team and who can find it; " +
-				"if they decline or close the question, do not try again unless they ask. add_channel_members adds people to it.",
+			Description: "Create a channel in one of the user's teams, public unless private is true, with the user as its first " +
+				"member. Its address is made from its name. add_channel_members adds people to it.",
 			Annotations: writes("Create channel", false),
 		},
 		[]Use{
@@ -400,7 +396,7 @@ func createChannelSpec() Spec {
 					return nil, out, nil
 				})
 		},
-	)
+	), "The person is asked to confirm first, seeing the name, the team and who can find it; if they decline or close the question, do not try again unless they ask.")
 }
 
 // channelAddress is the name in a channel's address made from its display
@@ -503,12 +499,12 @@ type Status struct {
 }
 
 func setStatusSpec() Spec {
-	return shaping(toolSpec(
+	return asked(shaping(toolSpec(
 		&mcp.Tool{
 			Name: "set_status",
 			Description: "Set the user's status, as everyone sees it beside their name: online, away, do not disturb (until a time, " +
-				"with dnd_until) or offline, and a status message with an emoji, until a time or until changed, or clear_text to clear it. " +
-				"Everyone sees it, so the person is asked to confirm first; if they decline or close the question, do not try again unless they ask.",
+				"with dnd_until) or offline, and a status message with an emoji, until a time or until changed, or clear_text " +
+				"to clear it. Everyone sees it.",
 			Annotations: writes("Set status", true),
 		},
 		[]Use{
@@ -657,5 +653,5 @@ func setStatusSpec() Spec {
 					return nil, planned, nil
 				})
 		},
-	), map[string]string{"clear_text": "chooses UnsetUserCustomStatus"})
+	), map[string]string{"clear_text": "chooses UnsetUserCustomStatus"}), "The person is asked to confirm first; if they decline or close the question, do not try again unless they ask.")
 }

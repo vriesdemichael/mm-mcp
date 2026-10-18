@@ -264,57 +264,53 @@ func TestTheLoadedConfigurationNamesItsCredentialWithoutShowingIt(t *testing.T) 
 	}
 }
 
-// Who asks before a write is reported as mm-mcp reads it, and the one
-// combination mm-mcp refuses fails with what to change (ADR-033).
-func TestSettingsSayWhoAsksBeforeAWrite(t *testing.T) {
+// Who decides on a write is reported as mm-mcp reads it, and what mm-mcp
+// refuses fails with what to change (ADR-033).
+func TestSettingsSayWhoDecidesOnAWrite(t *testing.T) {
 	t.Parallel()
-	settings := func(ask, force string) []Check {
+	settings := func(elicit, force, old string) []Check {
 		return Settings(testsupport.Env(map[string]string{
 			config.EnvURL: "https://chat.example.com", config.EnvAllowWrites: "true",
-			config.EnvAskBeforeWrites: ask, config.EnvForceHumanInTheLoopInClaudeCode: force,
+			config.EnvElicitationOptIn: elicit, config.EnvForceHumanInTheLoopInClaudeCode: force, config.EnvAskBeforeWrites: old,
 		}), false)
 	}
-	checks := settings("", "")
-	if got := find(t, checks, config.EnvAllowWrites); !strings.Contains(got.Detail, "asks first") {
-		t.Errorf("asking by default: %+v", got)
+	checks := settings("", "", "")
+	if got := find(t, checks, config.EnvAllowWrites); !strings.Contains(got.Detail, "client's own approval of each call decides") {
+		t.Errorf("by default: %+v", got)
 	}
-	for _, name := range []string{config.EnvAskBeforeWrites, config.EnvForceHumanInTheLoopInClaudeCode} {
+	for _, name := range []string{config.EnvElicitationOptIn, config.EnvForceHumanInTheLoopInClaudeCode, config.EnvAskBeforeWrites} {
 		for _, check := range checks {
 			if check.Name == name {
 				t.Errorf("unset, and still reported: %+v", check)
 			}
 		}
 	}
-	checks = settings("false", "")
-	if got := find(t, checks, config.EnvAllowWrites); !strings.Contains(got.Detail, "client's own approval") {
-		t.Errorf("not asking: %+v", got)
+	if got := find(t, settings("true", "", ""), config.EnvElicitationOptIn); got.Status != OK || !strings.Contains(got.Detail, "not a safeguard") {
+		t.Errorf("opted in: %+v", got)
 	}
-	if got := find(t, checks, config.EnvAskBeforeWrites); got.Status != OK || !strings.Contains(got.Detail, "asks nothing") {
-		t.Errorf("not asking: %+v", got)
-	}
-	if got := find(t, settings("false", "true"), config.EnvForceHumanInTheLoopInClaudeCode); got.Status != OK || !strings.Contains(got.Detail, "on every call") {
+	if got := find(t, settings("", "true", ""), config.EnvForceHumanInTheLoopInClaudeCode); got.Status != OK || !strings.Contains(got.Detail, "on every call") {
 		t.Errorf("forcing a human in the loop: %+v", got)
 	}
-	for _, ask := range []string{"", "true"} {
-		got := find(t, settings(ask, "true"), config.EnvForceHumanInTheLoopInClaudeCode)
-		if got.Status != Failed || !strings.Contains(got.Next, config.EnvAskBeforeWrites+"=false") {
-			t.Errorf("forcing while asking %q: %+v", ask, got)
-		}
+	if got := find(t, settings("true", "true", ""), config.EnvForceHumanInTheLoopInClaudeCode); got.Status != Failed || !strings.Contains(got.Detail, "asked twice") {
+		t.Errorf("forcing while opted in: %+v", got)
+	}
+	if got := find(t, settings("", "", "false"), config.EnvAskBeforeWrites); got.Status != Failed || !strings.Contains(got.Next, config.EnvElicitationOptIn) {
+		t.Errorf("the old setting: %+v", got)
 	}
 }
 
-func TestTheLoadedConfigurationSaysWhoAsksBeforeAWrite(t *testing.T) {
+func TestTheLoadedConfigurationSaysWhoDecidesOnAWrite(t *testing.T) {
 	t.Parallel()
-	loaded := func(skip, force bool) []Check {
-		return Loaded(config.Config{URL: "https://chat.example.com", AllowWrites: true, SkipAsking: skip, ForceHumanInTheLoopInClaudeCode: force}, "")
+	loaded := func(elicit, force bool) []Check {
+		return Loaded(config.Config{URL: "https://chat.example.com", AllowWrites: true, Elicit: elicit, ForceHumanInTheLoopInClaudeCode: force}, "")
 	}
-	if got := find(t, loaded(false, false), config.EnvAllowWrites); !strings.Contains(got.Detail, "asks first") {
-		t.Errorf("asking: %+v", got)
+	if got := find(t, loaded(false, false), config.EnvAllowWrites); !strings.Contains(got.Detail, "client's approval of each call decides") {
+		t.Errorf("by default: %+v", got)
 	}
-	if got := find(t, loaded(true, false), config.EnvAskBeforeWrites); !strings.Contains(got.Detail, "the only check") {
-		t.Errorf("not asking: %+v", got)
+	if got := find(t, loaded(true, false), config.EnvElicitationOptIn); !strings.Contains(got.Detail, "not a safeguard") {
+		t.Errorf("opted in: %+v", got)
 	}
-	if got := find(t, loaded(true, true), config.EnvForceHumanInTheLoopInClaudeCode); !strings.Contains(got.Detail, "on every call") {
+	if got := find(t, loaded(false, true), config.EnvForceHumanInTheLoopInClaudeCode); !strings.Contains(got.Detail, "on every call") {
 		t.Errorf("forcing a human in the loop: %+v", got)
 	}
 }

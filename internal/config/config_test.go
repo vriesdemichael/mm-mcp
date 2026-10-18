@@ -120,41 +120,52 @@ func TestAllowWritesRefusesAValueItCannotRead(t *testing.T) {
 	}
 }
 
-// mm-mcp asks before a write unless told not to; the config holds the
-// opposite, so a Config written without it asks.
-func TestWritesAreAskedAboutUnlessAskBeforeWritesIsFalse(t *testing.T) {
+// mm-mcp asks before a write only when told to: the client's own approval
+// decides, so a Config written without it asks nothing (ADR-033).
+func TestWritesAreAskedAboutOnlyWithElicitationOptedIn(t *testing.T) {
 	t.Parallel()
-	for value, skip := range map[string]bool{
-		"": false, "  ": false, "true": false, "1": false, "${user_config.ask_before_writes}": false,
-		"false": true, "0": true, "OFF": true,
+	for value, elicit := range map[string]bool{
+		"": false, "  ": false, "false": false, "0": false, "${user_config.elicitation_opt_in}": false,
+		"true": true, "1": true, "ON": true,
 	} {
-		cfg, err := config.FromEnv(testsupport.Env(with(config.EnvAskBeforeWrites, value)))
-		if err != nil || cfg.SkipAsking != skip || cfg.ForceHumanInTheLoopInClaudeCode {
-			t.Errorf("%q: got %v, %v; want SkipAsking %v", value, cfg, err, skip)
+		cfg, err := config.FromEnv(testsupport.Env(with(config.EnvElicitationOptIn, value)))
+		if err != nil || cfg.Elicit != elicit || cfg.ForceHumanInTheLoopInClaudeCode {
+			t.Errorf("%q: got %v, %v; want Elicit %v", value, cfg, err, elicit)
 		}
 	}
-	_, err := config.FromEnv(testsupport.Env(with(config.EnvAskBeforeWrites, "maybe")))
-	if err == nil || !strings.Contains(err.Error(), config.EnvAskBeforeWrites) {
+	_, err := config.FromEnv(testsupport.Env(with(config.EnvElicitationOptIn, "maybe")))
+	if err == nil || !strings.Contains(err.Error(), config.EnvElicitationOptIn) {
 		t.Fatalf("got %v", err)
 	}
 }
 
-// Forcing a human in the loop is for a client that asks; with mm-mcp asking
-// too, one write would be asked about twice, so the server does not start.
+// The setting that once meant mm-mcp asked stops the server, naming what
+// replaced it, rather than being ignored.
+func TestTheOldAskBeforeWritesStopsTheServer(t *testing.T) {
+	t.Parallel()
+	for _, value := range []string{"true", "false"} {
+		_, err := config.FromEnv(testsupport.Env(with(config.EnvAskBeforeWrites, value)))
+		if err == nil || !strings.Contains(err.Error(), config.EnvAskBeforeWrites+" is gone") || !strings.Contains(err.Error(), config.EnvElicitationOptIn) {
+			t.Errorf("%q: got %v", value, err)
+		}
+	}
+	if _, err := config.FromEnv(testsupport.Env(with(config.EnvAskBeforeWrites, "${user_config.ask_before_writes}"))); err != nil {
+		t.Errorf("a placeholder the client left unexpanded is unset: %v", err)
+	}
+}
+
+// Forcing a human in the loop has Claude Code ask; with mm-mcp asking too, one
+// write would be asked about twice, so the server does not start.
 func TestAHumanInTheLoopIsForcedOnlyWhenMmMcpDoesNotAsk(t *testing.T) {
 	t.Parallel()
-	env := with(config.EnvAskBeforeWrites, "false")
-	env[config.EnvForceHumanInTheLoopInClaudeCode] = "true"
+	env := with(config.EnvForceHumanInTheLoopInClaudeCode, "true")
 	cfg, err := config.FromEnv(testsupport.Env(env))
-	if err != nil || !cfg.SkipAsking || !cfg.ForceHumanInTheLoopInClaudeCode {
+	if err != nil || cfg.Elicit || !cfg.ForceHumanInTheLoopInClaudeCode {
 		t.Fatalf("got %v, %v", cfg, err)
 	}
-	for _, ask := range []string{"", "true"} {
-		env[config.EnvAskBeforeWrites] = ask
-		_, err := config.FromEnv(testsupport.Env(env))
-		if err == nil || !strings.Contains(err.Error(), config.EnvForceHumanInTheLoopInClaudeCode+"=true needs "+config.EnvAskBeforeWrites+"=false") {
-			t.Errorf("asking %q: got %v", ask, err)
-		}
+	env[config.EnvElicitationOptIn] = "true"
+	if _, err := config.FromEnv(testsupport.Env(env)); err == nil || !strings.Contains(err.Error(), "would ask twice") {
+		t.Errorf("both: got %v", err)
 	}
 }
 
