@@ -153,7 +153,7 @@ func TestAnEditIsCountedAgainAfterThePersonIsAsked(t *testing.T) {
 		}
 	}, accept)
 
-	refusedSaying(t, session, "update_post", map[string]any{"post_id": post.Id, "message": "Retro at five", "reaches": count},
+	refusedSaying(t, session, "update_post", map[string]any{"post_id": post.Id, "message": "Retro at five", "reaches": count, "discards": chars("Retro at four")},
 		"said "+itoa(count), "reaches: "+itoa(count+1))
 	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
