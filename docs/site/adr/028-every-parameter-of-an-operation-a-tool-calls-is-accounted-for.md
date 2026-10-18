@@ -9,6 +9,8 @@ A tool declares, in its spec's Uses, every Mattermost operation it calls, by its
 
 A parameter the router reads though the specification leaves it out is declared `Undocumented`, with the argument that sets it, if any, and where the server reads it; the check refuses one the specification does document, which must be set, fixed or omitted like any other, and the live suite shows each working. A parameter the specification documents and the server does not read is omitted with that reason.
 
+An operation a tool calls only on a licensed edition, such as the user groups behind a group mention, is declared `Licensed` with why. The live suite cannot reach a licensed edition (ADR-007), so it does not hold the tool to calling that operation; its parameters are accounted for like any other.
+
 When adding a tool or a parameter, read the operation in openapi/mattermost-latest.json, decide each parameter, and write the decision with its reason. An omission is a decision, and the reason is what a reviewer reads: say what a user would lose and why that is right, not that it is unneeded. When a release adds a parameter, the check fails the change that adopts the release, and the parameter is decided then.
 
 A tool that quietly ignores a parameter does less than the person asking expects, and nobody can tell from the outside. Declaring each one turns "does this tool do everything the endpoint can" into a list a reviewer reads and a check keeps complete. A declaration nobody verifies drifts from the code, so the live suite checks it against the requests the tool really sends.

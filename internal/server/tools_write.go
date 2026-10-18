@@ -164,9 +164,11 @@ type destination struct {
 	self      *model.User
 	label     string
 	channelID string
-	root      *model.Post
-	open      func(context.Context) (string, error)
-	size      destinationSize
+	// target is the channel a post in a known channel goes in.
+	target *model.Channel
+	root   *model.Post
+	open   func(context.Context) (string, error)
+	size   destinationSize
 	// key names the destination for the person's answer: the channel and
 	// thread, or the people a direct or group message goes to, so the answer
 	// accepts a post to the people it named and not to whoever the same
@@ -247,6 +249,7 @@ func inChannel(ctx context.Context, client *mattermost.Client, channelID, rootID
 		self:      self,
 		label:     place(channel, self.Id, names, groups[channel.Id]),
 		channelID: channelID,
+		target:    channel,
 		key:       "channel:" + channelID + "/" + rootID,
 		root:      root,
 		size: func(ctx context.Context) (int64, error) {
@@ -332,6 +335,9 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 					if err != nil {
 						return confirmation{}, err
 					}
+					if err := checkImpact(ctx, client, tool.Name, where, checked, input); err != nil {
+						return confirmation{}, err
+					}
 					return postQuestion(ctx, client, where, input.text(), files, checked, cfg.MarkAIGenerated)
 				},
 				func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Post, error) {
@@ -343,6 +349,17 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 					}
 					if err := stillAsAsked(ctx, tool.Name, bound(files, where)); err != nil {
 						return nil, Post{}, err
+					}
+					// How far the post goes is counted again now: members may have
+					// joined since the count was read, or while the person was asked.
+					if _, states := any(input).(stating); states {
+						checked, err := checkMessage(ctx, client, input.text(), where.label, where.size)
+						if err != nil {
+							return nil, Post{}, err
+						}
+						if err := checkImpact(ctx, client, tool.Name, where, checked, input); err != nil {
+							return nil, Post{}, err
+						}
 					}
 					channelID, err := where.channel(ctx)
 					if err != nil {
@@ -435,24 +452,30 @@ type createPostInput struct {
 	ChannelID string `json:"channel_id,omitempty" jsonschema:"the channel to post in, as get_user_channels or get_channel_info gives it"`
 	RootID    string `json:"root_id,omitempty" jsonschema:"reply in the thread of this post: the post that started it or any reply in it"`
 	Message   string `json:"message" jsonschema:"the text to post, in Mattermost Markdown"`
+	reachField
+	notifyField
 	filesField
 }
 
-func (in createPostInput) text() string { return in.Message }
+func (in createPostInput) text() string                       { return in.Message }
+func (in createPostInput) stated() (reaches, notifies *int64) { return in.Reaches, in.Notifies }
 func (in createPostInput) destination(ctx context.Context, client *mattermost.Client) (destination, error) {
 	return inChannel(ctx, client, in.ChannelID, in.RootID)
 }
 func (in createPostInput) typingIn() (string, string) { return in.ChannelID, in.RootID }
 
 func createPostSpec() Spec {
-	return postingSpec[createPostInput](
+	return checking(postingSpec[createPostInput](
 		&mcp.Tool{
 			Name: "create_post",
 			Description: "Post a message in a channel under the user's name, or with root_id a reply in the thread of any post. " +
-				"To message people directly use dm, and group_message only when the person asks for a group conversation." + postingDescription,
+				"To message people directly use dm, and group_message only when the person asks for a group conversation. " +
+				"Every call states reaches, how many members the channel has, and, where the message alerts a whole channel or " +
+				"user group as Mattermost asks about first, notifies; each is checked against mm-mcp's own count, and a wrong " +
+				"one is refused with the real one, for you to weigh before you call again." + postingDescription,
 			Annotations: writes("Create post", false),
 		},
-		[]Use{
+		append([]Use{
 			{Operation: "GetChannel", Params: map[string]Coverage{"channel_id": SetBy("channel_id")}},
 			{
 				Operation: "GetPost",
@@ -461,9 +484,9 @@ func createPostSpec() Spec {
 					"include_deleted": Omitted("a deleted post has no thread to reply in"),
 				},
 			},
-		},
+		}, impactUses()...),
 		SetBy("channel_id"), SetBy("root_id"), true,
-	)
+	), map[string]string{"reaches": reachCheck, "notifies": notifyCheck})
 }
 
 type dmInput struct {
@@ -640,14 +663,26 @@ func groupMessageSpec() Spec {
 type updatePostInput struct {
 	PostID  string `json:"post_id" jsonschema:"the post to edit, which must be the user's own"`
 	Message string `json:"message" jsonschema:"the post's new text in full, in Mattermost Markdown; it replaces the old text"`
+	reachField
+}
+
+// editReaches refuses an edit whose reaches is not the member count of the
+// post's channel: an edit reaches everyone the post does. GetChannelStats.
+func editReaches(ctx context.Context, client *mattermost.Client, p postInContext, stated *int64) error {
+	stats, err := client.ChannelStats(ctx, p.post.ChannelId)
+	if err != nil {
+		return err
+	}
+	return checkReaches("update_post", p.in, stated, stats.MemberCount)
 }
 
 func updatePostSpec() Spec {
-	return configuredToolSpec(
+	return checking(configuredToolSpec(
 		&mcp.Tool{
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
-				"newly mentions. The new text must fit the server's limit. The person is asked to confirm each edit, seeing the old text " +
+				"newly mentions. The new text must fit the server's limit. Every call states reaches, how many members the post's " +
+				"channel has, since an edit reaches everyone the post does; it is checked against mm-mcp's own count. The person is asked to confirm each edit, seeing the old text " +
 				"and the new; if they decline or close the question, do not edit it again unless they ask.",
 			Annotations: overwrites("Update post"),
 		},
@@ -661,6 +696,9 @@ func updatePostSpec() Spec {
 				"body.has_reactions": Omitted("Mattermost keeps it in step with the reactions itself"),
 				"body.is_pinned":     Omitted("pin_post pins and unpins, asking about that on its own"),
 			},
+		}, {
+			Operation: "GetChannelStats",
+			Params:    map[string]Coverage{"channel_id": Fixed("the post's channel", "reaches is checked against its member count")},
 		}}, postContextUses(), lengthUses(), describeUses(true)),
 		func(clientFor ClientFor, cfg config.Config) mcp.ToolHandlerFor[updatePostInput, Post] {
 			// An edit is bound to the text it replaces.
@@ -692,6 +730,9 @@ func updatePostSpec() Spec {
 					if err := checkLength(ctx, client, input.Message); err != nil {
 						return confirmation{}, err
 					}
+					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
+						return confirmation{}, err
+					}
 					_, marked := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
 					return confirmation{
 						Message: fmt.Sprintf("Edit your post in %s as @%s. An edit notifies nobody.%s\n\nIt reads now:\n\n%s\n\nIt will read:\n\n%s",
@@ -711,6 +752,9 @@ func updatePostSpec() Spec {
 					if err := stillAsAsked(ctx, "update_post", p.post.Message); err != nil {
 						return nil, Post{}, err
 					}
+					if err := editReaches(ctx, client, p, input.Reaches); err != nil {
+						return nil, Post{}, err
+					}
 					props, _ := editProps(p.post, cfg.MarkAIGenerated, p.self.Id)
 					edited, err := client.EditPost(ctx, input.PostID, input.Message, props)
 					if err != nil {
@@ -723,7 +767,7 @@ func updatePostSpec() Spec {
 					return nil, posts[0], nil
 				})
 		},
-	)
+	), map[string]string{"reaches": reachCheck})
 }
 
 // markablePostProps are the properties an edit may send back unchanged with

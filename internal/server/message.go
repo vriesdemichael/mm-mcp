@@ -32,6 +32,18 @@ var specialMentions = map[string]string{
 // checkedMessage is what a message will do once posted, for the question.
 type checkedMessage struct {
 	notes []string
+	// specials are its mentions of everyone, as @channel, @all and @here,
+	// each once.
+	specials []string
+	// groups are the user groups it mentions.
+	groups []mentionedGroup
+}
+
+// mentionedGroup is a user group a message mentions, by the mention as
+// written.
+type mentionedGroup struct {
+	word  string
+	group *model.Group
 }
 
 // note is what the question says of the message, before the message itself.
@@ -80,6 +92,7 @@ func checkMessage(ctx context.Context, client *mattermost.Client, message, where
 				continue
 			}
 			noted[special] = true
+			checked.specials = append(checked.specials, "@"+special)
 			count, err := size(ctx)
 			if err != nil {
 				return checkedMessage{}, err
@@ -112,10 +125,11 @@ func checkMessage(ctx context.Context, client *mattermost.Client, message, where
 	for _, m := range people {
 		user := m.user(byName)
 		switch {
-		case user == nil && groups[m.word] != "":
+		case user == nil && groups[m.word] != nil:
 			if !noted[m.word] {
 				noted[m.word] = true
-				checked.notes = append(checked.notes, groups[m.word])
+				checked.notes = append(checked.notes, groupNote(m.word, groups[m.word]))
+				checked.groups = append(checked.groups, mentionedGroup{word: m.word, group: groups[m.word]})
 			}
 		case user == nil:
 			unknown = append(unknown, m.word)
@@ -297,12 +311,11 @@ func aiNote(on bool) string {
 	return "\n\nThe post will be marked as written with AI."
 }
 
-// mentionedGroups says what each of the mentions that name no user does when
-// it names a user group instead, by the mention as written: the members it
-// notifies, or that it notifies nobody. Groups are a licensed feature: Team
-// Edition answers 501, and then no mention is a group. GetGroupsByNames.
-func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned []mention) map[string]string {
-	out := map[string]string{}
+// mentionedGroups is the user group each of the mentions that name no user
+// names instead, by the mention as written. Groups are a licensed feature:
+// Team Edition answers 501, and then no mention is a group. GetGroupsByNames.
+func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned []mention) map[string]*model.Group {
+	out := map[string]*model.Group{}
 	if len(mentioned) == 0 {
 		return out
 	}
@@ -322,17 +335,20 @@ func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned [
 	}
 	for _, m := range mentioned {
 		for _, name := range m.names {
-			group := byName[name]
-			switch {
-			case group == nil:
-				continue
-			case !group.AllowReference:
-				out[m.word] = fmt.Sprintf("%s names the group %s, which cannot be mentioned, so it notifies nobody.", m.word, group.DisplayName)
-			default:
-				out[m.word] = fmt.Sprintf("%s notifies the group %s: %s.", m.word, group.DisplayName, peopleCount(int64(group.GetMemberCount())))
+			if group := byName[name]; group != nil {
+				out[m.word] = group
+				break
 			}
-			break
 		}
 	}
 	return out
+}
+
+// groupNote is what a question says a mention of a user group does: the
+// members it notifies, or that it notifies nobody.
+func groupNote(word string, group *model.Group) string {
+	if !group.AllowReference {
+		return fmt.Sprintf("%s names the group %s, which cannot be mentioned, so it notifies nobody.", word, group.DisplayName)
+	}
+	return fmt.Sprintf("%s notifies the group %s: %s.", word, group.DisplayName, peopleCount(int64(group.GetMemberCount())))
 }

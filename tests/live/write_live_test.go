@@ -70,9 +70,27 @@ func writingSession(t *testing.T, admin *model.Client4, user *model.User, answer
 
 func createPost(t *testing.T, session *mcp.ClientSession, arguments map[string]any) server.Post {
 	t.Helper()
+	if _, stated := arguments["reaches"]; !stated {
+		channelID, _ := arguments["channel_id"].(string)
+		if rootID, _ := arguments["root_id"].(string); rootID != "" {
+			root, _, err := admin(t).GetPost(t.Context(), rootID, "")
+			check(t, err)
+			channelID = root.ChannelId
+		}
+		arguments["reaches"] = members(t, channelID)
+	}
 	var posted server.Post
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: arguments}), &posted)
 	return posted
+}
+
+// members is how many members a channel has, as a model reads it before it
+// posts or edits there: the reaches its call states (ADR-031).
+func members(t *testing.T, channelID string) int64 {
+	t.Helper()
+	stats, _, err := admin(t).GetChannelStats(t.Context(), channelID, "", false)
+	check(t, err)
+	return stats.MemberCount
 }
 
 // messagesIn is every message in a channel, read by admin.
@@ -213,7 +231,7 @@ func TestAWriteThePersonDidNotAcceptChangesNothing(t *testing.T) {
 			}
 
 			for _, params := range []*mcp.CallToolParams{
-				{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "unwanted"}},
+				{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "unwanted", "reaches": members(t, channel.Id)}},
 				{Name: "add_reaction", Arguments: map[string]any{"post_id": target.Id, "emoji": "thumbsup"}},
 			} {
 				result, err := tryTool(t, session, params)
@@ -268,10 +286,10 @@ func TestAServerThatDoesNotAskWritesWithoutAQuestion(t *testing.T) {
 
 			var posted server.Post
 			structured(t, callTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{
-				"channel_id": channel.Id, "message": "first draft",
+				"channel_id": channel.Id, "message": "first draft", "reaches": members(t, channel.Id),
 			}}), &posted)
 			callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-				"post_id": posted.ID, "message": "posted unasked",
+				"post_id": posted.ID, "message": "posted unasked", "reaches": members(t, channel.Id),
 			}})
 			callTool(t, session, &mcp.CallToolParams{Name: "add_reaction", Arguments: map[string]any{
 				"post_id": target.Id, "emoji": "thumbsup",

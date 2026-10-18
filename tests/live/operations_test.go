@@ -299,7 +299,7 @@ func declaredButNeverCalled() []string {
 	var missing []string
 	for _, spec := range server.AllSpecs() {
 		for _, use := range spec.Uses {
-			if !observed[spec.Tool.Name][use.Operation] {
+			if !observed[spec.Tool.Name][use.Operation] && use.Licensed == "" {
 				missing = append(missing, spec.Tool.Name+" declares "+use.Operation)
 			}
 		}

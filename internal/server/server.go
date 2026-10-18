@@ -94,8 +94,13 @@ type Spec struct {
 	Uses []Use
 	// Shapes names each argument that shapes the answer rather than setting a
 	// parameter, such as a filter applied to what Mattermost returned, with what
-	// it does. Every argument is either set on a parameter or named here.
+	// it does. Every argument is set on a parameter, named here, or named in
+	// Checks.
 	Shapes map[string]string
+	// Checks names each argument the call is checked against rather than
+	// sent, such as how many people a post reaches, with what mm-mcp counts
+	// it against (ADR-031).
+	Checks map[string]string
 	// Unasked says why a tool that changes Mattermost does not ask the person
 	// first: what it changes is theirs alone, or gone within seconds. Every
 	// other tool that changes Mattermost asks (ADR-021).
@@ -119,6 +124,12 @@ func local(spec Spec) Spec {
 	return spec
 }
 
+// checking gives a spec the arguments its calls are checked against.
+func checking(spec Spec, checks map[string]string) Spec {
+	spec.Checks = checks
+	return spec
+}
+
 // shaping gives a spec the arguments that shape its answer, beside any it has.
 func shaping(spec Spec, shapes map[string]string) Spec {
 	spec.Shapes = withShapes(spec.Shapes, shapes)
@@ -136,6 +147,10 @@ type Use struct {
 	// Releases says how the tool handles what differs in the oldest supported
 	// release, and is required exactly when something does (ADR-025).
 	Releases string
+	// Licensed says why the tool calls the operation only on a licensed
+	// edition, which the live suite cannot reach (ADR-007), so no live test
+	// is held to calling it.
+	Licensed string
 }
 
 // Coverage is what a tool does with one parameter of an operation it calls.
