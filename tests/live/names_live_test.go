@@ -16,7 +16,7 @@ import (
 // its link (ADR-030). A write others see takes its places by address alone,
 // which callTool reads as a model reads it; address_live_test.go holds that.
 
-func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsAddress(t *testing.T) {
+func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsLink(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user, other := seedUser(t, admin), seedUser(t, admin)
@@ -41,7 +41,7 @@ func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsAddress(t *testing.T)
 		{Name: "typing", Arguments: map[string]any{"channel_id": byName, "stop": true}},
 		{Name: "save_draft", Arguments: map[string]any{"channel_id": bySign, "message": "a draft found by name"}},
 		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id, "discards": chars("a draft found by name")}},
-		{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "posted by the channel's name", "reaches": members(t, channel.Id)}},
+		{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "posted at the channel's address", "reaches": members(t, channel.Id)}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/_redirect/pl/" + post.Id}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/" + team.Name + "/pl/" + post.Id}},
 	} {
@@ -52,7 +52,7 @@ func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsAddress(t *testing.T)
 
 	var read server.ChannelPosts
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "read_channel", Arguments: map[string]any{"channel_id": "#" + channel.DisplayName}}), &read)
-	if read.ChannelID != channel.Id || len(read.Posts) == 0 || read.Posts[len(read.Posts)-1].Message != "posted by the channel's name" {
+	if read.ChannelID != channel.Id || len(read.Posts) == 0 || read.Posts[len(read.Posts)-1].Message != "posted at the channel's address" {
 		t.Errorf("read %s by its display name: %+v", channel.Name, read)
 	}
 

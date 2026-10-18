@@ -44,10 +44,9 @@ func bareName(given string) string {
 // A write others see takes its places by address alone, read by
 // resolveAddress (ADR-030).
 //
-// A tool that asks the person refuses a client that cannot be asked before
-// it reads a name, which reaches Mattermost (ADR-021). On a server configured
-// not to ask, skip tells the tool's confirmation to let the call through
-// (ADR-033).
+// On a server set to ask, a tool that asks refuses a client that cannot be
+// asked before it reads a name, which reaches Mattermost; on one that does
+// not, skip tells the tool's confirmation to let the call through (ADR-033).
 func resolving[In, Out any](tool string, handler mcp.ToolHandlerFor[In, Out], clientFor ClientFor, asks, skip, addressed bool) mcp.ToolHandlerFor[In, Out] {
 	fields := idFields(reflect.TypeFor[In]())
 	return func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Out, error) {
@@ -140,7 +139,7 @@ func resolveID(ctx context.Context, request *mcp.CallToolRequest, clientFor Clie
 }
 
 // ownTeam is the id of the user's team a name or a link means. A link's team
-// is matched by the whole name in its address, never in part.
+// is matched by the whole name in its link, never in part.
 func ownTeam(ctx context.Context, client *mattermost.Client, name string) (string, error) {
 	l, isLink, err := parseLink(client, name)
 	if err != nil {
@@ -223,8 +222,8 @@ func nameUses(input reflect.Type) []Use {
 // idNotes is what each id argument's description adds, so the model knows it
 // need not look an id up first.
 var idNotes = map[string]string{
-	channelArg: "its id, its name as in its address or as shown, with ~ or # before it or not, or its link, a direct or group message's included",
-	teamArg:    "its id, its name as in its address or as shown, or a link to it or into it",
+	channelArg: "its id, its name as in its link or as shown, with ~ or # before it or not, its link, or its address, a direct or group message's included",
+	teamArg:    "its id, its name as in its link or as shown, a link to it or into it, or its address",
 	postArg:    "its id, or its link",
 	rootArg:    "its id, or its link",
 	fileArg:    "its id, its address as a resource, mattermost://…/files/<id>, or a link Mattermost gives to it",

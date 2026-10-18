@@ -317,7 +317,7 @@ func createChannelSpec() Spec {
 		&mcp.Tool{
 			Name: "create_channel",
 			Description: "Create a channel in one of the user's teams, public unless private is true, with the user as its first " +
-				"member. Its address is made from its name. add_channel_members adds people to it.",
+				"member. The name in its link is made from its display name. add_channel_members adds people to it.",
 			Annotations: writes("Create channel", false),
 		},
 		[]Use{
@@ -336,7 +336,7 @@ func createChannelSpec() Spec {
 				},
 			},
 			{Operation: "GetTeam", Params: map[string]Coverage{"team_id": SetBy("team_id")}},
-			{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "the channel is made under the user's name, and the question says whose")}},
+			{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "the channel is made under the user's name, which the question says where mm-mcp asks")}},
 		},
 		func(clientFor ClientFor) mcp.ToolHandlerFor[createChannelInput, Channel] {
 			return asking("create_channel",
@@ -378,7 +378,7 @@ func createChannelSpec() Spec {
 						return nil, Channel{}, err
 					}
 					created, err := client.CreateChannel(ctx, mattermost.NewChannel{
-						TeamID: input.TeamID, Name: channelAddress(input.DisplayName), DisplayName: strings.TrimSpace(input.DisplayName),
+						TeamID: input.TeamID, Name: channelURLName(input.DisplayName), DisplayName: strings.TrimSpace(input.DisplayName),
 						Private: input.Private, Purpose: input.Purpose, Header: input.Header,
 					})
 					if err != nil {
@@ -402,10 +402,10 @@ func createChannelSpec() Spec {
 	), "The person is asked to confirm first, seeing the name, the team and who can find it; if they decline or close the question, do not try again unless they ask.")
 }
 
-// channelAddress is the name in a channel's address made from its display
+// channelURLName is the name in a channel's link made from its display
 // name, as Mattermost's own app makes it: lower case, a dash for each run of
 // anything but letters and digits, and a random one when nothing is left.
-func channelAddress(display string) string {
+func channelURLName(display string) string {
 	var b strings.Builder
 	dash := false
 	for _, r := range strings.ToLower(strings.TrimSpace(display)) {
@@ -531,7 +531,7 @@ func setStatusSpec() Spec {
 				},
 			},
 			{Operation: "UnsetUserCustomStatus", Params: map[string]Coverage{"user_id": Fixed("me", "a person clears their own status message")}},
-			{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "a time without an offset is read in the person's timezone, and the question says whose status changes")}},
+			{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "a time without an offset is read in the person's timezone")}},
 		},
 		func(clientFor ClientFor) mcp.ToolHandlerFor[setStatusInput, Status] {
 			plan := func(ctx context.Context, request *mcp.CallToolRequest, input setStatusInput) (*mattermost.Client, *model.User, Status, time.Time, time.Time, error) {

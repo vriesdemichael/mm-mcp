@@ -14,12 +14,12 @@ func TestAChannelsAddressIsMadeFromItsName(t *testing.T) {
 		"Café ☕ talk":           "caf-talk",
 		strings.Repeat("a", 80): strings.Repeat("a", 64),
 	} {
-		if got := channelAddress(name); got != want {
+		if got := channelURLName(name); got != want {
 			t.Errorf("%q: got %q, want %q", name, got, want)
 		}
 	}
 	// Nothing to make an address of: a random one, as Mattermost's app does.
-	if got := channelAddress("☕☕"); len(got) != 26 {
+	if got := channelURLName("☕☕"); len(got) != 26 {
 		t.Errorf("a name without letters got %q", got)
 	}
 }

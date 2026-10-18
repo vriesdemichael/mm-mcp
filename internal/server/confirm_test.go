@@ -14,8 +14,8 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// The confirmation every write goes through (ADR-021), on a probe tool that
-// writes nothing: what the person is asked, and that the tool runs only on a
+// The confirmation a write others see goes through on a server set to ask
+// (ADR-033), on a probe tool that writes nothing: what the person is asked, and that the tool runs only on a
 // ticked acceptance of the very call it was asked about. The write tools' own
 // questions, and that a refusal leaves Mattermost unchanged, are the live
 // suite's.

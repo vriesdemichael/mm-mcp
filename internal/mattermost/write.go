@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// The writes the tools make, each behind the person's confirmation (ADR-021).
+// The writes the tools make, once MM_MCP_ALLOW_WRITES allows them (ADR-021).
 // Each is one Client4 call, and an operation a tool declares in its Uses.
 
 // NewPost is a post to create: a message in a channel, as a reply in RootID's

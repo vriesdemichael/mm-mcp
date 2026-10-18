@@ -250,14 +250,14 @@ func (c *Client) GroupMembers(ctx context.Context, channelIDs []string) (map[str
 	return result(c.api.GetUsersByGroupChannelIds(ctx, channelIDs))
 }
 
-// ChannelByNames is the channel with the given address name in the team with
-// the given address name, archived or not: the channel a link names.
+// ChannelByNames is the channel with the given URL name in the team with
+// the given URL name, archived or not: the channel a link names.
 // GetChannelByNameForTeamName.
 func (c *Client) ChannelByNames(ctx context.Context, teamName, channelName string) (*model.Channel, error) {
 	return result(c.api.GetChannelByNameForTeamNameIncludeDeleted(ctx, channelName, teamName, ""))
 }
 
-// TeamByName is the team with the given address name. GetTeamByName.
+// TeamByName is the team with the given URL name. GetTeamByName.
 func (c *Client) TeamByName(ctx context.Context, name string) (*model.Team, error) {
 	return result(c.api.GetTeamByName(ctx, name, ""))
 }

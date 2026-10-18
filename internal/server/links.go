@@ -111,7 +111,7 @@ type link struct {
 	// team is the name in the address of the team the link is in; empty for
 	// one Mattermost sends on to a team of the person's, and for a file's.
 	team string
-	// name is a channel's address name, or what follows messages/: @ and a
+	// name is a channel's URL name, or what follows messages/: @ and a
 	// username, a user's id, or a group message's name.
 	name string
 	// post is the post the link opens at, when it opens at one.
@@ -344,7 +344,7 @@ func channelByLink(ctx context.Context, client *mattermost.Client, mine myChanne
 	return described, nil
 }
 
-// named is the user's channel with the given address name, or nil.
+// named is the user's channel with the given URL name, or nil.
 func (m myChannels) named(name string) *model.Channel {
 	for _, channel := range m.channels {
 		if channel.Name == name {
@@ -376,7 +376,7 @@ func (m myChannels) messages(identifier string) *model.Channel {
 	return nil
 }
 
-// teamOfLink is the address name of the team a link is in, for a team
+// teamOfLink is the URL name of the team a link is in, for a team
 // argument: a team's link, or any link inside a team.
 func teamOfLink(l link) (string, error) {
 	if l.team == "" {
@@ -385,7 +385,7 @@ func teamOfLink(l link) (string, error) {
 	return l.team, nil
 }
 
-// teamNamed is the user's team whose address name is name, or nil.
+// teamNamed is the user's team whose URL name is name, or nil.
 func teamNamed(teams []*model.Team, name string) *model.Team {
 	for _, team := range teams {
 		if strings.EqualFold(team.Name, name) {

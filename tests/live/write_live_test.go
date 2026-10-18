@@ -95,7 +95,7 @@ func members(t *testing.T, channelID string) int64 {
 }
 
 // chars is how long a text is, as Mattermost counts a message's length: the
-// discards a call states that replaces or deletes it (ADR-031).
+// discards a call states that deletes a draft of it (ADR-031).
 func chars(text string) int64 { return int64(utf8.RuneCountInString(text)) }
 
 // messagesIn is every message in a channel, read by admin.
