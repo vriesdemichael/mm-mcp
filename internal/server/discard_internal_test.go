@@ -58,7 +58,7 @@ func TestAnEditStatesTheWholeTextItReplaces(t *testing.T) {
 	if err := checkOldMessage("your post in ~Town Square", current, current); err != nil {
 		t.Fatalf("the text as it reads: %v", err)
 	}
-	for stated, says := range map[string]string{"": "give old_message", "Give me a thumbs up": "does not read as old_message says"} {
+	for stated, says := range map[string]string{"": "give old_message", "Give me a thumbs up": "differs from the current text"} {
 		err := checkOldMessage("your post in ~Town Square", current, stated)
 		if err == nil || !strings.Contains(err.Error(), says) || !strings.Contains(err.Error(), "“"+current+"”") {
 			t.Errorf("old_message %q: %v; want it refused, saying %q and quoting the post", stated, err, says)
@@ -92,7 +92,7 @@ func TestAnEditOfAnAnsweredPostStatesHowManyAnswerIt(t *testing.T) {
 		if err == nil {
 			t.Fatalf("%s: not refused", says)
 		}
-		for _, want := range []string{says, "8 reactions and replies answer your post in ~Town Square", "@brent", "read as answers to the new text", "reply in the thread instead", "responses: 8"} {
+		for _, want := range []string{says, "8 reactions and replies respond to your post in ~Town Square", "@brent", "leaves them under the replacing text", "reply in the thread instead", "responses: 8"} {
 			if !strings.Contains(err.Error(), want) {
 				t.Errorf("%s: %q lacks %q", says, err, want)
 			}
@@ -106,7 +106,7 @@ func TestAnEditOfAnAnsweredPostStatesHowManyAnswerIt(t *testing.T) {
 		t.Errorf("responses on a post nobody answered: %v", err)
 	}
 	one := postAnswers{replies: 1}
-	if err := checkResponses("your post", one, nil); err == nil || !strings.Contains(err.Error(), "1 reaction or reply answers") {
+	if err := checkResponses("your post", one, nil); err == nil || !strings.Contains(err.Error(), "1 reaction or reply responds to") {
 		t.Errorf("one answer: %v", err)
 	}
 }

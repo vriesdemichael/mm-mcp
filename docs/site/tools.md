@@ -302,12 +302,12 @@ Each of these asks you first, showing exactly what will happen
     conversation.
 
 `update_post`: Update post { #update_post .mm-asks }
-:   Replaces the text of one of your own posts. The question shows the old text
-    and the new. An edit notifies nobody, so its mentions are not checked, only
-    its length. The call states `reaches`, how many members the post's channel
-    has, since an edit reaches everyone the post does; `old_message`, the
-    post's whole text as it reads now, beside the new; and, once anyone has
-    reacted or replied, `responses`, how many have
+:   Replaces the text of one of your own posts. The question shows the current
+    text and its replacement. An edit notifies nobody, so its mentions are not
+    checked, only its length. The call states `reaches`, how many members the
+    post's channel has, since an edit reaches everyone the post does;
+    `old_message`, the post's current text in full; and, for a post with
+    reactions or replies, `responses`, their number
     ([below](#what-an-edit-changes)). Another person's post is refused, even
     with an administrator's credential.
 
@@ -627,30 +627,29 @@ both are right.
 
 #### What an edit changes
 
-`update_post` states the post's whole text as it reads now, `old_message`, beside
-the new one
+`update_post` states the post's current text in full, `old_message`, alongside
+its replacement
 ([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)).
-The model cannot change a post without writing out all of what it replaces, and
-your client's approval shows the old text beside the new. A post that reads
-otherwise, because you edited it in Mattermost since the model read it, or
-because `old_message` is only part of it, is refused with what it reads now.
+The model cannot edit a post without writing out all of what it replaces, and
+your client's approval shows both texts. An `old_message` that differs from the
+post's current text, because you edited the post after the model read it or
+because only part of it is quoted, is refused with the current text.
 
-Once anyone has reacted to the post or, for one that starts a thread, replied
-to it, the edit states `responses` as well: how many have, as `read_post`
-gives it. Their answers will read as answers to the new text, and Mattermost
-tells nobody about an edit, so a thumbs up given to one sentence can end up
-under another. For example, editing your "Give me a thumbs up if you like cat
-memes", which five people gave a 👍 and two replied to, into something else,
-without `responses`, is refused with:
+A post with reactions, or with replies in the thread it starts, also takes
+`responses`, their number, as `read_post` gives it. An edit leaves those
+reactions and replies under the replacing text, and Mattermost tells nobody
+about an edit, so a thumbs up given to one sentence stands under another. For
+example, an edit of your "Give me a thumbs up if you like cat memes", which has
+five 👍 and two replies, that leaves out `responses` is refused with:
 
-> update_post did not run: 7 reactions and replies answer your post in ~Town
-> Square as it reads now: :thumbsup: ×5 (@brent, @ann, @joe, 2 more), 2 replies
-> in its thread, and the call left the number out. Mattermost tells nobody about
-> an edit, so they will read as answers to the new text. Consider whether they
-> still fit it; if the change is news to those who answered, reply in the
-> thread instead. If they still fit, call again with responses: 7
+> update_post did not run: 7 reactions and replies respond to your post in
+> ~Town Square: :thumbsup: ×5 (@brent, @ann, @joe, 2 more), 2 replies in its
+> thread, and the call left the number out. An edit leaves them under the
+> replacing text, and Mattermost tells nobody about it. Consider whether they
+> fit the replacement; if the change is news to those who responded, reply in
+> the thread instead. If they fit it, call again with responses: 7
 
-A post nobody has answered needs no `responses`.
+A post without reactions or replies takes no `responses`.
 
 #### What a write takes away
 
