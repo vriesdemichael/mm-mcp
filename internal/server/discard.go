@@ -46,9 +46,9 @@ func checkDiscards(tool, what, text string, files int, stated *int64) error {
 		"leave them as they are, or ask the person", tool, count, what, excerpt(text), held, said(stated), count)
 }
 
-// checkDeletes refuses a deletion whose deletes is not the post and the
+// checkDeletes refuses a delete_post whose deletes is not the post and the
 // replies that go with it.
-func checkDeletes(tool, what string, replies int64, stated *int64) error {
+func checkDeletes(what string, replies int64, stated *int64) error {
 	count := 1 + replies
 	if stated != nil && *stated == count {
 		return nil
@@ -57,7 +57,7 @@ func checkDeletes(tool, what string, replies int64, stated *int64) error {
 	if replies > 0 {
 		thread = fmt.Sprintf(" and the %d %s in its thread, other people's included", replies, plural(replies, "reply", "replies"))
 	}
-	return fmt.Errorf("%s did not run: it deletes %d %s, %s%s, and the call %s. "+
+	return fmt.Errorf("delete_post did not run: it deletes %d %s, %s%s, and the call %s. "+
 		"Consider whether the person meant to delete all of them. If they did, call again with deletes: %d. If not, "+
-		"leave it, or ask the person", tool, count, plural(count, "post", "posts"), what, thread, said(stated), count)
+		"leave it, or ask the person", count, plural(count, "post", "posts"), what, thread, said(stated), count)
 }

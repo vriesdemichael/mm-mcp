@@ -30,13 +30,13 @@ func TestAWrongDiscardsIsRefusedWithTheLengthAndTheStartOfTheText(t *testing.T) 
 func TestAWrongDeletesIsRefusedWithThePostsThatGo(t *testing.T) {
 	t.Parallel()
 	one, three := int64(1), int64(3)
-	if err := checkDeletes("delete_post", "your post in ~Town Square", 0, &one); err != nil {
+	if err := checkDeletes("your post in ~Town Square", 0, &one); err != nil {
 		t.Fatalf("a reply alone: %v", err)
 	}
-	if err := checkDeletes("delete_post", "your post in ~Town Square", 2, &three); err != nil {
+	if err := checkDeletes("your post in ~Town Square", 2, &three); err != nil {
 		t.Fatalf("a post and its two replies: %v", err)
 	}
-	err := checkDeletes("delete_post", "your post in ~Town Square", 2, &one)
+	err := checkDeletes("your post in ~Town Square", 2, &one)
 	if err == nil {
 		t.Fatal("a thread stated as one post was not refused")
 	}
@@ -45,7 +45,7 @@ func TestAWrongDeletesIsRefusedWithThePostsThatGo(t *testing.T) {
 			t.Errorf("%q lacks %q", err, want)
 		}
 	}
-	if err := checkDeletes("delete_post", "your post in ~Town Square", 0, nil); err == nil || !strings.Contains(err.Error(), "1 post,") {
+	if err := checkDeletes("your post in ~Town Square", 0, nil); err == nil || !strings.Contains(err.Error(), "1 post,") {
 		t.Errorf("a reply stated as nothing: %v", err)
 	}
 }
