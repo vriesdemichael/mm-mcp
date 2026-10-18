@@ -26,19 +26,19 @@ func member(t *testing.T, admin *model.Client4, channelID, userID string) bool {
 	return err == nil
 }
 
-func TestJoinAndLeaveAChannelByItsNameAskingEachTime(t *testing.T) {
+func TestJoinAndLeaveAChannelAskingEachTime(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user, other := seedUser(t, admin), seedUser(t, admin)
 	team := seedTeam(t, admin, user, other)
 	channel := seedChannel(t, admin, team, other)
-	// A direct message, which a channel's name is matched against as well.
+	// A direct message among the user's channels besides.
 	_, _, err := clientAs(t, other).CreateDirectChannel(t.Context(), other.Id, user.Id)
 	check(t, err)
 	session, questions := writingSession(t, admin, user, accept)
 
 	var joined server.Membership
-	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "join_channel", Arguments: map[string]any{"channel_id": "~" + channel.Name}}), &joined)
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "join_channel", Arguments: map[string]any{"channel_id": channel.Id}}), &joined)
 	if !joined.Member || joined.ChannelID != channel.Id || !member(t, admin, channel.Id, user.Id) {
 		t.Fatalf("joined %+v", joined)
 	}
@@ -48,7 +48,7 @@ func TestJoinAndLeaveAChannelByItsNameAskingEachTime(t *testing.T) {
 	}
 
 	var left server.Membership
-	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "leave_channel", Arguments: map[string]any{"channel_id": channel.DisplayName}}), &left)
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "leave_channel", Arguments: map[string]any{"channel_id": channel.Id}}), &left)
 	if left.Member || member(t, admin, channel.Id, user.Id) {
 		t.Fatalf("left %+v, and still a member: %v", left, member(t, admin, channel.Id, user.Id))
 	}
@@ -69,7 +69,7 @@ func TestAddChannelMembersAddsThePeopleTheQuestionNamed(t *testing.T) {
 
 	var added server.Membership
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "add_channel_members", Arguments: map[string]any{
-		"channel_id": channel.Name, "usernames": []string{"@" + first.Username, second.Email},
+		"channel_id": channel.Id, "usernames": []string{"@" + first.Username, second.Email},
 	}}), &added)
 
 	if len(added.Added) != 2 || !member(t, admin, channel.Id, first.Id) || !member(t, admin, channel.Id, second.Id) {
@@ -94,7 +94,7 @@ func TestCreateChannelMakesItsAddressFromItsName(t *testing.T) {
 
 	var created server.Channel
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "create_channel", Arguments: map[string]any{
-		"team_id": team.DisplayName, "display_name": display, "private": true, "purpose": "plan the release",
+		"team_id": team.Id, "display_name": display, "private": true, "purpose": "plan the release",
 	}}), &created)
 	t.Cleanup(func() { _, _ = admin.DeleteChannel(context.Background(), created.ID) })
 

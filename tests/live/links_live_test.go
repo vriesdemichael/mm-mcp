@@ -156,11 +156,11 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink, "stop": true}},
 		{Name: "save_draft", Arguments: map[string]any{"channel_id": channelLink, "message": "a draft found by its link"}},
-		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channelLink, "discards": chars("a draft found by its link")}},
-		{Name: "add_channel_members", Arguments: map[string]any{"channel_id": channelLink, "usernames": []string{p.third.Username}}},
-		{Name: "join_channel", Arguments: map[string]any{"channel_id": joinableLink}},
-		{Name: "leave_channel", Arguments: map[string]any{"channel_id": joinableLink}},
-		{Name: "create_post", Arguments: map[string]any{"channel_id": channelLink, "message": "posted by the channel's link"}},
+		{Name: "delete_draft", Arguments: map[string]any{"channel_id": p.channel.Id, "discards": chars("a draft found by its link")}},
+		{Name: "add_channel_members", Arguments: map[string]any{"channel_id": p.channel.Id, "usernames": []string{p.third.Username}}},
+		{Name: "join_channel", Arguments: map[string]any{"channel_id": joinable.Id}},
+		{Name: "leave_channel", Arguments: map[string]any{"channel_id": joinable.Id}},
+		{Name: "create_post", Arguments: map[string]any{"channel_id": p.channel.Id, "message": "posted by the channel's address"}},
 		// A team by its link, or by any link into it.
 		{Name: "list_team_channels", Arguments: map[string]any{"team_id": teamLink}},
 		{Name: "list_archived_channels", Arguments: map[string]any{"team_id": channelLink}},
@@ -170,7 +170,7 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/_redirect/pl/" + post.Id}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": teamLink + "/threads/" + post.Id}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": channelLink + "/" + reply.Id}},
-		{Name: "create_post", Arguments: map[string]any{"channel_id": channelLink, "root_id": teamLink + "/pl/" + post.Id, "message": "replied by the post's link"}},
+		{Name: "create_post", Arguments: map[string]any{"channel_id": p.channel.Id, "root_id": post.Id, "message": "replied by the post's address"}},
 		// A file by its link.
 		{Name: "read_file", Arguments: map[string]any{"file_id": liveURL + "/api/v4/files/" + fileID + "/preview"}},
 	} {

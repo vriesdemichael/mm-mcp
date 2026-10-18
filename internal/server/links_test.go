@@ -257,7 +257,7 @@ func TestAnAnswerNamingFilesCarriesTheirLinksAfterItself(t *testing.T) {
 	handler := func(context.Context, *mcp.CallToolRequest, input) (*mcp.CallToolResult, Post, error) {
 		return nil, Post{ID: otherID, Files: []Attachment{file}}, nil
 	}
-	result, out, err := resolving("t", handler, nil, false, false)(t.Context(), &mcp.CallToolRequest{}, input{})
+	result, out, err := resolving("t", handler, nil, false, false, false)(t.Context(), &mcp.CallToolRequest{}, input{})
 	if err != nil || out.ID != otherID {
 		t.Fatalf("got %+v, %v", out, err)
 	}
@@ -277,7 +277,7 @@ func TestAnAnswerNamingFilesCarriesTheirLinksAfterItself(t *testing.T) {
 	plain := func(context.Context, *mcp.CallToolRequest, input) (*mcp.CallToolResult, Post, error) {
 		return nil, Post{ID: otherID}, nil
 	}
-	if result, _, _ := resolving("t", plain, nil, false, false)(t.Context(), &mcp.CallToolRequest{}, input{}); result != nil {
+	if result, _, _ := resolving("t", plain, nil, false, false, false)(t.Context(), &mcp.CallToolRequest{}, input{}); result != nil {
 		t.Errorf("got %+v", result)
 	}
 }

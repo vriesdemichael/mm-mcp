@@ -26,12 +26,13 @@ type Team struct {
 	Description string `json:"description,omitempty"`
 	Open        bool   `json:"open" jsonschema:"whether anyone on the server may join it, rather than by invitation only"`
 	URL         string `json:"url" jsonschema:"the team's link, which opens it in Mattermost"`
+	Address     string `json:"address" jsonschema:"the team's address, which a tool that creates a channel in it takes"`
 }
 
 func toTeam(client *mattermost.Client, team *model.Team) Team {
 	return Team{
 		ID: team.Id, Name: team.Name, DisplayName: team.DisplayName, Description: team.Description,
-		Open: team.Type == model.TeamOpen && team.AllowOpenInvite, URL: teamLink(client, team),
+		Open: team.Type == model.TeamOpen && team.AllowOpenInvite, URL: teamLink(client, team), Address: asAddress(teamLink(client, team)),
 	}
 }
 
@@ -223,6 +224,7 @@ type Channel struct {
 	LastPostAt  string `json:"last_post_at,omitempty"`
 	Archived    bool   `json:"archived,omitempty" jsonschema:"an archived channel can be read but not posted in"`
 	URL         string `json:"url,omitempty" jsonschema:"the channel's link, which opens it in Mattermost; a direct or group message's opens in the first of the person's teams"`
+	Address     string `json:"address,omitempty" jsonschema:"the channel's address, which a tool that posts in it or changes it takes"`
 	// Member says whether the user belongs to the channel; nil when the tool
 	// did not look.
 	Member *bool `json:"member,omitempty" jsonschema:"whether the user belongs to the channel"`
@@ -412,6 +414,7 @@ func (m myChannels) describe(channel *model.Channel) Channel {
 		out.Team = team.DisplayName
 	}
 	out.URL = channelLink(m.client, channel, team, m.home, m.people[otherInDirect(channel, m.self.Id)])
+	out.Address = asAddress(out.URL)
 	return out
 }
 
@@ -788,6 +791,7 @@ func teamChannelsSpec(name, title, description, operation string, list func(cont
 					listed := toChannel(channel, "", nil, zone)
 					listed.Team = team.DisplayName
 					listed.URL = channelLink(client, channel, team, nil, "")
+					listed.Address = asAddress(listed.URL)
 					out.Channels = append(out.Channels, listed)
 				}
 				return nil, out, nil

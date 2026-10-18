@@ -395,6 +395,7 @@ func createChannelSpec() Spec {
 					if team, err := client.Team(ctx, created.TeamId); err == nil {
 						out.Team = team.DisplayName
 						out.URL = channelLink(client, created, team, nil, "")
+						out.Address = asAddress(out.URL)
 					}
 					return nil, out, nil
 				})

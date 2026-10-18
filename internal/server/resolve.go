@@ -41,11 +41,14 @@ func bareName(given string) string {
 // resolving reads a tool's id arguments into ids before its handler runs, and
 // answers a list the handler left empty as [] rather than null.
 //
+// A write others see takes its places by address alone, read by
+// resolveAddress (ADR-030).
+//
 // A tool that asks the person refuses a client that cannot be asked before
 // it reads a name, which reaches Mattermost (ADR-021). On a server configured
 // not to ask, skip tells the tool's confirmation to let the call through
 // (ADR-033).
-func resolving[In, Out any](tool string, handler mcp.ToolHandlerFor[In, Out], clientFor ClientFor, asks, skip bool) mcp.ToolHandlerFor[In, Out] {
+func resolving[In, Out any](tool string, handler mcp.ToolHandlerFor[In, Out], clientFor ClientFor, asks, skip, addressed bool) mcp.ToolHandlerFor[In, Out] {
 	fields := idFields(reflect.TypeFor[In]())
 	return func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Out, error) {
 		var none Out
@@ -62,7 +65,11 @@ func resolving[In, Out any](tool string, handler mcp.ToolHandlerFor[In, Out], cl
 			if strings.TrimSpace(given) == "" {
 				continue
 			}
-			resolved, err := resolveID(ctx, request, clientFor, arg, given)
+			resolve := resolveID
+			if _, takesAddress := addressArgs[arg]; addressed && takesAddress {
+				resolve = resolveAddress
+			}
+			resolved, err := resolve(ctx, request, clientFor, arg, given)
 			if err != nil {
 				return nil, none, fmt.Errorf("%s: %w", arg, err)
 			}
