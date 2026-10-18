@@ -133,6 +133,14 @@ func isLink(given string) bool {
 	return strings.HasPrefix(lower, "https://") || strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, fileResourceScheme+"://")
 }
 
+// foreignLinkError refuses a link to another server than the one mm-mcp works
+// with. A tool that takes an address says so in its own words.
+type foreignLinkError struct{ given, host, server string }
+
+func (e foreignLinkError) Error() string {
+	return fmt.Sprintf("%s is a link to %s, but mm-mcp works with %s; give the name or the id instead", e.given, e.host, e.server)
+}
+
 // parseLink reads a link to this server into what it names. ok is false for
 // an argument that is not a link; an error is a link that is to another server
 // or opens nothing an id argument can name.
@@ -163,8 +171,7 @@ func parseLink(client *mattermost.Client, given string) (link, bool, error) {
 			return link{}, true, fmt.Errorf("%s is an address on %s, but mm-mcp works with %s", given, address.Host, server.Host)
 		}
 	} else if !sameServer(server, address) {
-		return link{}, true, fmt.Errorf("%s is a link to %s, but mm-mcp works with %s; give the name or the id instead",
-			given, address.Host, server.Host)
+		return link{}, true, foreignLinkError{given: given, host: address.Host, server: server.Host}
 	}
 	base := strings.TrimRight(server.Path, "/")
 	rest, ok := strings.CutPrefix(address.Path+"/", base+"/")

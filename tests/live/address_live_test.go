@@ -76,6 +76,8 @@ func TestAWriteOthersSeeTakesItsPlacesByAddressAlone(t *testing.T) {
 	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": channel.Id}), "is an id", base+"/<team>/channels/<channel>", "get_channel_info")
 	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": "~" + channel.Name}), "is a name")
 	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": liveURL + "/" + team.Name + "/channels/" + channel.Name}), "is a link")
+	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": "https://chat.elsewhere.example/" + team.Name + "/channels/" + channel.Name}),
+		"is a link to chat.elsewhere.example", "takes an address", base+"/<team>/channels/<channel>")
 	rawRefused(t, session, "create_post", posting(map[string]any{"channel_id": base + "/" + team.Name + "/channels/" + channel.Id}), "names its channel by id")
 	rawRefused(t, session, "create_post", posting(map[string]any{"root_id": base + "/" + team.Name + "/channels/" + elsewhere.Name + "/" + post.Id}), "is not in")
 	rawRefused(t, session, "create_post", posting(map[string]any{"root_id": channelAt}), "a channel's address")
