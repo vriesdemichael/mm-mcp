@@ -322,9 +322,8 @@ func aiNote(on bool) string {
 // names instead, by the mention as written. Groups are a licensed feature:
 // Team Edition answers 501, and then no mention is a group. GetGroupsByNames.
 func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned []mention) map[string]*model.Group {
-	out := map[string]*model.Group{}
 	if len(mentioned) == 0 {
-		return out
+		return map[string]*model.Group{}
 	}
 	var names []string
 	for _, m := range mentioned {
@@ -332,7 +331,7 @@ func mentionedGroups(ctx context.Context, client *mattermost.Client, mentioned [
 	}
 	groups, err := client.GroupsByNames(ctx, names)
 	if err != nil {
-		return out
+		groups = nil
 	}
 	return groupsFor(mentioned, groups)
 }
