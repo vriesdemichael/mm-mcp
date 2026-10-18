@@ -883,7 +883,7 @@ func deletePostSpec() Spec {
 					if err != nil {
 						return confirmation{}, err
 					}
-					if err := checkDeletes("delete_post", "your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, replies(p.post), input.Deletes); err != nil {
 						return confirmation{}, err
 					}
 					message := fmt.Sprintf("Delete your post in %s:\n“%s”", p.in, excerpt(p.post.Message))
@@ -907,7 +907,7 @@ func deletePostSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_post", state(p.post)); err != nil {
 						return nil, Deleted{}, err
 					}
-					if err := checkDeletes("delete_post", "your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, replies(p.post), input.Deletes); err != nil {
 						return nil, Deleted{}, err
 					}
 					if err := client.DeletePost(ctx, input.PostID); err != nil {
