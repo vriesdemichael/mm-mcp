@@ -596,6 +596,29 @@ meant the message for that many people before it calls again. Each is counted
 again just before the post goes out, so members who joined while you read the
 question stop it.
 
+For example, when the model posts `@channel the release is out` in ~Town
+Square, a channel of 512 members, without stating the numbers, the call is
+refused with:
+
+> create_post did not run: a message in ~Town Square reaches 512 people, the
+> channel's members as Mattermost counts them, and the call left the number
+> out. Consider whether the person meant this message for all of them. If they
+> did, call again with reaches: 512. If not, send it somewhere narrower, such as
+> a smaller channel or a direct or group message, or ask them where it should go
+
+With `reaches: 512` it is refused again, because Mattermost would ask before
+alerting the whole channel:
+
+> create_post did not run: @channel alerts 511 people, every member of ~Town
+> Square but the user, which Mattermost asks about before sending, and the call
+> left the number out. Consider whether the person meant to alert all of them.
+> If they did, call again with notifies: 511. If not, mention only the people
+> meant, post somewhere narrower, or ask them
+
+The model then calls again with `reaches: 512` and `notifies: 511`, which
+your client's approval shows you, or asks you first. Nothing is posted until
+both are right.
+
 What a write acts on is what you were asked about: a reply posted, a file
 rewritten or a draft typed on while you read the question stops the write.
 Posts and edits are marked as written with AI, as Mattermost shows it, unless
