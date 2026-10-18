@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -24,6 +25,7 @@ type Draft struct {
 	Team       string   `json:"team,omitempty"`
 	RootID     string   `json:"root_id,omitempty" jsonschema:"the thread the draft replies in, if it does"`
 	Message    string   `json:"message"`
+	Length     int      `json:"length" jsonschema:"how many characters the draft holds, as Mattermost counts a message's length: what delete_draft states as discards"`
 	UpdatedAt  string   `json:"updated_at,omitempty"`
 	Notes      []string `json:"notes,omitempty" jsonschema:"what the message's mentions will do once sent"`
 }
@@ -231,7 +233,7 @@ func describeDrafts(ctx context.Context, client *mattermost.Client, drafts []*mo
 	for i, draft := range drafts {
 		out = append(out, Draft{
 			ChannelID: draft.ChannelId, Channel: described[i].Channel, ChannelURL: described[i].ChannelURL, Team: described[i].Team,
-			RootID: draft.RootId, Message: draft.Message, UpdatedAt: timestamp(draft.UpdateAt, zone),
+			RootID: draft.RootId, Message: draft.Message, Length: utf8.RuneCountInString(draft.Message), UpdatedAt: timestamp(draft.UpdateAt, zone),
 		})
 	}
 	return out, nil
@@ -431,7 +433,7 @@ func deleteDraftSpec() Spec {
 						return confirmation{}, err
 					}
 					where := draftPlace(described[0], draft)
-					if err := checkDiscards("delete_draft", "the unsent draft in "+where, draft.Message, len(draft.FileIds), input.Discards); err != nil {
+					if err := checkDiscards("the unsent draft in "+where, draft.Message, len(draft.FileIds), input.Discards); err != nil {
 						return confirmation{}, err
 					}
 					return confirmation{
@@ -456,7 +458,7 @@ func deleteDraftSpec() Spec {
 					if err != nil {
 						return nil, Draft{}, err
 					}
-					if err := checkDiscards("delete_draft", "the unsent draft in "+draftPlace(described[0], draft), draft.Message, len(draft.FileIds), input.Discards); err != nil {
+					if err := checkDiscards("the unsent draft in "+draftPlace(described[0], draft), draft.Message, len(draft.FileIds), input.Discards); err != nil {
 						return nil, Draft{}, err
 					}
 					if err := client.DeleteDraft(ctx, self.Id, draft.ChannelId, draft.RootId); err != nil {

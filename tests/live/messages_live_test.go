@@ -212,7 +212,7 @@ func TestAPostAndAnEditAreMarkedAsWrittenWithAIKeepingOtherProps(t *testing.T) {
 	// A post written by hand is marked when edited with help.
 	own := postAs(t, clientAs(t, user), channel.Id, "", "by hand")
 	editor, edits := writingSession(t, admin, user, accept)
-	callTool(t, editor, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": own.Id, "message": "edited with help", "reaches": members(t, channel.Id), "discards": chars("by hand")}})
+	callTool(t, editor, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": own.Id, "message": "edited with help", "reaches": members(t, channel.Id), "old_message": "by hand"}})
 	mustContain(t, "question", edits.only(t).Message, "An edit notifies nobody", "marked as written with AI")
 	edited, _, err := admin.GetPost(t.Context(), own.Id, "")
 	check(t, err)
@@ -230,7 +230,7 @@ func TestAPostAndAnEditAreMarkedAsWrittenWithAIKeepingOtherProps(t *testing.T) {
 	// is only text.
 	other2, asked2 := writingSession(t, admin, user, accept)
 	callTool(t, other2, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-		"post_id": integration.Id, "message": "fixed, thanks @" + slipOf(other.Username), "reaches": members(t, channel.Id), "discards": chars("from a tool"),
+		"post_id": integration.Id, "message": "fixed, thanks @" + slipOf(other.Username), "reaches": members(t, channel.Id), "old_message": "from a tool",
 	}})
 	if strings.Contains(asked2.only(t).Message, "marked as written with AI") {
 		t.Error("the question says a post with properties of its own will be marked")

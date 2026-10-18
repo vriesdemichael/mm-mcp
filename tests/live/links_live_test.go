@@ -292,7 +292,7 @@ func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
 		t.Errorf("the question names the group as:\n%s", question.Message)
 	}
 	for _, call := range []*mcp.CallToolParams{
-		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited", "reaches": members(t, group.Id), "discards": chars("the user's own post in the group")}},
+		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited", "reaches": members(t, group.Id), "old_message": "the user's own post in the group"}},
 		{Name: "add_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "remove_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "pin_post", Arguments: map[string]any{"post_id": theirs.Id}},

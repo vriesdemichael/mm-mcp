@@ -55,7 +55,7 @@ func TestAPostAndAnEditStateHowManyTheyReach(t *testing.T) {
 	refusedSaying(t, session, "update_post", map[string]any{"post_id": posted.ID, "message": "Standup moved to 10:30"},
 		"left the number out")
 	callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-		"post_id": posted.ID, "message": "Standup moved to 10:30", "reaches": reach + 1, "discards": chars("Standup moved to 10"),
+		"post_id": posted.ID, "message": "Standup moved to 10:30", "reaches": reach + 1, "old_message": "Standup moved to 10",
 	}})
 	stored, _, err := admin.GetPost(t.Context(), posted.ID, "")
 	check(t, err)
@@ -122,7 +122,7 @@ func TestAMessageThatAlertsAWholeChannelStatesWhomItNotifies(t *testing.T) {
 	// Not in a channel of 5 or fewer, and never for an edit, which notifies nobody.
 	createPost(t, session, map[string]any{"channel_id": small.Id, "message": "@here quick sync?"})
 	callTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{
-		"post_id": posted.ID, "message": "@channel the release is out, notes in the thread", "reaches": count, "discards": chars("@channel the release is out"),
+		"post_id": posted.ID, "message": "@channel the release is out, notes in the thread", "reaches": count, "old_message": "@channel the release is out",
 	}})
 	if n := len(messagesIn(t, admin, big.Id)) + len(messagesIn(t, admin, small.Id)); n != 2 {
 		t.Errorf("the channels hold %d posts; want the two that were stated right", n)
@@ -153,7 +153,7 @@ func TestAnEditIsCountedAgainAfterThePersonIsAsked(t *testing.T) {
 		}
 	}, accept)
 
-	refusedSaying(t, session, "update_post", map[string]any{"post_id": post.Id, "message": "Retro at five", "reaches": count, "discards": chars("Retro at four")},
+	refusedSaying(t, session, "update_post", map[string]any{"post_id": post.Id, "message": "Retro at five", "reaches": count, "old_message": "Retro at four"},
 		"said "+itoa(count), "reaches: "+itoa(count+1))
 	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
