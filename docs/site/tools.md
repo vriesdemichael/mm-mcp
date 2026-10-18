@@ -457,8 +457,9 @@ Each of these asks you first, showing exactly what will happen
 
 ### Works the same everywhere
 
-- **Names and links work where ids do.** Every `channel_id` and `team_id`
-  takes a name as well as an id, a channel's with `~` or `#` before it or not.
+- **Names and links work where ids do, for a tool that reads.** Every
+  `channel_id` and `team_id` of a tool that reads, or that changes only what is
+  yours, takes a name as well as an id, a channel's with `~` or `#` before it or not.
   Every id argument takes the link Mattermost shows you: a channel's, a direct
   or group message's, a team's, a post's, Copy Link's or the one a thread opens
   at, and a file's, or its [resource](#files-as-resources) address. A name of a
@@ -466,8 +467,18 @@ Each of these asks you first, showing exactly what will happen
   ambiguous one is refused with every candidate, and an unknown one with the
   closest names. A link is never fetched, and one to another server is refused
   ([ADR-030](adr/030-names-are-matched-leniently-and-a-refusal-names-the-next-step.md)).
-- **Every place comes with its link.** Each post, channel and team an answer
-  describes carries the link it opens at, made from names: a channel's in its
+- **A write others see takes an address.** The tools that post or change what
+  others see take a channel, a post or a team by its address alone, matched
+  exactly: `mattermost://<server>/<team>/channels/<channel>`, a direct
+  message's `mattermost://<server>/<team>/messages/@<username>`, a post's as
+  its channel's address followed by its id, and a team's as
+  `mattermost://<server>/<team>`. Your MCP client's approval of the call, or
+  its AI reviewer, sees the tool's arguments and nothing else, so the address
+  shows where the write goes by name. An id, a name or a link is refused with
+  where to read the address, and so is the old address of a renamed channel.
+- **Every place comes with its link and its address.** Each post, channel,
+  team and draft an answer describes carries its address, and the link it opens
+  at, made from names: a channel's in its
   team, a direct or group message's in your first team, as
   `/<team>/messages/@<username>`, and a post's in its channel's team, as
   Copy Link gives it. Asked where something was said, the agent links the post,

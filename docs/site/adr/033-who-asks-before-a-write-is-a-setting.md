@@ -24,13 +24,12 @@ Not every write has a person in the loop. An agent that works alone, such as a s
 
 The names say what the person gets. "Ask before writes" names who asks and when, "force human in the loop" names the outcome, a person on every call, and that it overrides what the client would otherwise allow, and "in Claude Code" names the one client that enforces it: the mark is Claude Code's own, and MCP has no mark of its kind that every client reads. Each is a yes or no. The one combination that contradicts itself is refused rather than resolved silently.
 
-The inputs stay as they are. A channel or post can be named by id, and a client's prompt then shows an id rather than a name. Requiring a readable name in the input would make the prompt easier to read, but a name is matched leniently (ADR-030) and could reach somewhere the model only imagined, while an id cannot. Since mm-mcp cannot tell whether a person sees the client's prompt, it does not trade the id's exactness for readability.
+A write others see names where it goes by its address (ADR-030), so a client's prompt shows the destination by name whoever asks.
 
 ## Not chosen
 
 - **One setting with three values**: Values naming who asks, such as `mm-mcp` or `client`, read as something to install or connect rather than as a choice about asking.
 - **The mark on every write by default**: It overrides allow rules, so no agent could write unattended.
 - **The mark while mm-mcp asks too**: The person would be asked twice for one post, wearing out the attention the question depends on.
-- **A readable name in every write's input**: See above; an id cannot reach the wrong place.
 - **Detect the client and stop asking it**: A client's name says nothing reliable about whether it shows questions, and the same client behaves differently from one mode to another.
 - **A name that leaves the client out**: It would promise a person on every write in any client, where only Claude Code reads the mark; another client approves as its own rules say.

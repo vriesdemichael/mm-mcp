@@ -13,7 +13,8 @@ import (
 
 // Every tool's id arguments take what a person gives as readily as an id: a
 // channel or a team by its name, with ~ or # before it or not, and a post by
-// its address (ADR-030).
+// its link (ADR-030). A write others see takes its places by address alone,
+// which callTool reads as a model reads it; address_live_test.go holds that.
 
 func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsAddress(t *testing.T) {
 	t.Parallel()
@@ -39,8 +40,8 @@ func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsAddress(t *testing.T)
 		{Name: "typing", Arguments: map[string]any{"channel_id": byName}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": byName, "stop": true}},
 		{Name: "save_draft", Arguments: map[string]any{"channel_id": bySign, "message": "a draft found by name"}},
-		{Name: "delete_draft", Arguments: map[string]any{"channel_id": byDisplay, "discards": chars("a draft found by name")}},
-		{Name: "create_post", Arguments: map[string]any{"channel_id": byDisplay, "message": "posted by the channel's name", "reaches": members(t, channel.Id)}},
+		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id, "discards": chars("a draft found by name")}},
+		{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "posted by the channel's name", "reaches": members(t, channel.Id)}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/_redirect/pl/" + post.Id}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/" + team.Name + "/pl/" + post.Id}},
 	} {

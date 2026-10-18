@@ -24,6 +24,7 @@ type Draft struct {
 	ChannelURL string   `json:"channel_url,omitempty" jsonschema:"the channel's link, which opens it in Mattermost"`
 	Team       string   `json:"team,omitempty"`
 	RootID     string   `json:"root_id,omitempty" jsonschema:"the thread the draft replies in, if it does"`
+	Address    string   `json:"address,omitempty" jsonschema:"where the draft waits, as delete_draft takes it: its channel's address, or for a reply its thread's post's"`
 	Message    string   `json:"message"`
 	Length     int      `json:"length" jsonschema:"how many characters the draft holds, as Mattermost counts a message's length: what delete_draft states as discards"`
 	UpdatedAt  string   `json:"updated_at,omitempty"`
@@ -234,6 +235,7 @@ func describeDrafts(ctx context.Context, client *mattermost.Client, drafts []*mo
 		out = append(out, Draft{
 			ChannelID: draft.ChannelId, Channel: described[i].Channel, ChannelURL: described[i].ChannelURL, Team: described[i].Team,
 			RootID: draft.RootId, Message: draft.Message, Length: utf8.RuneCountInString(draft.Message), UpdatedAt: timestamp(draft.UpdateAt, zone),
+			Address: draftAddress(asAddress(described[i].ChannelURL), draft.RootId),
 		})
 	}
 	return out, nil
@@ -339,6 +341,15 @@ func listDraftsSpec() Spec {
 type deleteDraftInput struct {
 	draftTarget
 	discardField
+}
+
+// draftAddress is where a draft waits: its channel's address, or for a reply
+// the address of the post its thread starts with.
+func draftAddress(channelAddress, rootID string) string {
+	if rootID == "" {
+		return channelAddress
+	}
+	return postAddress(channelAddress, rootID)
 }
 
 // draftPlace names where a draft waits, as a question names it.

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -126,11 +127,97 @@ var backgroundOperations = map[string]string{"PublishUserTyping": "typing"}
 // for a capability the client lacks; it returns that failure.
 func tryTool(t *testing.T, session *mcp.ClientSession, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
 	t.Helper()
+	return tryRawTool(t, session, atAddresses(t, session, params))
+}
+
+// tryRawTool is tryTool without reading ids into addresses, for a test of
+// what a write others see does with an id, a name or a link.
+func tryRawTool(t *testing.T, session *mcp.ClientSession, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	t.Helper()
 	rec := recorderOf(t, session)
 	rec.take()
 	result, err := session.CallTool(t.Context(), params)
 	account(t, rec, params.Name, declaredUses(params.Name))
 	return result, err
+}
+
+// addressedTools are the writes others see, which take their places by
+// address alone (ADR-030).
+var addressedTools = sync.OnceValue(func() map[string]bool {
+	out := map[string]bool{}
+	for _, spec := range server.AllSpecs() {
+		out[spec.Tool.Name] = spec.Addressed
+	}
+	return out
+})
+
+// seededID is the shape of an id Mattermost gives what a test seeds.
+var seededID = regexp.MustCompile(`^[a-z0-9]{26}$`)
+
+// atAddresses is a call to a write others see with each channel, post and team
+// a test named by the id it seeded given by its address instead, read as a
+// model reads it, through the session: get_channel_info, read_post and
+// get_team_info answer with it. An id nothing answers for is left as it is,
+// for the tool to refuse.
+func atAddresses(t *testing.T, session *mcp.ClientSession, params *mcp.CallToolParams) *mcp.CallToolParams {
+	t.Helper()
+	arguments, ok := params.Arguments.(map[string]any)
+	if !ok || !addressedTools()[params.Name] {
+		return params
+	}
+	read := map[string]struct {
+		tool, arg string
+		address   func(json.RawMessage) string
+	}{
+		"channel_id": {"get_channel_info", "channel", field("address")},
+		"post_id":    {"read_post", "post_id", nested("post", "address")},
+		"root_id":    {"read_post", "post_id", nested("post", "address")},
+		"team_id":    {"get_team_info", "team", field("address")},
+	}
+	converted := map[string]any{}
+	for name, value := range arguments {
+		converted[name] = value
+		id, _ := value.(string)
+		how, takes := read[name]
+		if !takes || !seededID.MatchString(id) {
+			continue
+		}
+		result, err := tryRawTool(t, session, &mcp.CallToolParams{Name: how.tool, Arguments: map[string]any{how.arg: id}})
+		if err != nil || result.IsError {
+			continue
+		}
+		raw, err := json.Marshal(result.StructuredContent)
+		if err != nil {
+			continue
+		}
+		if address := how.address(raw); address != "" {
+			converted[name] = address
+		}
+	}
+	return &mcp.CallToolParams{Meta: params.Meta, Name: params.Name, Arguments: converted}
+}
+
+// field reads one string field of an answer.
+func field(name string) func(json.RawMessage) string {
+	return func(raw json.RawMessage) string {
+		var object map[string]json.RawMessage
+		var value string
+		if json.Unmarshal(raw, &object) == nil {
+			_ = json.Unmarshal(object[name], &value)
+		}
+		return value
+	}
+}
+
+// nested reads a string field of an object in an answer.
+func nested(outer, name string) func(json.RawMessage) string {
+	return func(raw json.RawMessage) string {
+		var object map[string]json.RawMessage
+		if json.Unmarshal(raw, &object) != nil {
+			return ""
+		}
+		return field(name)(object[outer])
+	}
 }
 
 // account checks the requests a caller sent since the recorder was last

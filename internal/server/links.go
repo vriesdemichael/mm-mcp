@@ -118,6 +118,9 @@ type link struct {
 	post string
 	// file is the file a file's link or resource address names.
 	file string
+	// address marks a place's address, mattermost:// and the path of its
+	// link, rather than its link (ADR-030).
+	address bool
 }
 
 // fileResourceScheme is the scheme of a file's resource address (ADR-029).
@@ -151,14 +154,15 @@ func parseLink(client *mattermost.Client, given string) (link, bool, error) {
 	shown := *address
 	shown.RawQuery, shown.Fragment, shown.User = "", "", nil
 	given = shown.String()
-	if strings.EqualFold(address.Scheme, fileResourceScheme) {
-		id, ok := fileResourceID(server, address)
-		if !ok {
-			return link{}, true, fmt.Errorf("%s is not a file's address on this server; a file's is %s", given, fileResource(server, "<file_id>"))
+	addressed := strings.EqualFold(address.Scheme, fileResourceScheme)
+	if addressed {
+		if id, ok := fileResourceID(server, address); ok {
+			return link{given: given, kind: linkFile, file: id}, true, nil
 		}
-		return link{given: given, kind: linkFile, file: id}, true, nil
-	}
-	if !sameServer(server, address) {
+		if !strings.EqualFold(address.Host, server.Host) {
+			return link{}, true, fmt.Errorf("%s is an address on %s, but mm-mcp works with %s", given, address.Host, server.Host)
+		}
+	} else if !sameServer(server, address) {
 		return link{}, true, fmt.Errorf("%s is a link to %s, but mm-mcp works with %s; give the name or the id instead",
 			given, address.Host, server.Host)
 	}
@@ -174,10 +178,13 @@ func parseLink(client *mattermost.Client, given string) (link, bool, error) {
 		}
 	}
 	read, ok := readPath(segments)
-	if !ok {
+	switch {
+	case addressed && (!ok || read.kind == linkFile):
+		return link{}, true, fmt.Errorf("%s is not the address of a team, a channel, a direct or group message, a post or a file on this server", given)
+	case !ok:
 		return link{}, true, fmt.Errorf("%s is not a link Mattermost gives to a team, a channel, a direct or group message, a post or a file", given)
 	}
-	read.given = given
+	read.given, read.address = given, addressed
 	return read, true, nil
 }
 

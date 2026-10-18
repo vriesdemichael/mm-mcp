@@ -651,3 +651,37 @@ func TestEveryToolOnlyViewsCallIsForViewsAlone(t *testing.T) {
 		t.Fatal("no tool is for views alone; the scan has stopped matching")
 	}
 }
+
+// TestEveryWriteOthersSeeTakesItsPlacesByAddress: a tool that changes what
+// others see takes each channel, post and team by address alone and says so
+// in its input schema, and no other tool does (ADR-030).
+func TestEveryWriteOthersSeeTakesItsPlacesByAddress(t *testing.T) {
+	t.Parallel()
+	addressed := 0
+	for _, spec := range registered(t) {
+		places := 0
+		for _, arg := range []string{"channel_id", "post_id", "root_id", "team_id"} {
+			if slices.Contains(inputArguments(t, specWithSchema(t, spec.Tool.Name)), arg) {
+				places++
+			}
+		}
+		switch {
+		case spec.Asks() && places > 0 && !spec.Addressed:
+			t.Errorf("%s changes what others see, and takes its places by id or name", spec.Tool.Name)
+		case !spec.Asks() && spec.Addressed:
+			t.Errorf("%s takes its places by address alone, though it changes nothing others see", spec.Tool.Name)
+		case spec.Addressed:
+			addressed++
+			raw, err := json.Marshal(spec.Tool.InputSchema)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Count(string(raw), "its address, mattermost://") != places {
+				t.Errorf("%s does not say of each place it takes that it takes its address", spec.Tool.Name)
+			}
+		}
+	}
+	if addressed == 0 {
+		t.Fatal("no tool takes an address; the check has nothing to hold")
+	}
+}

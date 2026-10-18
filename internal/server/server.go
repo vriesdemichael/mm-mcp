@@ -45,10 +45,13 @@ A tool that posts or changes what others see asks the person to confirm each
 call before it acts. If they decline or close the question, do not call it again
 unless they ask. To message people, send each a direct message with dm.
 
-Wherever a tool asks for a channel, team, post or file id, a channel's or team's
-name works too, and so does any link Mattermost shows for it. Every post, channel
-and team an answer describes comes with its url. To say where something was said,
-link the post by its url, not its channel; never build a link from an id.
+Wherever a tool that reads asks for a channel, team, post or file id, a channel's
+or team's name works too, and so does any link Mattermost shows for it. A tool
+that posts or changes what others see takes a channel, post or team by its
+address alone, mattermost://…, which names it exactly: every post, channel and
+team an answer describes comes with its address and its url. Read the place
+first when you do not have its address. To say where something was said, link
+the post by its url, not its channel; never build a link or an address from an id.
 
 To catch the person up, list_mentions finds what mentions them, get_user_channels
 with unread_only what they have not read, and read_unread reads a channel from
@@ -86,7 +89,7 @@ func Single(client *mattermost.Client) ClientFor {
 // Mattermost operations it calls.
 type Spec struct {
 	Tool     *mcp.Tool
-	Register func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks bool)
+	Register func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks, addressed bool)
 	// Uses is every operation the tool calls, with what it does with each of the
 	// operation's parameters (ADR-028). The live suite checks that the tool calls
 	// exactly these, and the governance tests that each is accounted for in full
@@ -105,6 +108,9 @@ type Spec struct {
 	// first: what it changes is theirs alone, or gone within seconds. Every
 	// other tool that changes Mattermost asks (ADR-021).
 	Unasked string
+	// Addressed marks a write others see, whose channel, post and team
+	// arguments take an address alone (ADR-030).
+	Addressed bool
 	// Local marks a tool that writes files on the machine the server runs on,
 	// from what it reads in Mattermost. Only a server serving over stdio, on the
 	// person's own machine, offers it (ADR-029).
@@ -194,7 +200,19 @@ func (s Spec) ReadOnly() bool {
 }
 
 // AllSpecs is the catalogue: every tool mm-mcp has, whatever the configuration.
+// Each write others see takes its places by address (ADR-030).
 func AllSpecs() []Spec {
+	specs := catalogue()
+	for i, spec := range specs {
+		if spec.Asks() {
+			specs[i] = addressed(spec)
+		}
+	}
+	return specs
+}
+
+// catalogue is every tool, as each is built.
+func catalogue() []Spec {
 	return []Spec{
 		getMeSpec(),
 		diagnoseSpec(),
@@ -323,7 +341,7 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 			}
 			spec.Tool.Description += " " + note
 		}
-		spec.Register(server, clientFor, cfg, asks)
+		spec.Register(server, clientFor, cfg, asks, spec.Addressed)
 	}
 	return server
 }
@@ -345,8 +363,8 @@ func toolSpec[In, Out any](tool *mcp.Tool, own []Use, handler func(ClientFor) mc
 	return Spec{
 		Tool: tool,
 		Uses: uses(own, nameUses(reflect.TypeFor[In]())),
-		Register: func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks bool) {
-			mcp.AddTool(server, tool, resolving(tool.Name, handler(clientFor), clientFor, asks, cfg.SkipAsking))
+		Register: func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks, addressed bool) {
+			mcp.AddTool(server, tool, resolving(tool.Name, handler(clientFor), clientFor, asks, cfg.SkipAsking, addressed))
 		},
 	}
 }
@@ -354,8 +372,8 @@ func toolSpec[In, Out any](tool *mcp.Tool, own []Use, handler func(ClientFor) mc
 // configuredToolSpec is toolSpec for a tool that needs the configuration too.
 func configuredToolSpec[In, Out any](tool *mcp.Tool, own []Use, handler func(ClientFor, config.Config) mcp.ToolHandlerFor[In, Out]) Spec {
 	spec := toolSpec[In, Out](tool, own, nil)
-	spec.Register = func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks bool) {
-		mcp.AddTool(server, tool, resolving(tool.Name, handler(clientFor, cfg), clientFor, asks, cfg.SkipAsking))
+	spec.Register = func(server *mcp.Server, clientFor ClientFor, cfg config.Config, asks, addressed bool) {
+		mcp.AddTool(server, tool, resolving(tool.Name, handler(clientFor, cfg), clientFor, asks, cfg.SkipAsking, addressed))
 	}
 	return spec
 }
