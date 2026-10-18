@@ -39,13 +39,9 @@ func rendersViews(request mcp.Request) bool {
 	if !ok || values["mimeTypes"] == nil {
 		return true
 	}
-	switch types := values["mimeTypes"].(type) {
-	case []string:
-		return slices.Contains(types, views.MIMEType)
-	case []any:
-		return slices.Contains(types, any(views.MIMEType))
-	}
-	return false
+	// What a client declares arrives as JSON, so a list is a []any.
+	types, _ := values["mimeTypes"].([]any)
+	return slices.Contains(types, any(views.MIMEType))
 }
 
 // declaredViewTypes is what the client declared of views on this request, as
@@ -62,16 +58,11 @@ func declaredViewTypes(request mcp.Request) []string {
 		return nil
 	}
 	found := []string{}
-	if values, ok := settings.(map[string]any); ok {
-		switch types := values["mimeTypes"].(type) {
-		case []string:
-			found = append(found, types...)
-		case []any:
-			for _, value := range types {
-				if text, ok := value.(string); ok {
-					found = append(found, text)
-				}
-			}
+	values, _ := settings.(map[string]any)
+	types, _ := values["mimeTypes"].([]any)
+	for _, value := range types {
+		if text, ok := value.(string); ok {
+			found = append(found, text)
 		}
 	}
 	return found

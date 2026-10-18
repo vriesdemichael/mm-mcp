@@ -127,3 +127,24 @@ func TestShowLinksThePageAndTheToolOnlyViewsCallIsMarkedForThem(t *testing.T) {
 		t.Errorf("show's kinds are %s", kinds)
 	}
 }
+
+// What show and view_action refuse, they refuse before Mattermost is reached:
+// the unit tests block the network.
+func TestShowAndTheViewsToolRefuseWhatTheyDoNotDo(t *testing.T) {
+	t.Parallel()
+	session := connectWith(t, readOnlyConfig, rendersViews())
+	for _, c := range []struct {
+		tool      string
+		arguments map[string]any
+	}{
+		{"show", map[string]any{"kind": "list", "post_id": "abcdefghijklmnopqrstuvwxyz"}},
+		{"show", map[string]any{"kind": "thread", "post_id": "abcdefghijklmnopqrstuvwxyz", "limit": 500}},
+		{"view_action", map[string]any{"action": "post", "post_id": "abcdefghijklmnopqrstuvwxyz"}},
+		{"view_action", map[string]any{"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz", "cursor": "not-a-cursor"}},
+	} {
+		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: c.tool, Arguments: c.arguments})
+		if err == nil && !result.IsError {
+			t.Errorf("%s %v was answered", c.tool, c.arguments)
+		}
+	}
+}

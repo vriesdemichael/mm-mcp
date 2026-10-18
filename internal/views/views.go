@@ -54,25 +54,15 @@ func Asset(name string) (string, error) {
 // Catalogs is the page's own words, by language tag, as the catalogs under
 // page/catalogs hold them.
 func Catalogs() (map[string]map[string]any, error) {
-	entries, err := fs.ReadDir(assets, "page/catalogs")
-	if err != nil {
-		return nil, err
-	}
+	// The pattern is fixed, so Glob cannot refuse it.
+	names, _ := fs.Glob(assets, "page/catalogs/*.json")
 	catalogs := map[string]map[string]any{}
-	for _, entry := range entries {
-		name := entry.Name()
-		if !strings.HasSuffix(name, ".json") {
-			continue
-		}
-		data, err := assets.ReadFile("page/catalogs/" + name)
-		if err != nil {
-			return nil, err
-		}
+	for _, name := range names {
 		var words map[string]any
-		if err := json.Unmarshal(data, &words); err != nil {
-			return nil, fmt.Errorf("the catalog %s: %w", name, err)
+		if err := json.Unmarshal([]byte(mustAsset(strings.TrimPrefix(name, "page/"))), &words); err != nil {
+			return nil, fmt.Errorf("the catalog %s: %w", path.Base(name), err)
 		}
-		catalogs[strings.TrimSuffix(name, ".json")] = words
+		catalogs[strings.TrimSuffix(path.Base(name), ".json")] = words
 	}
 	return catalogs, nil
 }
@@ -130,9 +120,7 @@ func mustAsset(name string) string {
 // mustJSON is value as JSON, which Go's encoder writes with <, > and &
 // escaped, so it cannot end the script it stands in.
 func mustJSON(value any) string {
-	data, err := json.Marshal(value)
-	if err != nil {
-		panic(err)
-	}
+	// Strings and maps of them always encode.
+	data, _ := json.Marshal(value)
 	return string(data)
 }

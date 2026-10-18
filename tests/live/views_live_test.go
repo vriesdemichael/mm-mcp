@@ -168,3 +168,23 @@ func TestDiagnoseSaysWhetherTheClientRendersViews(t *testing.T) {
 		t.Errorf("with views: %+v", got)
 	}
 }
+
+// A post that does not exist, or that the user cannot see, is refused by
+// read_post and by show alike, alone or with its thread.
+func TestAPostThatIsNotThereIsRefusedAloneAndWithItsThread(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user := seedUser(t, admin)
+	session := viewsSession(t, personalAccessToken(t, admin, user.Id).Token)
+	missing := model.NewId()
+	for _, params := range []*mcp.CallToolParams{
+		{Name: "read_post", Arguments: map[string]any{"post_id": missing, "include_thread": false}},
+		{Name: "read_post", Arguments: map[string]any{"post_id": missing}},
+		{Name: "show", Arguments: map[string]any{"kind": "thread", "post_id": missing}},
+	} {
+		result := callTool(t, session, params)
+		if !result.IsError {
+			t.Errorf("%s %v answered %+v", params.Name, params.Arguments, result.StructuredContent)
+		}
+	}
+}

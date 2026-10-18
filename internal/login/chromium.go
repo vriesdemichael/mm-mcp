@@ -379,34 +379,20 @@ func (w *chromiumWindow) value(ctx context.Context, session, expression string) 
 }
 
 func (w *chromiumWindow) Evaluate(ctx context.Context, script string) error {
-	session, err := w.page(ctx)
-	if err != nil {
-		return err
-	}
-	var evaluated struct {
-		ExceptionDetails *struct {
-			Text      string `json:"text"`
-			Exception *struct {
-				Description string `json:"description"`
-			} `json:"exception"`
-		} `json:"exceptionDetails"`
-	}
-	if err := w.call(ctx, session, "Runtime.evaluate", map[string]any{"expression": script, "awaitPromise": true}, &evaluated); err != nil {
-		return err
-	}
-	if details := evaluated.ExceptionDetails; details != nil {
-		if details.Exception != nil && details.Exception.Description != "" {
-			return fmt.Errorf("the script failed: %s", details.Exception.Description)
-		}
-		return fmt.Errorf("the script failed: %s", details.Text)
-	}
-	return nil
+	_, err := w.evaluate(ctx, script, false)
+	return err
 }
 
 // Value is what expression evaluates to in the page, awaited, as JSON. A
 // login needs no value back; the view page's browser tests read what a view
 // drew with it.
 func (w *chromiumWindow) Value(ctx context.Context, expression string) (json.RawMessage, error) {
+	return w.evaluate(ctx, expression, true)
+}
+
+// evaluate runs script in the page and awaits it, answering with its value
+// when asked to.
+func (w *chromiumWindow) evaluate(ctx context.Context, script string, value bool) (json.RawMessage, error) {
 	session, err := w.page(ctx)
 	if err != nil {
 		return nil, err
@@ -422,7 +408,7 @@ func (w *chromiumWindow) Value(ctx context.Context, expression string) (json.Raw
 			} `json:"exception"`
 		} `json:"exceptionDetails"`
 	}
-	if err := w.call(ctx, session, "Runtime.evaluate", map[string]any{"expression": expression, "awaitPromise": true, "returnByValue": true}, &evaluated); err != nil {
+	if err := w.call(ctx, session, "Runtime.evaluate", map[string]any{"expression": script, "awaitPromise": true, "returnByValue": value}, &evaluated); err != nil {
 		return nil, err
 	}
 	if details := evaluated.ExceptionDetails; details != nil {
