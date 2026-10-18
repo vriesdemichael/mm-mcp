@@ -187,13 +187,19 @@ func TestEveryToolArgumentSetsAParameterItCalls(t *testing.T) {
 		arguments := inputArguments(t, specWithSchema(t, spec.Tool.Name))
 		for _, arg := range arguments {
 			shapes, shaping := spec.Shapes[arg]
+			checks, checking := spec.Checks[arg]
 			switch {
+			case checking && (exposed[arg] || shaping):
+				t.Errorf("%s names %s as checked, though it also sets a parameter or shapes the answer", spec.Tool.Name, arg)
+			case checking && strings.TrimSpace(checks) == "":
+				t.Errorf("%s names %s as checked without saying against what", spec.Tool.Name, arg)
+			case checking:
 			case exposed[arg] && shaping:
 				t.Errorf("%s both sets a parameter with %s and names it as shaping the answer", spec.Tool.Name, arg)
 			case shaping && strings.TrimSpace(shapes) == "":
 				t.Errorf("%s names %s as shaping the answer without saying how", spec.Tool.Name, arg)
 			case !exposed[arg] && !shaping:
-				t.Errorf("%s takes the argument %s, which sets no parameter it declares and shapes nothing it says", spec.Tool.Name, arg)
+				t.Errorf("%s takes the argument %s, which sets no parameter it declares, shapes nothing it says, and is checked against nothing", spec.Tool.Name, arg)
 			}
 		}
 		for arg := range exposed {
@@ -204,6 +210,11 @@ func TestEveryToolArgumentSetsAParameterItCalls(t *testing.T) {
 		for arg := range spec.Shapes {
 			if !slices.Contains(arguments, arg) {
 				t.Errorf("%s says %s shapes its answer, but takes no such argument", spec.Tool.Name, arg)
+			}
+		}
+		for arg := range spec.Checks {
+			if !slices.Contains(arguments, arg) {
+				t.Errorf("%s says it checks %s, but takes no such argument", spec.Tool.Name, arg)
 			}
 		}
 	}

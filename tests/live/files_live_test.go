@@ -275,7 +275,7 @@ func TestAFileChangedAfterThePersonWasAskedIsNotSent(t *testing.T) {
 	})
 
 	_, err := tryTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{
-		"channel_id": channel.Id, "message": "notes", "files": []map[string]any{{"path": onDisk}},
+		"channel_id": channel.Id, "message": "notes", "files": []map[string]any{{"path": onDisk}}, "reaches": members(t, channel.Id),
 	}})
 	var refused *jsonrpc.Error
 	if !errors.As(err, &refused) || !strings.Contains(refused.Message, "changed since the person was asked") {

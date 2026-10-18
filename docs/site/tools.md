@@ -276,6 +276,11 @@ Each of these asks you first, showing exactly what will happen
     and, for a reply, the start of the thread. Posting takes down the typing
     indicator `typing` put up there. Returns the post.
 
+    Every call states how far the message goes
+    ([below](#how-far-a-message-goes)): `reaches`, how many members the
+    channel has, and `notifies` where the message alerts a whole channel or
+    user group as Mattermost would ask about first.
+
     `files` attaches up to ten files: text the model writes, given a `name` and
     `content`, or, when the server runs on your machine over stdio, a file by
     its full `path`. The question lists each file with its size, type and the
@@ -298,8 +303,10 @@ Each of these asks you first, showing exactly what will happen
 
 `update_post`: Update post { #update_post .mm-asks }
 :   Replaces the text of one of your own posts. The question shows the old text
-    and the new. An edit notifies nobody, so only its length is checked.
-    Another person's post is refused, even with an administrator's credential.
+    and the new. An edit notifies nobody, so only its length is checked, and
+    `reaches`, how many members the post's channel has, since an edit reaches
+    everyone the post does. Another person's post is refused, even with an
+    administrator's credential.
 
 `delete_post`: Delete post { #delete_post .mm-asks }
 :   Deletes one of your own posts. Deleting the post that starts a thread
@@ -565,6 +572,29 @@ those mentioned is deactivated, and, on a licensed server with user groups, how
 many a group's mention notifies. Mentions are found as Mattermost finds them, so
 code mentions nobody and `@here.` ending a sentence is `@here`. What a post
 does, and every file it carries, comes before the message in the question.
+
+#### How far a message goes
+
+`create_post` states in its call how far the message goes, as two numbers
+mm-mcp counts itself
+([ADR-031](adr/031-a-message-is-checked-before-anyone-is-asked-to-post-it.md)):
+
+- `reaches`, on every post: how many members the channel has. Everyone in it
+  can read the message, whatever it mentions.
+- `notifies`, exactly where Mattermost's web app would ask before sending,
+  with the number it would show: everyone but you for `@channel`, `@all`
+  or `@here` in a channel of more than 5 members, or a mentioned user
+  group's members in the channel, above 5. As in Mattermost, it is not asked
+  while the server's `EnableConfirmNotificationsToChannel` is off, or of
+  someone who may not mention the whole channel.
+
+`update_post` states `reaches` too, never `notifies`. The numbers are in
+the call because that is what your MCP client's own approval shows you, or its
+AI reviewer, and the model cannot state them without looking. A missing or wrong
+number is refused with the real one, and the model is told to weigh whether you
+meant the message for that many people before it calls again. Each is counted
+again just before the post goes out, so members who joined while you read the
+question stop it.
 
 What a write acts on is what you were asked about: a reply posted, a file
 rewritten or a draft typed on while you read the question stops the write.

@@ -13,9 +13,14 @@ The server's own instructions tell the model how Mattermost renders a message, i
 
 A colleague reads a post as the person's own words, so what reaches them should be what the person agreed to, and say plainly when a model wrote it. A mention that names nobody notifies nobody and reads as a mistake; a mention of everyone notifies everyone, which the person should know before they tick the box. A message Mattermost would refuse is better refused before the person spends attention on it.
 
+`create_post` states how far its message goes, as two numbers mm-mcp counts itself, checked before anyone is asked and again just before the post goes out. `reaches` is the channel's member count, on every post: everyone in the channel can read it, whatever it mentions. `notifies` is required exactly where Mattermost's web app asks before sending, with the number it shows: every member but the sender for `@channel`, `@all` or `@here` in a channel of more than 5 members, while the server's `EnableConfirmNotificationsToChannel` is on and the person has `use_channel_mentions` there; otherwise the members in the channel of the largest user group mentioned, above 5, that the person may mention. The 5 is the web app's own `NOTIFY_ALL_MEMBERS`, which the server does not publish; the rest is read from the server. `update_post` states `reaches` and never `notifies`, since an edit reaches everyone the post does and notifies nobody. A missing or wrong number is refused with the real one and where it comes from, and the refusal asks the model to weigh whether the person meant the message for that many people. The numbers are in the call's arguments because that is what a client's own approval shows, a person's prompt or an AI reviewer's, and the model cannot state them without looking.
+
 ## Not chosen
 
 - **Split an overlong message into replies on the tool's own initiative**: The person would confirm one post and get several; the model can split it, and each part is then asked about as what it is.
 - **Leave the AI marker to the model**: It would be set inconsistently, and a post's provenance is not the model's to decide.
 - **Mark drafts**: The person writes the last version of a draft and sends it themselves.
 - **Formatting guidance in every tool's description**: It would cost every tool listing in every session for what one paragraph of the server's instructions says.
+- **An acknowledgement the model sets, such as `target_audience_ack`**: The model sets it without looking; a number it must read, and that mm-mcp counts, it cannot.
+- **`reaches` only above a threshold**: A number to choose, configure and explain, where the count is one read and a refusal hands it over.
+- **One number for both**: A message reaches the whole channel whatever it mentions, and only some messages alert everyone at once; Mattermost asks about the second alone.

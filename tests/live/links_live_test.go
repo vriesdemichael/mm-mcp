@@ -174,6 +174,11 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		// A file by its link.
 		{Name: "read_file", Arguments: map[string]any{"file_id": liveURL + "/api/v4/files/" + fileID + "/preview"}},
 	} {
+		if call.Name == "create_post" {
+			// Read as a model reads it, just before the call: add_channel_members
+			// above changes it.
+			call.Arguments.(map[string]any)["reaches"] = members(t, p.channel.Id)
+		}
 		if result := callTool(t, session, call); result.IsError {
 			t.Errorf("%s %v: %s", call.Name, call.Arguments, errorText(result))
 		}
@@ -287,7 +292,7 @@ func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
 		t.Errorf("the question names the group as:\n%s", question.Message)
 	}
 	for _, call := range []*mcp.CallToolParams{
-		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited"}},
+		{Name: "update_post", Arguments: map[string]any{"post_id": posted.ID, "message": "the user's post, edited", "reaches": members(t, group.Id)}},
 		{Name: "add_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "remove_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "pin_post", Arguments: map[string]any{"post_id": theirs.Id}},

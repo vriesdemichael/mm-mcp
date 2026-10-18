@@ -24,7 +24,7 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestAReadOnlyToolCallsOnlyOperationsThatRead`: a tool annotated read-only calls only operations that read: GET, HEAD, or a search or lookup that takes a POST.
 - `TestALocalToolOnlyReadsMattermost`: a tool that writes this machine's files calls only operations that read.
 - `TestEveryParameterOfACalledOperationIsAccountedFor`: every parameter and body field of a called operation is set, fixed or omitted with a reason.
-- `TestEveryToolArgumentSetsAParameterItCalls`: every argument a tool takes sets a parameter it declares, and every declared argument is taken.
+- `TestEveryToolArgumentSetsAParameterItCalls`: every argument a tool takes sets a parameter it declares, shapes the answer, or is checked against a count mm-mcp makes, saying how, and every declared argument is taken.
 - `TestEveryDifferenceBetweenSupportedReleasesIsHandled`: an operation that differs on the oldest supported release is handled, said so, and listed on the releases page.
 - `TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView`: only a tool whose every call the person should see carries an MCP Apps view (ADR-022).
 - `TestAViewDrawsItsDataToolsOutputUnchanged`: every tool a view draws from answers exactly as the data tool it reads with.

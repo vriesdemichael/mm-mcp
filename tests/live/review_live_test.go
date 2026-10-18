@@ -64,7 +64,7 @@ func TestUpdatePostStopsWhenThePostChangesWhileThePersonIsAsked(t *testing.T) {
 		}
 	}, accept)
 
-	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version"}})
+	result, err := tryTool(t, session, &mcp.CallToolParams{Name: "update_post", Arguments: map[string]any{"post_id": post.Id, "message": "the model's version", "reaches": members(t, post.ChannelId)}})
 	if err == nil && !result.IsError {
 		t.Fatal("an edit replaced text the person was never shown")
 	}
@@ -249,7 +249,7 @@ func TestTypingStopsWhenToldAndWhenAReplyIsDeclined(t *testing.T) {
 	// Shown typing a reply named by any post in the thread, then the reply is declined.
 	callTool(t, session, &mcp.CallToolParams{Name: "typing", Arguments: map[string]any{"root_id": reply.Id}})
 	<-seen
-	callTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{"root_id": reply.Id, "message": "me"}})
+	callTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{"root_id": reply.Id, "message": "me", "reaches": members(t, channel.Id)}})
 	quiet("declining the reply")
 }
 

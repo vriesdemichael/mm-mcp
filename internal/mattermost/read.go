@@ -344,3 +344,27 @@ func (c *Client) Preference(ctx context.Context, userID, category, name string) 
 func (c *Client) GroupsByNames(ctx context.Context, names []string) ([]*model.Group, error) {
 	return result(c.api.GetGroupsByNames(ctx, names))
 }
+
+// TeamMember is the user's membership of a team, with the roles it gives them
+// there, its scheme's included. GetTeamMember.
+func (c *Client) TeamMember(ctx context.Context, teamID, userID string) (*model.TeamMember, error) {
+	return result(c.api.GetTeamMember(ctx, teamID, userID, ""))
+}
+
+// RolesByNames is the roles with the given names, each with the permissions it
+// grants. GetRolesByNames.
+func (c *Client) RolesByNames(ctx context.Context, names []string) ([]*model.Role, error) {
+	return result(c.api.GetRolesByNames(ctx, names))
+}
+
+// ChannelMemberCountsByGroup is how many members of each user group are in the
+// channel. GetChannelMemberCountsByGroup.
+func (c *Client) ChannelMemberCountsByGroup(ctx context.Context, channelID string) ([]*model.ChannelMemberCountByGroup, error) {
+	return result(c.api.GetChannelMemberCountsByGroup(ctx, channelID, false, ""))
+}
+
+// ClientLicense is the part of the server's licence it tells every client,
+// such as whether it covers LDAP groups. GetClientLicense.
+func (c *Client) ClientLicense(ctx context.Context) (map[string]string, error) {
+	return result(c.api.GetOldClientLicense(ctx, ""))
+}
