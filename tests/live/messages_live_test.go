@@ -48,11 +48,17 @@ func TestDMMessagesOnePersonOrTheUserThemselvesWithAFile(t *testing.T) {
 		t.Fatalf("posted %+v; want the direct message %s with one file", posted, direct.Id)
 	}
 
-	toSelf := sendDM(t, session, map[string]any{"message": "note to self"})
+	// A note to the user names them, so whoever approves the call sees where
+	// it goes; without a username it is refused.
+	result := callTool(t, session, &mcp.CallToolParams{Name: "dm", Arguments: map[string]any{"message": "note to self"}})
+	if !result.IsError || !strings.Contains(errorText(result), "give username") || !strings.Contains(errorText(result), "@"+user.Username) {
+		t.Errorf("a dm without a username: %s", errorText(result))
+	}
+	toSelf := sendDM(t, session, map[string]any{"username": user.Username, "message": "note to self"})
 	self, _, err := clientAs(t, user).CreateDirectChannel(t.Context(), user.Id, user.Id)
 	check(t, err)
 	if toSelf.ChannelID != self.Id || toSelf.Channel != "yourself" {
-		t.Fatalf("a dm without a username went to %+v; want the user's own %s", toSelf, self.Id)
+		t.Fatalf("a dm to the user's own username went to %+v; want the user's own %s", toSelf, self.Id)
 	}
 }
 
