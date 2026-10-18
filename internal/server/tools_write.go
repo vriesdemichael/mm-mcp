@@ -498,7 +498,7 @@ func createPostSpec() Spec {
 }
 
 type dmInput struct {
-	Username string `json:"username,omitempty" jsonschema:"the person to message: their username, with or without @, or their email address; the user themselves when not given"`
+	Username string `json:"username,omitempty" jsonschema:"the person to message: their username, with or without @, or their email address; the user's own username for a note to themselves. Required, so whoever approves the call sees who it goes to"`
 	Message  string `json:"message" jsonschema:"the text to send, in Mattermost Markdown"`
 	filesField
 }
@@ -510,8 +510,12 @@ func (in dmInput) destination(ctx context.Context, client *mattermost.Client) (d
 	if err != nil {
 		return destination{}, err
 	}
+	name := strings.TrimPrefix(strings.TrimSpace(in.Username), "@")
+	if name == "" {
+		return destination{}, fmt.Errorf("give username, the person to message, so whoever approves the call sees who it goes to; for a note to the user themselves, their own: @%s", self.Username)
+	}
 	other := self
-	if name := strings.TrimPrefix(strings.TrimSpace(in.Username), "@"); name != "" && !strings.EqualFold(name, self.Username) {
+	if !strings.EqualFold(name, self.Username) && !strings.EqualFold(name, self.Email) {
 		found, err := lookUpUsers(ctx, client, []string{name})
 		if err != nil {
 			return destination{}, err
@@ -555,7 +559,7 @@ func dmSpec() Spec {
 	return postingSpec[dmInput](
 		&mcp.Tool{
 			Name: "dm",
-			Description: "Send a direct message to one person under the user's name, or to the user themselves when no username is given. " +
+			Description: "Send a direct message to one person under the user's name, or a note to the user themselves by their own username. " +
 				"This is how to message people: \"message Alice and Bob\" is two direct messages, one to each." + postingDescription,
 			Annotations: writes("Send direct message", false),
 		},
@@ -563,7 +567,7 @@ func dmSpec() Spec {
 			{Operation: "CreateDirectChannel", Params: map[string]Coverage{}},
 			{
 				Operation: "GetUser",
-				Params:    map[string]Coverage{"user_id": Fixed("me", "the message is sent under the user's name, and the question says whose")},
+				Params:    map[string]Coverage{"user_id": Fixed("me", "the user's own username or email address is a note to themselves")},
 			},
 		}),
 		SetBy("username"), Omitted("a reply in a direct message's thread is a create_post with root_id"), false,
