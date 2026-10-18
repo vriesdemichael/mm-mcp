@@ -7,7 +7,7 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// What a call that states wrongly how much it takes away is told.
+// What a call that states wrongly what it replaces or takes away is told.
 
 func TestAWrongDiscardsIsRefusedWithTheLengthAndTheStartOfTheText(t *testing.T) {
 	t.Parallel()
@@ -32,22 +32,22 @@ func TestAWrongDiscardsIsRefusedWithTheLengthAndTheStartOfTheText(t *testing.T) 
 func TestAWrongDeletesIsRefusedWithThePostsThatGo(t *testing.T) {
 	t.Parallel()
 	one, three := int64(1), int64(3)
-	if err := checkDeletes("your post in ~Town Square", 0, &one); err != nil {
+	if err := checkDeletes("your post in ~Town Square", "Lunch order?", 0, &one); err != nil {
 		t.Fatalf("a reply alone: %v", err)
 	}
-	if err := checkDeletes("your post in ~Town Square", 2, &three); err != nil {
+	if err := checkDeletes("your post in ~Town Square", "Lunch order?", 2, &three); err != nil {
 		t.Fatalf("a post and its two replies: %v", err)
 	}
-	err := checkDeletes("your post in ~Town Square", 2, &one)
+	err := checkDeletes("your post in ~Town Square", "Lunch order?", 2, &one)
 	if err == nil {
 		t.Fatal("a thread stated as one post was not refused")
 	}
-	for _, want := range []string{"3 posts", "the 2 replies in its thread, other people's included", "said 1", "Consider whether", "deletes: 3"} {
+	for _, want := range []string{"3 posts", "which begins “Lunch order?”", "the 2 replies in its thread, other people's included", "said 1", "Consider whether", "deletes: 3"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("%q lacks %q", err, want)
 		}
 	}
-	if err := checkDeletes("your post in ~Town Square", 0, nil); err == nil || !strings.Contains(err.Error(), "1 post,") {
+	if err := checkDeletes("your post in ~Town Square", "Lunch order?", 0, nil); err == nil || !strings.Contains(err.Error(), "1 post, your post") {
 		t.Errorf("a reply stated as nothing: %v", err)
 	}
 }

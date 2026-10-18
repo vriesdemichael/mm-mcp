@@ -857,15 +857,6 @@ type deletePostInput struct {
 	deleteField
 }
 
-// replies is how many replies go with a post that is deleted: those in its
-// thread when it starts one.
-func replies(post *model.Post) int64 {
-	if post.RootId != "" {
-		return 0
-	}
-	return post.ReplyCount
-}
-
 func deletePostSpec() Spec {
 	return asked(checking(toolSpec(
 		&mcp.Tool{
@@ -904,7 +895,7 @@ func deletePostSpec() Spec {
 					if err != nil {
 						return confirmation{}, err
 					}
-					if err := checkDeletes("your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, p.post.Message, repliesTo(p.post), input.Deletes); err != nil {
 						return confirmation{}, err
 					}
 					message := fmt.Sprintf("Delete your post in %s:\n“%s”", p.in, excerpt(p.post.Message))
@@ -928,7 +919,7 @@ func deletePostSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_post", state(p.post)); err != nil {
 						return nil, Deleted{}, err
 					}
-					if err := checkDeletes("your post in "+p.in, replies(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, p.post.Message, repliesTo(p.post), input.Deletes); err != nil {
 						return nil, Deleted{}, err
 					}
 					if err := client.DeletePost(ctx, input.PostID); err != nil {
