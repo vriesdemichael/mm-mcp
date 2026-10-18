@@ -331,11 +331,8 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 					if err := stillAsAsked(ctx, tool.Name, bound(files, where)); err != nil {
 						return confirmation{}, err
 					}
-					checked, err := checkMessage(ctx, client, input.text(), where.label, where.size)
+					checked, err := checkPost(ctx, client, tool.Name, where, input)
 					if err != nil {
-						return confirmation{}, err
-					}
-					if err := checkImpact(ctx, client, tool.Name, where, checked, input); err != nil {
 						return confirmation{}, err
 					}
 					return postQuestion(ctx, client, where, input.text(), files, checked, cfg.MarkAIGenerated)
@@ -353,11 +350,7 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 					// How far the post goes is counted again now: members may have
 					// joined since the count was read, or while the person was asked.
 					if _, states := any(input).(stating); states {
-						checked, err := checkMessage(ctx, client, input.text(), where.label, where.size)
-						if err != nil {
-							return nil, Post{}, err
-						}
-						if err := checkImpact(ctx, client, tool.Name, where, checked, input); err != nil {
+						if _, err := checkPost(ctx, client, tool.Name, where, input); err != nil {
 							return nil, Post{}, err
 						}
 					}
@@ -406,6 +399,16 @@ func postingSpec[In posting](tool *mcp.Tool, own []Use, channel, root Coverage, 
 			}
 		},
 	)
+}
+
+// checkPost is what is checked of a post before it goes further: its message
+// (ADR-031), and how far it goes where its input states it.
+func checkPost[In posting](ctx context.Context, client *mattermost.Client, tool string, where destination, input In) (checkedMessage, error) {
+	checked, err := checkMessage(ctx, client, input.text(), where.label, where.size)
+	if err != nil {
+		return checkedMessage{}, err
+	}
+	return checked, checkImpact(ctx, client, tool, where, checked, input)
 }
 
 // postQuestion asks to post: as whom, where, in reply to what, what its

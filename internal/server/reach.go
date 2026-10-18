@@ -145,15 +145,14 @@ func loudnessIn(ctx context.Context, client *mattermost.Client, self *model.User
 		return loudness{}, err
 	}
 	facts := loudFacts{confirming: config["EnableConfirmNotificationsToChannel"] == "true", members: members, specials: checked.specials, where: where}
-	switch {
-	case !facts.confirming:
-	case len(facts.specials) > 0:
-		if members > notifyAllMembers {
-			if facts.mayMentionChannel, err = allowedIn(ctx, client, self, channel, model.PermissionUseChannelMentions.Id); err != nil {
-				return loudness{}, err
-			}
+	// Only what loudnessOf would look at is read.
+	everyone := facts.confirming && len(facts.specials) > 0 && members > notifyAllMembers
+	if everyone {
+		if facts.mayMentionChannel, err = allowedIn(ctx, client, self, channel, model.PermissionUseChannelMentions.Id); err != nil {
+			return loudness{}, err
 		}
-	case len(checked.groups) > 0:
+	}
+	if facts.confirming && len(facts.specials) == 0 && len(checked.groups) > 0 {
 		if facts.groups, err = groupsIn(ctx, client, self, channel, config, checked.groups); err != nil {
 			return loudness{}, err
 		}
@@ -171,8 +170,6 @@ func groupsIn(ctx context.Context, client *mattermost.Client, self *model.User, 
 	if err != nil {
 		return nil, err
 	}
-	ldap := license["IsLicensed"] == "true" && license["LDAPGroups"] == "true"
-	custom := config["EnableCustomGroups"] == "true"
 	may, err := allowedIn(ctx, client, self, channel, model.PermissionUseGroupMentions.Id)
 	if err != nil {
 		return nil, err
@@ -181,6 +178,16 @@ func groupsIn(ctx context.Context, client *mattermost.Client, self *model.User, 
 	if err != nil {
 		return nil, err
 	}
+	return groupMentions(mentioned, license, config, may, counts), nil
+}
+
+// groupMentions is each mentioned group with its members in the channel, and
+// whether the user may mention it: it allows it, its kind is on, LDAP groups
+// by the licence and custom groups by the server's setting, and they may
+// mention groups there.
+func groupMentions(mentioned []mentionedGroup, license, config map[string]string, may bool, counts []*model.ChannelMemberCountByGroup) []groupMention {
+	ldap := license["IsLicensed"] == "true" && license["LDAPGroups"] == "true"
+	custom := config["EnableCustomGroups"] == "true"
 	inChannel := map[string]int64{}
 	for _, count := range counts {
 		inChannel[count.GroupId] = count.ChannelMemberCount
@@ -190,23 +197,15 @@ func groupsIn(ctx context.Context, client *mattermost.Client, self *model.User, 
 		kindOn := (m.group.Source == model.GroupSourceLdap && ldap) || (m.group.Source == model.GroupSourceCustom && custom)
 		out = append(out, groupMention{word: m.word, name: m.group.DisplayName, members: inChannel[m.group.Id], allowed: may && kindOn && m.group.AllowReference})
 	}
-	return out, nil
+	return out
 }
 
-// allowedIn reports whether the user holds permission in the channel, as the
-// web app works it out: from the roles they hold on the system, in the
-// channel's team and in the channel, whose names Mattermost already gives by
-// the team's and channel's schemes. GetChannelMember, GetTeamMember,
-// GetRolesByNames.
+// allowedIn reports whether the user holds a permission of the channel's, as
+// the web app works it out: from the roles they hold on the system and in the
+// channel, whose names Mattermost already gives by the team's and channel's
+// schemes. GetChannelMember, GetRolesByNames.
 func allowedIn(ctx context.Context, client *mattermost.Client, self *model.User, channel *model.Channel, permission string) (bool, error) {
 	names := strings.Fields(self.Roles)
-	if channel.TeamId != "" {
-		member, err := client.TeamMember(ctx, channel.TeamId, self.Id)
-		if err != nil {
-			return false, err
-		}
-		names = append(names, strings.Fields(member.Roles)...)
-	}
 	member, err := client.Membership(ctx, channel.Id, self.Id)
 	if err != nil {
 		return false, err
@@ -216,12 +215,12 @@ func allowedIn(ctx context.Context, client *mattermost.Client, self *model.User,
 	if err != nil {
 		return false, err
 	}
-	for _, role := range roles {
-		if slices.Contains(role.Permissions, permission) {
-			return true, nil
-		}
-	}
-	return false, nil
+	return permitted(roles, permission), nil
+}
+
+// permitted reports whether any of the roles grants the permission.
+func permitted(roles []*model.Role, permission string) bool {
+	return slices.ContainsFunc(roles, func(role *model.Role) bool { return slices.Contains(role.Permissions, permission) })
 }
 
 // checkImpact holds a call that states how far its message goes to mm-mcp's
@@ -255,13 +254,6 @@ func impactUses() []Use {
 			Params: map[string]Coverage{
 				"channel_id": Fixed("the post's channel", "the user's roles there say whether they may mention the whole channel"),
 				"user_id":    Fixed("me", "the post goes out under the user's name, with their permissions"),
-			},
-		},
-		{
-			Operation: "GetTeamMember",
-			Params: map[string]Coverage{
-				"team_id": Fixed("the channel's team", "the user's roles there grant permissions in its channels too"),
-				"user_id": Fixed("me", "the post goes out under the user's name, with their permissions"),
 			},
 		},
 		{Operation: "GetRolesByNames", Params: map[string]Coverage{}},
