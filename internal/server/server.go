@@ -43,13 +43,13 @@ to you.
 
 To message people, send each a direct message with dm.
 
-Wherever a tool that reads asks for a channel, team, post or file id, a channel's
-or team's name works too, and so does any link Mattermost shows for it. A tool
-that posts or changes what others see takes a channel, post or team by its
-address alone, mattermost://…, which names it exactly: every post, channel and
-team an answer describes comes with its address and its url. Read the place
-first when you do not have its address. To say where something was said, link
-the post by its url, not its channel; never build a link or an address from an id.
+Wherever a tool asks for a channel, team, post or file id, it takes as well a
+channel's or team's name, any link Mattermost shows for it, and its address,
+mattermost://…, which every post, channel and team a read describes carries
+beside its url. A tool that posts or changes what others see takes a channel,
+post or team by its address alone, which names it exactly: read the place first
+when you do not have it. To say where something was said, link the post by its
+url, not its channel; never build a link or an address from an id.
 
 To catch the person up, list_mentions finds what mentions them, get_user_channels
 with unread_only what they have not read, and read_unread reads a channel from
@@ -99,15 +99,15 @@ type Spec struct {
 	// Checks.
 	Shapes map[string]string
 	// Checks names each argument the call is checked against rather than
-	// sent, such as how many people a post reaches, with what mm-mcp counts
-	// it against (ADR-031).
+	// sent, such as how many people a post reaches, with what mm-mcp reads
+	// to check it (ADR-031).
 	Checks map[string]string
 	// Asking is what the tool's description says of mm-mcp's question, said
 	// only while the server asks (MM_MCP_ELICITATION_OPT_IN, ADR-033).
 	Asking string
-	// Unasked says why a tool that changes Mattermost does not ask the person
-	// first: what it changes is theirs alone, or gone within seconds. Every
-	// other tool that changes Mattermost asks (ADR-021).
+	// Unasked says why a tool that changes Mattermost is no change others
+	// see: what it changes is theirs alone, or gone within seconds. Every other
+	// tool that changes Mattermost asks on a server set to ask (ADR-033).
 	Unasked string
 	// Addressed marks a write others see, whose channel, post and team
 	// arguments take an address alone (ADR-030).
@@ -198,8 +198,8 @@ func Undocumented(arg, reason string) Coverage {
 	return Coverage{How: "undocumented", Arg: arg, Reason: reason}
 }
 
-// Asks reports whether the tool asks the person before each call: it changes
-// what others see in Mattermost (ADR-021).
+// Asks reports whether the tool asks the person before each call on a server
+// set to ask: it changes what others see in Mattermost (ADR-033).
 func (s Spec) Asks() bool { return !s.ReadOnly() && s.Unasked == "" && !s.Local }
 
 // ReadOnly reports whether the tool changes nothing, as its annotation says.
@@ -293,23 +293,27 @@ func Exposed(cfg config.Config) []Spec {
 }
 
 // WritingInstructions follows Instructions on a server that offers writes
-// (ADR-033): the MCP client's approval of each call decides, and mm-mcp checks
-// what each call states.
-const WritingInstructions = `A tool that posts or changes what others see runs once
-your MCP client approves the call, if it asks: mm-mcp does not ask the person
-itself. Make such a call only when the person asked for that change. It states
-what it does to others: how many people a post reaches and notifies, how many
-characters or posts it takes away, and where it goes by address. mm-mcp checks
-each against its own count, and when it is not what you stated, it refuses and
+// (ADR-033): what each write states, which mm-mcp checks.
+const WritingInstructions = `A tool that posts or changes what others see states what it does to them: how
+many people a post or an edit reaches and a post notifies, the full text an edit
+replaces and how many reactions and replies the post has, how many characters or
+posts a deletion takes away, and where it goes, by address. mm-mcp checks each
+against its own reading, and when one is not what you stated, it refuses and
 says what it is; consider whether that is what the person meant before calling
-again, and ask them when it may not be. Name in your reply what was posted or
-changed, and where.`
+again, and ask them when it may not be. Make such a call only when the person
+asked for that change, and name in your reply what was posted or changed, and
+where.`
+
+// ApprovingInstructions follows WritingInstructions on a server that does not
+// ask (ADR-033).
+const ApprovingInstructions = `Your MCP client approves each such call, if it asks:
+mm-mcp does not ask the person itself.`
 
 // ElicitingInstructions follows WritingInstructions on a server set to ask
 // as well (MM_MCP_ELICITATION_OPT_IN=true, ADR-033).
-const ElicitingInstructions = `This server also asks the person before each such
-call, through your MCP client. If they decline or close the question, do not
-call it again unless they ask.`
+const ElicitingInstructions = `mm-mcp also asks the person before each such call,
+through your MCP client. If they decline or close the question, do not call it
+again unless they ask.`
 
 // unaskedNote ends the description of each tool that changes what others
 // see, on a server that does not ask.
@@ -333,6 +337,8 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 		instructions += "\n\n" + WritingInstructions
 		if cfg.Elicit {
 			instructions += "\n\n" + ElicitingInstructions
+		} else {
+			instructions += "\n\n" + ApprovingInstructions
 		}
 	}
 	resources := AllResources()

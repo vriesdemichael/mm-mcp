@@ -343,10 +343,10 @@ func TestTheToolsPageDocumentsEveryToolAndOnlyThose(t *testing.T) {
 	}
 }
 
-// TestEveryToolThatWritesAsksFirst calls each write tool from a client that
-// cannot be asked. A tool that asks refuses it with the missing capability
-// error before reaching Mattermost; one that does not reaches for the network,
-// which the unit tests block, and fails some other way (ADR-021).
+// TestEveryToolThatWritesAsksFirstWhenOptedIn calls each tool that changes
+// what others see, on a server set to ask, from a client that cannot be asked.
+// Each refuses it with the missing capability error before reaching Mattermost
+// (ADR-033).
 func TestEveryToolThatWritesAsksFirstWhenOptedIn(t *testing.T) {
 	t.Parallel()
 	cfg := writingConfig
@@ -399,6 +399,9 @@ func TestAServerThatDoesNotAskLeavesTheCallToTheClient(t *testing.T) {
 		instructions := connect(t, cfg).InitializeResult().Instructions
 		if says := strings.Contains(instructions, "also asks the person"); says != mode.elicit {
 			t.Errorf("%s, the instructions say mm-mcp asks: %v", mode.name, says)
+		}
+		if says := strings.Contains(instructions, "does not ask the person itself"); says == mode.elicit {
+			t.Errorf("%s, the instructions say the client's approval alone decides: %v", mode.name, says)
 		}
 		for _, tool := range listTools(t, cfg) {
 			if says := strings.Contains(tool.Description, "is asked to confirm"); says != (mode.elicit && asking[tool.Name]) {
