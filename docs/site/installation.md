@@ -205,7 +205,7 @@ server need not be you at this machine: `save_file`, and attaching a file by
 its `path`. A file the model writes, given a name and its content, is still
 attached. Anything on your machine that reaches the port acts as mm-mcp's
 account
-([Security](security.md#over-http)).
+([Security](security.md#http-transport)).
 
 ## Verifying a download
 
