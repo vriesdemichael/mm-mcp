@@ -137,8 +137,8 @@ func loudnessOf(f loudFacts) loudness {
 
 // loudnessIn reads what loudnessOf decides on, for a message posted in
 // channel, which checkMessage found the mentions of. GetClientConfig,
-// GetChannelMember, GetTeamMember and GetRolesByNames; for a mention of a user
-// group, GetClientLicense and GetChannelMemberCountsByGroup too.
+// GetChannelMember and GetRolesByNames; for a mention of a user group,
+// GetChannelMemberCountsByGroup too.
 func loudnessIn(ctx context.Context, client *mattermost.Client, self *model.User, channel *model.Channel, where string, checked checkedMessage, members int64) (loudness, error) {
 	config, err := client.ClientConfig(ctx)
 	if err != nil {
@@ -161,15 +161,9 @@ func loudnessIn(ctx context.Context, client *mattermost.Client, self *model.User
 }
 
 // groupsIn is each user group a message mentions, with its members in the
-// channel and whether the user may mention it there: the group allows it, its
-// kind is on, LDAP groups by the licence and custom groups by the server's
-// setting, and the user has use_group_mentions in the channel. Groups are a
-// licensed edition's feature, so Team Edition never gets here.
+// channel and whether the user may mention it there. Groups are a licensed
+// edition's feature, so Team Edition never gets here.
 func groupsIn(ctx context.Context, client *mattermost.Client, self *model.User, channel *model.Channel, config map[string]string, mentioned []mentionedGroup) ([]groupMention, error) {
-	license, err := client.ClientLicense(ctx)
-	if err != nil {
-		return nil, err
-	}
 	may, err := allowedIn(ctx, client, self, channel, model.PermissionUseGroupMentions.Id)
 	if err != nil {
 		return nil, err
@@ -178,15 +172,15 @@ func groupsIn(ctx context.Context, client *mattermost.Client, self *model.User, 
 	if err != nil {
 		return nil, err
 	}
-	return groupMentions(mentioned, license, config, may, counts), nil
+	return groupMentions(mentioned, config, may, counts), nil
 }
 
 // groupMentions is each mentioned group with its members in the channel, and
-// whether the user may mention it: it allows it, its kind is on, LDAP groups
-// by the licence and custom groups by the server's setting, and they may
-// mention groups there.
-func groupMentions(mentioned []mentionedGroup, license, config map[string]string, may bool, counts []*model.ChannelMemberCountByGroup) []groupMention {
-	ldap := license["IsLicensed"] == "true" && license["LDAPGroups"] == "true"
+// whether the user may mention it: it allows it, its kind is on, and they may
+// mention groups there. Mattermost answers a lookup of groups only where its
+// licence covers them, so an LDAP group it answered with is on; a custom group
+// is on while the server's EnableCustomGroups is, as the web app reads it.
+func groupMentions(mentioned []mentionedGroup, config map[string]string, may bool, counts []*model.ChannelMemberCountByGroup) []groupMention {
 	custom := config["EnableCustomGroups"] == "true"
 	inChannel := map[string]int64{}
 	for _, count := range counts {
@@ -194,7 +188,7 @@ func groupMentions(mentioned []mentionedGroup, license, config map[string]string
 	}
 	out := make([]groupMention, 0, len(mentioned))
 	for _, m := range mentioned {
-		kindOn := (m.group.Source == model.GroupSourceLdap && ldap) || (m.group.Source == model.GroupSourceCustom && custom)
+		kindOn := m.group.Source == model.GroupSourceLdap || (m.group.Source == model.GroupSourceCustom && custom)
 		out = append(out, groupMention{word: m.word, name: m.group.DisplayName, members: inChannel[m.group.Id], allowed: may && kindOn && m.group.AllowReference})
 	}
 	return out
@@ -257,11 +251,6 @@ func impactUses() []Use {
 			},
 		},
 		{Operation: "GetRolesByNames", Params: map[string]Coverage{}},
-		{
-			Operation: "GetClientLicense",
-			Params:    map[string]Coverage{"format": Fixed("old", "the shape Mattermost's own clients read, which says whether LDAP groups are licensed")},
-			Licensed:  "asked only once a message mentions a user group, which Team Edition has none of",
-		},
 		{
 			Operation: "GetChannelMemberCountsByGroup",
 			Params: map[string]Coverage{

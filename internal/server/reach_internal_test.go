@@ -100,22 +100,19 @@ func TestAGroupIsMentionableOnlyWhereItsKindIsOnAndTheUserMay(t *testing.T) {
 		}
 		return out
 	}
-	on := map[string]string{"IsLicensed": "true", "LDAPGroups": "true", "EnableCustomGroups": "true"}
+	on := map[string]string{"EnableCustomGroups": "true"}
 	off := map[string]string{}
-	got := groupMentions(mentioned, on, on, true, counts)
+	got := groupMentions(mentioned, on, true, counts)
 	if got[0].members != 7 || got[1].members != 3 || got[2].members != 0 || got[0].name != "Developers" {
 		t.Fatalf("counted %+v", got)
 	}
 	if a := allowed(got); !a["@devs"] || !a["@oncall"] || a["@board"] {
 		t.Errorf("with both kinds on: %v", a)
 	}
-	if a := allowed(groupMentions(mentioned, off, on, true, counts)); a["@devs"] || !a["@oncall"] {
-		t.Errorf("without LDAP groups licensed: %v", a)
-	}
-	if a := allowed(groupMentions(mentioned, on, off, true, counts)); !a["@devs"] || a["@oncall"] {
+	if a := allowed(groupMentions(mentioned, off, true, counts)); !a["@devs"] || a["@oncall"] {
 		t.Errorf("with custom groups off: %v", a)
 	}
-	if a := allowed(groupMentions(mentioned, on, on, false, counts)); a["@devs"] || a["@oncall"] {
+	if a := allowed(groupMentions(mentioned, on, false, counts)); a["@devs"] || a["@oncall"] {
 		t.Errorf("by a user who may not mention groups: %v", a)
 	}
 }
