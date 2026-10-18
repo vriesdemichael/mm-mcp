@@ -303,12 +303,13 @@ Each of these asks you first, showing exactly what will happen
 
 `update_post`: Update post { #update_post .mm-asks }
 :   Replaces the text of one of your own posts. The question shows the old text
-    and the new. An edit notifies nobody, so only its length is checked. The
-    call states `reaches`, how many members the post's channel has, since an
-    edit reaches everyone the post does; `old_message`, the post's whole text
-    as it reads now, beside the new; and, once anyone has reacted or replied,
-    `responses`, how many have ([below](#what-an-edit-changes)). Another
-    person's post is refused, even with an administrator's credential.
+    and the new. An edit notifies nobody, so its mentions are not checked, only
+    its length. The call states `reaches`, how many members the post's channel
+    has, since an edit reaches everyone the post does; `old_message`, the
+    post's whole text as it reads now, beside the new; and, once anyone has
+    reacted or replied, `responses`, how many have
+    ([below](#what-an-edit-changes)). Another person's post is refused, even
+    with an administrator's credential.
 
 `delete_post`: Delete post { #delete_post .mm-asks }
 :   Deletes one of your own posts. Deleting the post that starts a thread
