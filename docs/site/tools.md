@@ -636,6 +636,25 @@ counted again just before the write, so a post you edited, a draft you typed on
 or a reply that arrived since the model read it stops the write, whether or not
 anyone is asked.
 
+For example, an edit of your post that reads "Retro moved to Thursday at four,
+agenda in the thread", without `discards`, is refused with:
+
+> update_post did not run: it discards the 53 characters of your post in ~Town
+> Square, which begins “Retro moved to Thursday at four, agenda in the thread”,
+> and the call left the number out. Consider whether the person meant to lose
+> those words. If they did, call again with discards: 53. If not, leave them as
+> they are, or ask the person
+
+and deleting a post that started a thread of 12 replies, without `deletes`:
+
+> delete_post did not run: it deletes 13 posts, your post in ~Town Square and
+> the 12 replies in its thread, other people's included, and the call left the
+> number out. Consider whether the person meant to delete all of them. If they
+> did, call again with deletes: 13. If not, leave it, or ask the person
+
+A thirteenth reply arriving before the model calls again with `deletes: 13`
+gets the same refusal, with 14.
+
 What a write acts on is what you were asked about: a reply posted, a file
 rewritten or a draft typed on while you read the question stops the write.
 Posts and edits are marked as written with AI, as Mattermost shows it, unless
