@@ -671,7 +671,8 @@ type updatePostInput struct {
 }
 
 // checkEdit is what is checked of an edit before it goes further: how far it
-// reaches, that the post reads as old_message says, and how many answer it.
+// reaches, that old_message is the post's current text, and how many respond
+// to the post.
 // GetChannelStats, GetUsersByIds.
 func checkEdit(ctx context.Context, client *mattermost.Client, p postInContext, input updatePostInput) error {
 	if err := editReaches(ctx, client, p, input.Reaches); err != nil {
@@ -704,10 +705,10 @@ func updatePostSpec() Spec {
 			Name: "update_post",
 			Description: "Replace the text of one of the user's own posts; Mattermost marks the post as edited, and notifies nobody it " +
 				"newly mentions. The new text must fit the server's limit. Every call states reaches, how many members the post's " +
-				"channel has, since an edit reaches everyone the post does; old_message, the post's whole text as it reads now; and, " +
-				"when anyone has reacted or replied, responses, how many have: their answers will read as answers to the new text. " +
-				"Each is checked against the post as it is, read again just before the edit. The person is asked to confirm each edit, seeing the old text " +
-				"and the new; if they decline or close the question, do not edit it again unless they ask.",
+				"channel has, since an edit reaches everyone the post does; old_message, the post's current text in full; and, for a " +
+				"post with reactions or replies, responses, their number, since an edit leaves them under the replacing text. " +
+				"Each is checked against the post, read again just before the edit. The person is asked to confirm each edit, seeing the current text " +
+				"and its replacement; if they decline or close the question, do not edit it again unless they ask.",
 			Annotations: overwrites("Update post"),
 		},
 		uses([]Use{{

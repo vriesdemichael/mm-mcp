@@ -70,21 +70,21 @@ func checkDeletes(what string, replies int64, stated *int64) error {
 		"leave it, or ask the person", count, plural(count, "post", "posts"), what, thread, said(stated), count)
 }
 
-// What an edit states of what it changes (ADR-031): the post's whole text as
-// it reads now, which binds the edit to it and puts what it replaces beside
-// what replaces it, and, for a post others have answered, how many answer it,
-// since their answers will read as answers to the new text.
+// What an edit states (ADR-031): the post's current text in full, which binds
+// the edit to it and shows what it replaces alongside the replacement, and,
+// for a post with reactions or replies, their number, since an edit leaves
+// them under the replacing text and tells nobody.
 
 // editField is what update_post states of the post it edits.
 type editField struct {
-	OldMessage string `json:"old_message,omitempty" jsonschema:"the post's whole text exactly as it reads now, which message replaces, so whoever approves the edit sees both. Required; a post that reads otherwise is refused with what it reads"`
-	Responses  *int64 `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies answer the post, as read_post gives it: Mattermost tells nobody about an edit, so they will read as answers to the new text. Required when the post has any; a missing or wrong count is refused with who answered"`
+	OldMessage string `json:"old_message,omitempty" jsonschema:"the post's current text, exactly and in full, which message replaces, so whoever approves the edit sees both. Required; one that differs from the current text is refused with it"`
+	Responses  *int64 `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies the post has, as read_post gives it: an edit leaves them under the replacing text and tells nobody. Required for a post that has any; a missing or wrong count is refused with who responded"`
 }
 
 // oldMessageCheck and responsesCheck say what old_message and responses are
 // checked against, for the spec that takes them.
 const (
-	oldMessageCheck = "the post's text as it reads now, read just before the edit"
+	oldMessageCheck = "the post's current text, read just before the edit"
 	responsesCheck  = "the post's reactions and, when it starts a thread, its replies, read just before the edit"
 )
 
@@ -92,8 +92,8 @@ const (
 // quotes the start of.
 const quotedWhole = 2000
 
-// checkOldMessage refuses an edit whose old_message is not the post's text as
-// it reads now. what names the post, such as "your post in ~Town Square".
+// checkOldMessage refuses an edit whose old_message is not the post's current
+// text. what names the post, such as "your post in ~Town Square".
 func checkOldMessage(what, current, stated string) error {
 	if stated == current {
 		return nil
@@ -103,20 +103,20 @@ func checkOldMessage(what, current, stated string) error {
 		shown = excerpt(current) + "”, which read_post reads whole, “"
 	}
 	if stated == "" {
-		return fmt.Errorf("update_post did not run: give old_message, the whole text of %s as it reads now, beside message, so whoever approves the edit sees what it replaces. It reads now: “%s”", what, shown)
+		return fmt.Errorf("update_post did not run: give old_message, the current text of %s in full, alongside message, so whoever approves the edit sees what it replaces. The current text: “%s”", what, shown)
 	}
-	return fmt.Errorf("update_post did not run: %s does not read as old_message says: it changed since it was read, or old_message is not all of it. It reads now: “%s”. Consider whether the edit still fits what it reads before calling again with that as old_message", what, shown)
+	return fmt.Errorf("update_post did not run: old_message differs from the current text of %s, because the post changed after it was read or because only part of it is quoted. The current text: “%s”. Consider whether the edit fits that text before calling again with it as old_message", what, shown)
 }
 
-// postAnswers is what answers a post: its reactions, by emoji, with who gave
-// each, and its replies when it starts a thread.
+// postAnswers is what responds to a post: its reactions, by emoji, with who
+// gave each, and its replies when it starts a thread.
 type postAnswers struct {
 	reactions []*model.Reaction
 	replies   int64
 	names     map[string]string
 }
 
-// answersTo is what answers a post, as Mattermost answered with it.
+// answersTo is what responds to a post, as Mattermost gives the post.
 // GetUsersByIds.
 func answersTo(ctx context.Context, client *mattermost.Client, post *model.Post) (postAnswers, error) {
 	a := postAnswers{reactions: reactionsOf(post), replies: repliesTo(post)}
@@ -129,10 +129,10 @@ func answersTo(ctx context.Context, client *mattermost.Client, post *model.Post)
 	return a, err
 }
 
-// count is how many answer the post: what responses states.
+// count is how many respond to the post: what responses states.
 func (a postAnswers) count() int64 { return int64(len(a.reactions)) + a.replies }
 
-// String says who answered, for a refusal: each emoji with how many gave it
+// String says who responded, for a refusal: each emoji with how many gave it
 // and the first of them, then the replies.
 func (a postAnswers) String() string {
 	var order []string
@@ -159,25 +159,25 @@ func (a postAnswers) String() string {
 	return strings.Join(parts, ", ")
 }
 
-// checkResponses refuses an edit of a post others answered whose responses is
-// not how many answer it, or that states answers a post nobody answered.
+// checkResponses refuses an edit of a post with reactions or replies whose
+// responses is not their number, or that states some for a post without any.
 func checkResponses(what string, a postAnswers, stated *int64) error {
 	count := a.count()
 	switch {
 	case count == 0 && (stated == nil || *stated == 0):
 		return nil
 	case count == 0:
-		return fmt.Errorf("update_post did not run: the call says responses: %d, but nobody has answered %s. Leave responses out", *stated, what)
+		return fmt.Errorf("update_post did not run: the call says responses: %d, but %s has no reactions or replies. Leave responses out", *stated, what)
 	case stated != nil && *stated == count:
 		return nil
 	}
-	return fmt.Errorf("update_post did not run: %s %s %s as it reads now: %s, and the call %s. Mattermost tells nobody about an edit, "+
-		"so they will read as answers to the new text. Consider whether they still fit it; if the change is news to those who answered, "+
-		"reply in the thread instead. If they still fit, call again with responses: %d",
-		peopleAnswer(count), plural(count, "answers", "answer"), what, a, said(stated), count)
+	return fmt.Errorf("update_post did not run: %s %s %s: %s, and the call %s. An edit leaves them under the replacing text, and "+
+		"Mattermost tells nobody about it. Consider whether they fit the replacement; if the change is news to those who responded, "+
+		"reply in the thread instead. If they fit it, call again with responses: %d",
+		peopleAnswer(count), plural(count, "responds to", "respond to"), what, a, said(stated), count)
 }
 
-// peopleAnswer counts the answers to a post as a refusal names them.
+// peopleAnswer counts what responds to a post as a refusal names it.
 func peopleAnswer(count int64) string {
 	return fmt.Sprintf("%d %s", count, plural(count, "reaction or reply", "reactions and replies"))
 }

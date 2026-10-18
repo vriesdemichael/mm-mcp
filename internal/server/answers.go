@@ -75,8 +75,8 @@ type Post struct {
 	AIGenerated bool                `json:"ai_generated,omitempty" jsonschema:"whether the post is marked as written with AI, as Mattermost shows it"`
 	Reactions   map[string][]string `json:"reactions,omitempty" jsonschema:"each emoji name with the usernames of the people who reacted with it"`
 	// Responses is how many reactions and, for a post that starts a thread,
-	// replies answer it.
-	Responses int64        `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies answer it: what update_post states before it edits it"`
+	// replies it has.
+	Responses int64        `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies it has: what update_post states to edit it"`
 	Files     []Attachment `json:"files,omitempty" jsonschema:"the files attached; read_file reads one, by its id or its uri"`
 	Type      string       `json:"type,omitempty" jsonschema:"set for a message Mattermost wrote, such as someone joining the channel"`
 }

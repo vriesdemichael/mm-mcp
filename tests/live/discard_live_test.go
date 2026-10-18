@@ -45,12 +45,12 @@ func TestAnEditStatesTheWholeTextItReplaces(t *testing.T) {
 	}
 
 	refusedSaying(t, session, "update_post", edit(nil), "give old_message", "your post in ~"+channel.DisplayName, "“Lunch at noon”")
-	refusedSaying(t, session, "update_post", edit("Lunch"), "does not read as old_message says", "“Lunch at noon”")
+	refusedSaying(t, session, "update_post", edit("Lunch"), "differs from the current text", "“Lunch at noon”")
 
 	// The person adds to the post in Mattermost after the model read it.
 	_, _, err := own.PatchPost(t.Context(), post.Id, &model.PostPatch{Message: model.NewPointer("Lunch at noon, bring snacks")})
 	check(t, err)
-	refusedSaying(t, session, "update_post", edit("Lunch at noon"), "does not read as old_message says", "“Lunch at noon, bring snacks”", "Consider whether")
+	refusedSaying(t, session, "update_post", edit("Lunch at noon"), "differs from the current text", "“Lunch at noon, bring snacks”", "Consider whether")
 	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
 	if stored.Message != "Lunch at noon, bring snacks" {
@@ -89,8 +89,8 @@ func TestAnEditOfAnAnsweredPostStatesHowManyAnswerIt(t *testing.T) {
 	}
 	edit := map[string]any{"post_id": post.Id, "message": "Let's drop that idea Brent had yesterday", "old_message": asked, "reaches": members(t, channel.Id)}
 	refusedSaying(t, session, "update_post", edit,
-		"3 reactions and replies answer your post", ":thumbsup: ×2", "@"+brent.Username, "1 reply in its thread",
-		"read as answers to the new text", "reply in the thread instead", "responses: 3")
+		"3 reactions and replies respond to your post", ":thumbsup: ×2", "@"+brent.Username, "1 reply in its thread",
+		"leaves them under the replacing text", "reply in the thread instead", "responses: 3")
 	stored, _, err := admin.GetPost(t.Context(), post.Id, "")
 	check(t, err)
 	if stored.Message != asked {
