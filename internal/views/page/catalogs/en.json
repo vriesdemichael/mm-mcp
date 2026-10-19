@@ -47,6 +47,32 @@
     "other": "{count} replies"
   },
   "thread.title": "Thread",
+  "unreads.channels": "Channels",
+  "unreads.direct": "Direct messages",
+  "unreads.mark_read": "Mark read",
+  "unreads.mark_refused": "This app does not mark it read from here.",
+  "unreads.marked": "Marked read",
+  "unreads.mentioned": {
+    "one": "{count} mention",
+    "other": "{count} mentions"
+  },
+  "unreads.mentions": "Mentions",
+  "unreads.more_channels": "More channels have something unread in Mattermost.",
+  "unreads.more_mentions": "More posts mention you in Mattermost.",
+  "unreads.more_threads": "More followed threads have unread replies in Mattermost.",
+  "unreads.new_messages": "New messages",
+  "unreads.nothing": "Nothing is unread.",
+  "unreads.open_channel": "Open the channel in Mattermost",
+  "unreads.open_refused": "This app does not open it here.",
+  "unreads.threads": "Followed threads",
+  "unreads.unread": {
+    "one": "{count} unread",
+    "other": "{count} unread"
+  },
+  "unreads.unread_replies": {
+    "one": "{count} unread reply",
+    "other": "{count} unread replies"
+  },
   "view.cancelled": "The call was cancelled.",
   "view.failed": "Mattermost could not be read.",
   "view.loading": "Loading",

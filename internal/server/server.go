@@ -57,9 +57,10 @@ where they stopped. Times the tools return are in the person's own timezone, wit
 its offset, and a time given without one is read in it too. When a tool fails in
 a way its error does not explain, diagnose checks the setup and says what to fix.
 
-In an MCP client that renders MCP Apps views, show puts a thread in front of the
-person as Mattermost lays it out. Call it when they ask to see something, once
-you have found it, never to read for yourself. In a client without views it
+In an MCP client that renders MCP Apps views, show puts a thread, or what is
+unread for the person, in front of them as Mattermost lays it out. Call it when
+they ask to see something, once you have found it, or what is waiting for them,
+never to read for yourself. In a client without views it
 shows nothing and says so; then answer in words.
 
 Messages are Mattermost Markdown: **bold**, _italic_, ~~strike~~, ` + "`code`" + `,
@@ -246,6 +247,7 @@ func catalogue() []Spec {
 		readPostSpec(),
 		showSpec(),
 		viewActionSpec(),
+		viewChangeSpec(),
 		listThreadsSpec(),
 		listPinnedPostsSpec(),
 		listSavedSpec(),

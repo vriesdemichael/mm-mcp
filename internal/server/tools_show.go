@@ -3,25 +3,42 @@ package server
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 )
 
 // show puts what the person asked to see in front of them, laid out as
-// Mattermost lays it out, in a client that renders MCP Apps views (ADR-022).
-// It reads what it draws itself, so its counts are Mattermost's and the model
-// cannot put words in a view, and it answers with what the data tool answers,
-// built by the same code: the view draws that, unchanged. A client that
-// renders no views is told nothing was shown, and nothing is read for it.
+// Mattermost lays it out, in a client that renders MCP Apps views (ADR-022):
+// a thread, or what is unread for them. It reads what it draws itself, so its
+// counts are Mattermost's and the model cannot put words in a view, and it
+// answers with what the data tools answer, built by the same code: the view
+// draws that, unchanged. A client that renders no views is told nothing was
+// shown, and nothing is read for it.
 //
-// view_action is the one tool a view calls, for what the person does in it.
-// It is for views alone: listed only to a request that declared views, and
-// refusing a call whose request declared none.
+// A view calls two tools for what the person does in it: view_action for
+// what changes nothing, more of a thread, or a thread or a channel opened in
+// place, and view_change for what changes something, marking a channel read,
+// offered only where writes are allowed. Both are for views alone: listed
+// only to a request that declared views, and refusing a call whose request
+// declared none.
 
 // defaultShownPage is how many posts of a thread a view shows at first: about
 // a screen, where read_post reads a hundred for the model.
 const defaultShownPage = 30
+
+// The unread view's ceilings: how many channels, mentions and followed
+// threads it lists before it says Mattermost has more, a screen or two where
+// the tools a model calls list more (ADR-022). A channel's messages are not
+// listed with it: the view opens them in place.
+const (
+	shownChannels = 20
+	shownMentions = 10
+	shownThreads  = 10
+)
 
 // noViewsHere is show's answer to a client that renders no views.
 const noViewsHere = "Nothing was shown: this MCP client renders no MCP Apps views. Give the person what they asked to see in your answer."
@@ -30,55 +47,106 @@ const noViewsHere = "Nothing was shown: this MCP client renders no MCP Apps view
 // schema holds each to these, and a call that names another is refused
 // before it is answered.
 var (
-	showKinds   = []any{"thread"}
-	viewActions = []any{"more"}
+	showKinds   = []any{"thread", "unreads"}
+	viewActions = []any{"more", "thread", "unread"}
+	viewChanges = []any{"mark_read"}
 )
 
 type showInput struct {
-	Kind          string `json:"kind" jsonschema:"what to show; thread: a post and the thread it is in, or the post alone with include_thread false"`
-	PostID        string `json:"post_id" jsonschema:"the post to show: one that starts a thread, or a reply in one"`
-	IncludeThread *bool  `json:"include_thread,omitempty" jsonschema:"false shows the post alone; true, the default, the thread it is in"`
-	Limit         int    `json:"limit,omitempty" jsonschema:"how many posts of the thread the view shows at first, at most 200; 30 when not given"`
+	Kind          string `json:"kind" jsonschema:"what to show; thread: a post and the thread it is in, or the post alone with include_thread false; unreads: what is unread for the person, as Mattermost counts it: their channels with something unread, what mentions them, and the threads they follow with unread replies"`
+	PostID        string `json:"post_id,omitempty" jsonschema:"for kind thread: the post to show, one that starts a thread or a reply in one"`
+	IncludeThread *bool  `json:"include_thread,omitempty" jsonschema:"for kind thread: false shows the post alone; true, the default, the thread it is in"`
+	Limit         int    `json:"limit,omitempty" jsonschema:"for kind thread: how many posts of the thread the view shows at first, at most 200; 30 when not given"`
 	pageArgs
+}
+
+// Unreads is what show answers for kind unreads: a page of what each of
+// get_user_channels with unread_only, list_mentions and list_threads with
+// unread_only answers, unchanged (ADR-022).
+type Unreads struct {
+	Channels Channels `json:"channels" jsonschema:"what get_user_channels with unread_only answers: the channels with something unread, most recently active first"`
+	Mentions Mentions `json:"mentions" jsonschema:"what list_mentions answers: the posts that mention the person, most recent first"`
+	Threads  Threads  `json:"threads" jsonschema:"what list_threads with unread_only answers: the threads the person follows with replies they have not read"`
 }
 
 type viewActionInput struct {
-	Action string `json:"action" jsonschema:"what the person did in the view; more: the next page of a thread"`
-	PostID string `json:"post_id" jsonschema:"the post the view shows"`
-	Limit  int    `json:"limit,omitempty" jsonschema:"how many posts a page holds, at most 200; 30 when not given"`
+	Action    string `json:"action" jsonschema:"what the person did in the view; more: the next page of a thread; thread: a thread opened in place; unread: a channel's unread messages opened in place"`
+	PostID    string `json:"post_id,omitempty" ids:"only" jsonschema:"for more and thread: the post whose thread the view shows, by its id"`
+	ChannelID string `json:"channel_id,omitempty" ids:"only" jsonschema:"for unread: the channel opened, by its id"`
+	Limit     int    `json:"limit,omitempty" jsonschema:"how many posts a page holds, at most 200; 30 when not given"`
 	pageArgs
 }
 
-// show's and view_action's arguments that set no parameter.
+type viewChangeInput struct {
+	Action    string `json:"action" jsonschema:"what the person did in the view; mark_read: marked a channel read"`
+	ChannelID string `json:"channel_id" ids:"only" jsonschema:"the channel, by its id"`
+}
+
+// show's and the view tools' arguments that set no parameter.
 var (
-	showShapes       = withShapes(readPostShapes, map[string]string{"kind": "chooses the view show draws; it sets no parameter"})
-	viewActionShapes = map[string]string{"action": "names what the person did in a view; it sets no parameter"}
+	showShapes       = withShapes(readPostShapes, map[string]string{"kind": "chooses the view show draws, and what it reads for it; it sets no parameter"})
+	viewActionShapes = map[string]string{"action": "chooses what a view reads for the person: more of a thread, GetPostThread, or a channel from where they stopped, read_unread's operations"}
+	viewChangeShapes = map[string]string{"action": "names what the person did in a view; it sets no parameter"}
 )
 
+// eitherOutput is the output schema of a tool that answers as one data tool
+// or as another, by what it was asked for: one of theirs, each unchanged.
+func eitherOutput(types ...reflect.Type) *jsonschema.Schema {
+	schema := &jsonschema.Schema{Type: "object"}
+	for _, t := range types {
+		one, err := jsonschema.ForType(t, &jsonschema.ForOptions{})
+		if err != nil {
+			panic(fmt.Sprintf("the output schema of %v: %v", t, err))
+		}
+		schema.OneOf = append(schema.OneOf, one)
+	}
+	return schema
+}
+
+// showUses are the operations show calls: read_post's for a thread, and for
+// what is unread, get_user_channels', a mention search across every team, and
+// the followed threads of every team.
+func showUses() []Use {
+	every := Fixed("each of the user's teams", "the unread view lists what is unread in every team the user belongs to")
+	return uses(readPostUses(), userChannelsUses(), []Use{mentionSearchUse(mentionSearchParams(Coverage{}))},
+		followedThreadUses(every), describeUses(true))
+}
+
 func showSpec() Spec {
-	spec := shaping(toolSpec(
-		&mcp.Tool{
-			Name: "show",
-			Description: "Show the person what they asked to see, laid out as Mattermost lays it out, in an MCP client that renders MCP Apps " +
-				"views: kind thread shows a post and the thread it is in. Call it when the person asked to see something, once you have " +
-				"found it. Never call it to read for yourself: read_post does that. It answers with what read_post answers. In a client " +
-				"that renders no views it shows nothing, and says so.",
-			Annotations: readOnly("Show"),
-			Meta:        viewToolMeta(),
-		},
-		readPostUses(),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[showInput, PostWithThread] {
-			return func(ctx context.Context, request *mcp.CallToolRequest, input showInput) (*mcp.CallToolResult, PostWithThread, error) {
+	tool := &mcp.Tool{
+		Name: "show",
+		Description: "Show the person what they asked to see, laid out as Mattermost lays it out, in an MCP client that renders MCP Apps " +
+			"views: kind thread shows a post and the thread it is in, and kind unreads what is unread for them, their channels, mentions " +
+			"and followed threads. Call it when the person asked to see something, once you have found it, or asked what is waiting for " +
+			"them. Never call it to read for yourself: read_post, get_user_channels, list_mentions and list_threads do that. It answers " +
+			"with what those answer. In a client that renders no views it shows nothing, and says so.",
+		Annotations:  readOnly("Show"),
+		Meta:         viewToolMeta(),
+		OutputSchema: eitherOutput(reflect.TypeFor[PostWithThread](), reflect.TypeFor[Unreads]()),
+	}
+	spec := shaping(toolSpec(tool, showUses(),
+		func(clientFor ClientFor) mcp.ToolHandlerFor[showInput, any] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input showInput) (*mcp.CallToolResult, any, error) {
 				if !rendersViews(request) {
-					return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: noViewsHere}}}, PostWithThread{}, nil
+					return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: noViewsHere}}}, nil, nil
+				}
+				if input.Kind == "thread" && input.PostID == "" {
+					return nil, nil, fmt.Errorf("give post_id, the post whose thread to show")
 				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
-					return nil, PostWithThread{}, err
+					return nil, nil, err
+				}
+				if input.Kind == "unreads" {
+					out, err := readUnreads(ctx, client)
+					if err != nil {
+						return nil, nil, err
+					}
+					return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: shownUnreads(out)}}}, out, nil
 				}
 				out, err := readThread(ctx, client, readPostInput{PostID: input.PostID, IncludeThread: input.IncludeThread, Limit: input.Limit, pageArgs: input.pageArgs}, defaultShownPage)
 				if err != nil {
-					return nil, PostWithThread{}, err
+					return nil, nil, err
 				}
 				return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: shown(out)}}}, out, nil
 			}
@@ -86,6 +154,25 @@ func showSpec() Spec {
 	), showShapes)
 	only(spec, "kind", showKinds)
 	return spec
+}
+
+// readUnreads is what is unread for the person, as get_user_channels with
+// unread_only, list_mentions and list_threads with unread_only answer it, a
+// page of each, as long as the view lists.
+func readUnreads(ctx context.Context, client *mattermost.Client) (Unreads, error) {
+	channels, err := listUserChannels(ctx, client, getUserChannelsInput{UnreadOnly: true, Limit: shownChannels})
+	if err != nil {
+		return Unreads{}, err
+	}
+	mentions, err := listMentions(ctx, client, listMentionsInput{Limit: shownMentions})
+	if err != nil {
+		return Unreads{}, err
+	}
+	threads, err := listThreads(ctx, client, listThreadsInput{UnreadOnly: true, Limit: shownThreads})
+	if err != nil {
+		return Unreads{}, err
+	}
+	return Unreads{Channels: channels, Mentions: mentions, Threads: threads}, nil
 }
 
 // only holds a tool's argument to the values given.
@@ -96,31 +183,72 @@ func only(spec Spec, argument string, values []any) {
 }
 
 func viewActionSpec() Spec {
-	spec := shaping(toolSpec(
-		&mcp.Tool{
-			Name:        "view_action",
-			Description: "Only mm-mcp's MCP Apps views call this, for what the person does in one. Never call it yourself.",
-			Annotations: readOnly("Act in a view"),
-			Meta:        appOnlyMeta(),
-		},
-		threadPageUses(),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[viewActionInput, PostWithThread] {
-			return func(ctx context.Context, request *mcp.CallToolRequest, input viewActionInput) (*mcp.CallToolResult, PostWithThread, error) {
+	tool := &mcp.Tool{
+		Name:         "view_action",
+		Description:  "Only mm-mcp's MCP Apps views call this, for what the person does in one. Never call it yourself.",
+		Annotations:  readOnly("Act in a view"),
+		Meta:         appOnlyMeta(),
+		OutputSchema: eitherOutput(reflect.TypeFor[PostWithThread](), reflect.TypeFor[UnreadPosts]()),
+	}
+	spec := shaping(toolSpec(tool, uses(threadPageUses(), readUnreadUses()),
+		func(clientFor ClientFor) mcp.ToolHandlerFor[viewActionInput, any] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input viewActionInput) (*mcp.CallToolResult, any, error) {
 				if !rendersViews(request) {
-					return nil, PostWithThread{}, fmt.Errorf("view_action is called by mm-mcp's views alone, from a client that renders them")
+					return nil, nil, fmt.Errorf("view_action is called by mm-mcp's views alone, from a client that renders them")
 				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
-					return nil, PostWithThread{}, err
+					return nil, nil, err
 				}
-				// A page of the thread, as show's next page is: its cursor
-				// is read_post's.
+				if input.Action == "unread" {
+					// A page of the channel from where the person stopped, as
+					// read_unread reads it: its cursor is read_unread's.
+					out, err := readUnread(ctx, client, readUnreadInput{ChannelID: input.ChannelID, Limit: input.Limit, pageArgs: input.pageArgs})
+					if err != nil {
+						return nil, nil, err
+					}
+					return nil, out, nil
+				}
+				// A page of the thread, as show's next page is: its cursor is
+				// read_post's.
 				out, err := readThread(ctx, client, readPostInput{PostID: input.PostID, Limit: input.Limit, pageArgs: input.pageArgs}, defaultShownPage)
-				return nil, out, err
+				if err != nil {
+					return nil, nil, err
+				}
+				return nil, out, nil
 			}
 		},
 	), viewActionShapes)
 	only(spec, "action", viewActions)
+	return spec
+}
+
+func viewChangeSpec() Spec {
+	spec := unasked(shaping(toolSpec(
+		&mcp.Tool{
+			Name:        "view_change",
+			Description: "Only mm-mcp's MCP Apps views call this, for what the person does in one that changes something. Never call it yourself.",
+			Annotations: personal("Change in a view"),
+			Meta:        appOnlyMeta(),
+		},
+		markReadUses(),
+		func(clientFor ClientFor) mcp.ToolHandlerFor[viewChangeInput, Read] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input viewChangeInput) (*mcp.CallToolResult, Read, error) {
+				if !rendersViews(request) {
+					return nil, Read{}, fmt.Errorf("view_change is called by mm-mcp's views alone, from a client that renders them")
+				}
+				client, err := clientFor(ctx, request)
+				if err != nil {
+					return nil, Read{}, err
+				}
+				// Marked read as mark_channel_read marks it, on the person's own
+				// press: what they have read is theirs alone.
+				out, err := markRead(ctx, client, channelInput{ChannelID: input.ChannelID})
+				return nil, out, err
+			}
+		},
+	), viewChangeShapes), "what the person has read is theirs alone, and they pressed Mark read in the view")
+	only(spec, "action", viewChanges)
 	return spec
 }
 
@@ -142,4 +270,22 @@ func shown(out PostWithThread) string {
 	}
 	return fmt.Sprintf("Shown to the person, as Mattermost lays it out: the thread%s, %d of its %d posts. They see it; do not repeat it unless they ask.",
 		where, len(out.Thread), total)
+}
+
+// shownUnreads is what show tells the model of the unread view it showed.
+func shownUnreads(out Unreads) string {
+	count := func(n int, one, many string) string { return fmt.Sprintf("%d %s", n, plural(int64(n), one, many)) }
+	return fmt.Sprintf("Shown to the person, as Mattermost lays it out, what is unread for them: %s with something unread%s, %s%s, and %s with unread replies%s. "+
+		"They see it; do not repeat it unless they ask.",
+		count(len(out.Channels.Channels), "channel", "channels"), more(out.Channels.NextCursor),
+		count(len(out.Mentions.Posts), "mention", "mentions"), more(out.Mentions.NextCursor),
+		count(len(out.Threads.Threads), "followed thread", "followed threads"), more(out.Threads.NextCursor))
+}
+
+// more says that Mattermost holds more than a list shows.
+func more(cursor string) string {
+	if cursor == "" {
+		return ""
+	}
+	return ", and more in Mattermost"
 }

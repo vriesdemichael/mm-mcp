@@ -301,3 +301,28 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   .skeleton-line { animation: pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.5; } }
 }
+
+/* What is unread: channels by team, mentions and followed threads, each a
+ * row that opens in place. */
+.unreads { display: flex; flex-direction: column; gap: 14px; }
+.unread-heading { margin: 0 0 6px; font-size: var(--mm-heading); font-weight: 600; }
+.unread-team { margin: 8px 0 2px; font-size: var(--mm-text-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.unread-list { list-style: none; margin: 0; padding: 0; }
+.unread-row { padding-block: 6px; border-block-end: 1px solid var(--mm-border); }
+.unread-row:last-child { border-block-end: 0; }
+.unread-row.marked .unread-name { color: var(--mm-text-muted); }
+.unread-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.unread-name { font-weight: 600; text-align: start; }
+.unread-count { margin-inline-start: auto; white-space: nowrap; font-size: var(--mm-text-xs); }
+.unread-excerpt, .unread-people { margin: 2px 0 0; }
+.unread-people { font-size: var(--mm-text-xs); }
+.badge {
+  display: inline-flex; align-items: center; padding-inline: 6px; border-radius: var(--mm-radius-full);
+  background: var(--mm-mention); color: var(--mm-bg); font-size: var(--mm-text-xs); font-weight: 600; white-space: nowrap;
+}
+.badge + .unread-count { margin-inline-start: 0; }
+.mark-read { font-size: var(--mm-text-xs); white-space: nowrap; }
+.more-note { margin: 6px 0 0; font-size: var(--mm-text-xs); }
+.posts.compact { margin-block-start: 4px; }
+.opened { margin-block-start: 6px; padding-inline-start: 10px; border-inline-start: 2px solid var(--mm-border-strong); }
+.new-messages span { color: var(--mm-danger); }
