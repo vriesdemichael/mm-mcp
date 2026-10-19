@@ -627,20 +627,24 @@ For example, when the model posts `@channel the release is out` in ~Town
 Square, a channel of 512 members, without stating the numbers, the call is
 refused with:
 
-> create_post did not run: a message in ~Town Square reaches 512 people, the
-> channel's members as Mattermost counts them, and the call left the number
-> out. Consider whether the person meant this message for all of them. If they
-> did, call again with reaches: 512. If not, send it somewhere narrower, such as
-> a smaller channel or a direct or group message, or ask them where it should go
+!!! warning "Refused"
+
+    create_post did not run: a message in ~Town Square reaches 512 people, the
+    channel's members as Mattermost counts them, and the call left the number
+    out. Consider whether the person meant this message for all of them. If they
+    did, call again with reaches: 512. If not, send it somewhere narrower, such as
+    a smaller channel or a direct or group message, or ask them where it should go
 
 With `reaches: 512` it is refused again, because Mattermost would ask before
 alerting the whole channel:
 
-> create_post did not run: @channel alerts 511 people, every member of ~Town
-> Square but the user, which Mattermost asks about before sending, and the call
-> left the number out. Consider whether the person meant to alert all of them.
-> If they did, call again with notifies: 511. If not, mention only the people
-> meant, post somewhere narrower, or ask them
+!!! warning "Refused"
+
+    create_post did not run: @channel alerts 511 people, every member of ~Town
+    Square but the user, which Mattermost asks about before sending, and the call
+    left the number out. Consider whether the person meant to alert all of them.
+    If they did, call again with notifies: 511. If not, mention only the people
+    meant, post somewhere narrower, or ask them
 
 The model then calls again with `reaches: 512` and `notifies: 511`, which
 your client's approval shows you, as does mm-mcp's question where it asks.
@@ -663,12 +667,14 @@ about an edit, so a thumbs up given to one sentence stands under another. For
 example, an edit of your "Give me a thumbs up if you like cat memes", which has
 five 👍 and two replies, that leaves out `responses` is refused with:
 
-> update_post did not run: 7 reactions and replies respond to your post in
-> ~Town Square: :thumbsup: ×5 (@brent, @ann, @joe, 2 more), 2 replies in its
-> thread, and the call left the number out. An edit leaves them under the
-> replacing text, and Mattermost tells nobody about it. Consider whether they
-> fit the replacement; if the change is news to those who responded, reply in
-> the thread instead. If they fit it, call again with responses: 7
+!!! warning "Refused"
+
+    update_post did not run: 7 reactions and replies respond to your post in
+    ~Town Square: &#58;thumbsup&#58; ×5 (@brent, @ann, @joe, 2 more), 2 replies in its
+    thread, and the call left the number out. An edit leaves them under the
+    replacing text, and Mattermost tells nobody about it. Consider whether they
+    fit the replacement; if the change is news to those who responded, reply in
+    the thread instead. If they fit it, call again with responses: 7
 
 A post without reactions or replies takes no `responses`.
 
@@ -686,11 +692,13 @@ the model read it stops the write.
 For example, deleting a post that started a thread of 12 replies, without
 `deletes`:
 
-> delete_post did not run: it deletes 13 posts, your post in ~Town Square,
-> which begins “Who is in for the release party on Friday? I'll book a table”,
-> and the 12 replies in its thread, other people's included, and the call left
-> the number out. Consider whether the person meant to delete all of them. If
-> they did, call again with deletes: 13. If not, leave it, or ask the person
+!!! warning "Refused"
+
+    delete_post did not run: it deletes 13 posts, your post in ~Town Square,
+    which begins “Who is in for the release party on Friday? I'll book a table”,
+    and the 12 replies in its thread, other people's included, and the call left
+    the number out. Consider whether the person meant to delete all of them. If
+    they did, call again with deletes: 13. If not, leave it, or ask the person
 
 A thirteenth reply arriving before the model calls again with `deletes: 13`
 gets the same refusal, with 14.
@@ -703,19 +711,23 @@ A write others see names its channel, post or team by its address
 so your client's approval shows where it goes by name. A post to ~Town Square
 named by its channel's name, on a server at chat.example.com, is refused with:
 
-> channel_id: ~town-square is a name, but this takes an address,
-> mattermost://chat.example.com/<team>/channels/<channel>, or
-> <team>/messages/@<username> for a direct message, which names the place
-> exactly and shows it to whoever approves the call; get_user_channels,
-> get_channel_info and every post give each channel's address
+!!! warning "Refused"
+
+    channel_id: ~town-square is a name, but this takes an address,
+    mattermost://chat.example.com/&lt;team>/channels/&lt;channel>, or
+    &lt;team>/messages/@&lt;username> for a direct message, which names the place
+    exactly and shows it to whoever approves the call; get_user_channels,
+    get_channel_info and every post give each channel's address
 
 and a reply whose `root_id` names the post by its link:
 
-> root_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
-> but this takes an address, mattermost://chat.example.com/<team>/channels/<channel>/<post id>:
-> its channel's address, then its id, which names the place exactly and shows it
-> to whoever approves the call; read_post, read_channel and search_posts give
-> each post's address
+!!! warning "Refused"
+
+    root_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
+    but this takes an address, mattermost://chat.example.com/&lt;team>/channels/&lt;channel>/&lt;post id>:
+    its channel's address, then its id, which names the place exactly and shows it
+    to whoever approves the call; read_post, read_channel and search_posts give
+    each post's address
 
 The model reads the address, `mattermost://chat.example.com/eng/channels/town-square`,
 and calls again with it.
