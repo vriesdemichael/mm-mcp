@@ -1,0 +1,9 @@
+{
+  "name": "mm-mcp-client-tests-driver",
+  "private": true,
+  "description": "Test only, never shipped: operates Goose's and VS Code's windows over CDP for the client tests (ADR-036).",
+  "type": "module",
+  "devDependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

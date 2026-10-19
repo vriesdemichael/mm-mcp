@@ -2,9 +2,10 @@ version: "2"
 
 run:
   timeout: 5m
-  # The live suite is linted with everything else.
+  # The live suite, and the client tests in it, are linted with everything else.
   build-tags:
     - live
+    - clients
 
 linters:
   enable:
@@ -33,8 +34,10 @@ linters:
         - -QF*
   exclusions:
     rules:
-      # tools/ runs commands, and reads and writes the files it is told to, by design.
-      - path: ^tools/
+      # tools/, and internal/testclients, which installs the clients the client
+      # tests drive, run commands and read and write the files they are told
+      # to, by design.
+      - path: ^(tools|internal/testclients)/
         linters:
           - gosec
         text: "(G204|G301|G304|G306|G703)"
