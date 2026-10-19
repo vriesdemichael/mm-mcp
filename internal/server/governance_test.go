@@ -224,6 +224,10 @@ func TestAToolThatDoesNotAskChangesNothingOfOthers(t *testing.T) {
 		switch {
 		case spec.ReadOnly() || spec.Local:
 			t.Errorf("%s says why it does not ask, but it is not a tool that changes Mattermost", spec.Tool.Name)
+		case isForViews(spec.Tool):
+			// What a tool only views call does is the person's own press in
+			// the view, which a call from a view never asks about (ADR-022,
+			// ADR-035): it may post, or replace or delete a draft.
 		case hints.DestructiveHint == nil || *hints.DestructiveHint:
 			t.Errorf("%s does not ask, and may destroy something", spec.Tool.Name)
 		}
@@ -570,10 +574,11 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 }
 
 // The tools that put a view in front of the person (ADR-022): those whose
-// every call the person should see, show and every tool that posts, which
-// shows the post as posted. A view on a tool the model reads with would take
+// every call the person should see, show, every tool that posts, which shows
+// the post as posted, and propose_post, which shows the proposal for the
+// person to post (ADR-035). A view on a tool the model reads with would take
 // space in the conversation on every read.
-var toolsWithAView = map[string]bool{"show": true, "create_post": true, "dm": true, "group_message": true}
+var toolsWithAView = map[string]bool{"show": true, "create_post": true, "dm": true, "group_message": true, "propose_post": true}
 
 func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
 	t.Parallel()
@@ -598,15 +603,21 @@ func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
 // each shape it answers in: a data tool's output, unchanged, named under "",
 // or, for show's unread view, the outputs of three, each unchanged under the
 // property named. A tool that answers in more shapes than one says it answers
-// as one of them.
+// as one of them. A property named with no data tool is a press's own: the
+// word its outcome is, such as posted, or whom a post would alert, which the
+// view asks the person to confirm.
 var viewData = map[string][]map[string]string{
 	"show":        {{"": "read_post"}, {"channels": "get_user_channels", "mentions": "list_mentions", "threads": "list_threads"}},
 	"view_action": {{"": "read_post"}, {"": "read_unread"}},
-	"view_change": {{"": "mark_channel_read"}},
-	// A tool that posts shows the post it answers with.
+	// A press on a proposal answers with the draft as delete_draft names one,
+	// or the post as create_post answers with it.
+	"view_change": {{"": "mark_channel_read"}, {"status": "", "draft": "delete_draft", "post": "create_post", "notifies": ""}},
+	// A tool that posts shows the post it answers with, and propose_post the
+	// proposal.
 	"create_post":   {{"": "create_post"}},
 	"dm":            {{"": "dm"}},
 	"group_message": {{"": "group_message"}},
+	"propose_post":  {{"": "propose_post"}},
 }
 
 func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
@@ -662,6 +673,12 @@ func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
 				t.Errorf("%s answers with %d parts; want %d: %v", name, len(properties), len(shape), answer)
 			}
 			for property, data := range shape {
+				if data == "" {
+					if properties[property] == nil {
+						t.Errorf("%s answers with no %s: %v", name, property, answer)
+					}
+					continue
+				}
 				if !same(properties[property], schemas[data]) {
 					t.Errorf("%s's %s is\n%v\nwhere %s answers as\n%v", name, property, properties[property], data, schemas[data])
 				}

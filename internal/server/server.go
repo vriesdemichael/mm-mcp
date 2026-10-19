@@ -317,6 +317,15 @@ const ElicitingInstructions = `mm-mcp also asks the person before each such call
 through your MCP client. If they decline or close the question, do not call it
 again unless they ask.`
 
+// ProposingInstructions ends the instructions of a server that offers writes:
+// what a proposal is for, and where the model learns what came of it
+// (ADR-035).
+const ProposingInstructions = `When the person should have the last word on a post, propose it with
+propose_post: it waits as their draft, for them to send from Mattermost, or, in
+a client that renders views, to post, change or discard in the view. Learn what
+they did from Mattermost, with list_drafts or by reading the channel, rather
+than proposing it again.`
+
 // unaskedNote ends the description of each tool that changes what others
 // see, on a server that does not ask.
 const unaskedNote = "mm-mcp does not ask: the MCP client approves the call, if it asks at all, so make it only when the person asked for exactly this."
@@ -342,6 +351,7 @@ func New(cfg config.Config, clientFor ClientFor) *mcp.Server {
 		} else {
 			instructions += "\n\n" + ApprovingInstructions
 		}
+		instructions += "\n\n" + ProposingInstructions
 	}
 	resources := AllResources()
 	// Logging is what the SDK offers when told nothing, and stays offered as

@@ -23,7 +23,7 @@ It is a convenience in a client that shows the question, not a safeguard. The an
 
 `MM_MCP_ASK_BEFORE_WRITES` sets nothing. A server started with it set stops and names `MM_MCP_ELICITATION_OPT_IN`, so nobody believes a setting decides who asks when it does not. The server says at start who decides on a write.
 
-Not every write has a person in the loop. An agent that works alone, such as a scheduled report, needs only to be allowed by the client's rules. That is why forcing a human in the loop is a setting of its own: a mark that overrides allow rules makes unattended writing impossible. A change that is the user's alone or gone in seconds never asks, whatever the settings (ADR-021).
+Not every write has a person in the loop. An agent that works alone, such as a scheduled report, needs only to be allowed by the client's rules. That is why forcing a human in the loop is a setting of its own: a mark that overrides allow rules makes unattended writing impossible. A change that is the user's alone or gone in seconds never asks, whatever the settings (ADR-021), and neither does a press in a proposal's view, the person's own decision on what the view shows them; `MM_MCP_POST_FROM_VIEWS` takes Post out of the view for a client that cannot be trusted with it (ADR-035).
 
 The names say what the person gets. "Elicitation opt-in" names the mechanism and that it is chosen, not assumed; "force human in the loop" names the outcome, a person on every call, overriding what the client would otherwise allow; and "in Claude Code" names the one client that enforces it. Each is a yes or no, and the one combination that contradicts itself is refused rather than resolved silently.
 

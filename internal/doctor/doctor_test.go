@@ -315,6 +315,24 @@ func TestTheLoadedConfigurationSaysWhoDecidesOnAWrite(t *testing.T) {
 	}
 }
 
+// Posting a proposal from its view is said where it is turned off, and a
+// placeholder for it reads as unset, so it is on.
+func TestPostingFromAProposalsViewIsReported(t *testing.T) {
+	t.Parallel()
+	off := Settings(testsupport.Env(map[string]string{config.EnvURL: "https://chat.example.com", config.EnvPostFromViews: "false"}), false)
+	if got := find(t, off, config.EnvPostFromViews); got.Status != OK || !strings.Contains(got.Detail, "offers no Post") {
+		t.Errorf("turned off: %+v", got)
+	}
+	on := Settings(testsupport.Env(map[string]string{config.EnvURL: "https://chat.example.com", config.EnvPostFromViews: "${user_config.post_from_views}"}), false)
+	if got := find(t, on, config.EnvPostFromViews); got.Status != OK || !strings.Contains(got.Detail, "offers Post") {
+		t.Errorf("left to its default: %+v", got)
+	}
+	loaded := Loaded(config.Config{URL: "https://chat.example.com", AllowWrites: true, MarkAIGenerated: true}, "")
+	if got := find(t, loaded, config.EnvPostFromViews); !strings.Contains(got.Detail, "offers no Post") {
+		t.Errorf("loaded with it off: %+v", got)
+	}
+}
+
 // A placeholder reads as unset, so a setting that is on by default is on.
 func TestAPlaceholderForASettingOnByDefaultReadsAsOn(t *testing.T) {
 	t.Parallel()

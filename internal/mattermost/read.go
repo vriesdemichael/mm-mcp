@@ -291,6 +291,13 @@ func (c *Client) UserByEmail(ctx context.Context, email string) (*model.User, er
 	return result(c.api.GetUserByEmail(ctx, email, ""))
 }
 
+// ChannelTimezones is each timezone the channel's members are in, once, as
+// Mattermost's web app counts them before it sends a message that alerts the
+// whole channel. GetChannelMembersTimezones.
+func (c *Client) ChannelTimezones(ctx context.Context, channelID string) ([]string, error) {
+	return result(c.api.GetChannelMembersTimezones(ctx, channelID))
+}
+
 // ClientConfig is the part of the server's configuration it tells every
 // client, such as the longest message it takes. GetClientConfig.
 func (c *Client) ClientConfig(ctx context.Context) (map[string]string, error) {

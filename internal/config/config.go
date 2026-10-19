@@ -26,6 +26,7 @@ const (
 	EnvForceHumanInTheLoopInClaudeCode = "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE"
 	EnvDownloadDir                     = "MM_MCP_DOWNLOAD_DIR"
 	EnvMarkAIGenerated                 = "MM_MCP_MARK_AI_GENERATED"
+	EnvPostFromViews                   = "MM_MCP_POST_FROM_VIEWS"
 	EnvBlockExternalNetwork            = "MM_MCP_BLOCK_EXTERNAL_NETWORK"
 	EnvCAFile                          = "MM_MCP_CA_FILE"
 	EnvResourceMaxMB                   = "MM_MCP_RESOURCE_MAX_MB"
@@ -48,7 +49,7 @@ const maxMB = math.MaxInt64 >> 20
 // that is not listed here (ADR-006).
 var EnvironmentVariables = []string{
 	EnvURL, EnvToken, EnvAllowWrites, EnvElicitationOptIn, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
-	EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
+	EnvPostFromViews, EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
 }
 
 // Config is a server's configuration.
@@ -75,6 +76,10 @@ type Config struct {
 	// MarkAIGenerated marks every post and edit the model writes as written
 	// with AI, as Mattermost shows it. On unless turned off.
 	MarkAIGenerated bool
+	// PostFromViews lets the person post a proposal from its view, where the
+	// client renders it (ADR-035). On unless turned off: off, the draft waits in
+	// Mattermost for them to send.
+	PostFromViews bool
 	// DownloadDir is where save_file writes; empty means the person's
 	// Downloads directory.
 	DownloadDir string
@@ -106,8 +111,8 @@ func (c Config) ResourceBytes() int64 {
 
 // String leaves the token out, so a Config can be logged or printed in an error.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, Elicit: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
-		c.URL, c.AllowWrites, c.Elicit, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
+	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, Elicit: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, PostFromViews: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
+		c.URL, c.AllowWrites, c.Elicit, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.PostFromViews, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
 }
 
 // GoString is String, so %#v leaves the token out too.
@@ -182,6 +187,12 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 			return Config{}, err
 		}
 	}
+	postFromViews := true
+	if raw := lookup(EnvPostFromViews); strings.TrimSpace(raw) != "" {
+		if postFromViews, err = ParseBool(EnvPostFromViews, raw); err != nil {
+			return Config{}, err
+		}
+	}
 	downloadDir := strings.TrimSpace(lookup(EnvDownloadDir))
 	if downloadDir != "" && !filepath.IsAbs(downloadDir) {
 		// A relative directory would be the MCP client's working directory,
@@ -201,6 +212,7 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 	}
 	return Config{
 		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, Elicit: elicit, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
+		PostFromViews: postFromViews,
 		DownloadDir:   downloadDir,
 		CAFile:        strings.TrimSpace(lookup(EnvCAFile)),
 		ResourceMaxMB: resourceMax,

@@ -7,7 +7,7 @@
 // A channel's unread messages, and a thread, open in place through the tool
 // that only views call and changes nothing, or in Mattermost where the host
 // refuses it. Mark read goes through the one that changes something, which
-// the server offers only where writes are allowed (MARKS_READ).
+// the server offers only where writes are allowed (CHANGES).
 
 // UNREAD_PAGE is how many posts a channel opened in place shows.
 const UNREAD_PAGE = 30;
@@ -78,7 +78,7 @@ function channelRow(channel) {
 // markRead offers Mark read, where the server lets a view mark a channel read
 // and the host lets the view call a tool.
 function markRead(channel) {
-  if (!MARKS_READ || !view.callsTools) return null;
+  if (!CHANGES || !view.callsTools) return null;
   const button = el("button", { type: "button", class: "link muted mark-read" }, t("unreads.mark_read"));
   button.addEventListener("click", async () => {
     button.disabled = true;

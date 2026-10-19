@@ -142,6 +142,7 @@ func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) 
 		"MM_MCP_ELICITATION_OPT_IN": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
 		"MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
 		"MM_MCP_MARK_AI_GENERATED":                      {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
+		"MM_MCP_POST_FROM_VIEWS":                        {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
 		"MM_MCP_DOWNLOAD_DIR":                           {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_CA_FILE":                                {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_RESOURCE_MAX_MB":                        {"isRequired": false, "isSecret": false, "format": "number", "default": "10"},

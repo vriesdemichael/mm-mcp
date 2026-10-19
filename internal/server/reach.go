@@ -78,10 +78,12 @@ func said(stated *int64) string {
 }
 
 // loudness is what Mattermost's web app would ask about before sending a
-// message: how many people it alerts at once, and why, or nothing.
+// message: how many people it alerts at once, by which mentions, and why, or
+// nothing.
 type loudness struct {
-	count int64
-	why   string
+	count    int64
+	mentions []string
+	why      string
 }
 
 // groupMention is a user group a message mentions, and how many of its
@@ -119,16 +121,18 @@ func loudnessOf(f loudFacts) loudness {
 			return loudness{}
 		}
 		return loudness{
-			count: f.members - 1,
-			why:   fmt.Sprintf("%s alerts %s, every member of %s but the user", strings.Join(f.specials, ", "), peopleCount(f.members-1), f.where),
+			count:    f.members - 1,
+			mentions: f.specials,
+			why:      fmt.Sprintf("%s alerts %s, every member of %s but the user", strings.Join(f.specials, ", "), peopleCount(f.members-1), f.where),
 		}
 	}
 	var loudest loudness
 	for _, group := range f.groups {
 		if group.allowed && group.members > notifyAllMembers && group.members > loudest.count {
 			loudest = loudness{
-				count: group.members,
-				why:   fmt.Sprintf("%s alerts %s, the members of the group %s in %s", group.word, peopleCount(group.members), group.name, f.where),
+				count:    group.members,
+				mentions: []string{group.word},
+				why:      fmt.Sprintf("%s alerts %s, the members of the group %s in %s", group.word, peopleCount(group.members), group.name, f.where),
 			}
 		}
 	}

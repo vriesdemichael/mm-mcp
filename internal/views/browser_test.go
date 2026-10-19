@@ -118,11 +118,13 @@ func (h *host) until(expression string) {
 
 // mount puts the page in a frame of the host, with options as host.js takes
 // them, and waits until the view has drawn. The page is a writing server's,
-// which lets a view mark a channel read, unless options say "readOnly".
+// which lets a view mark a channel read and post a proposal, unless options
+// say "readOnly", or "postsOff" for a server that does not post from a view.
 func (h *host) mount(options map[string]any) int {
 	h.t.Helper()
 	readOnly, _ := options["readOnly"].(bool)
-	page, _ := json.Marshal(views.Page(base, !readOnly))
+	postsOff, _ := options["postsOff"].(bool)
+	page, _ := json.Marshal(views.Page(base, views.Settings{Changes: !readOnly, Posts: !postsOff}))
 	settings, _ := json.Marshal(options)
 	var index int
 	h.eval("mmHost.mount("+string(page)+", "+string(settings)+")", &index)

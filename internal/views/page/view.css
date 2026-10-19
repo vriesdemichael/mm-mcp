@@ -329,3 +329,80 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 
 /* A post as posted: the post alone, under where it went. */
 .posted-label { font-size: var(--mm-text-xs); }
+
+/* A proposal: the post as it will be posted, where it waits, and what the
+ * person can do with it. */
+.proposal-card {
+  margin-block: 8px;
+  padding-block: 8px;
+  padding-inline: 10px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+}
+.proposal-heading { margin: 0 0 6px; font-size: var(--mm-text-xs); font-weight: 600; color: var(--mm-text-muted); }
+.proposal-status { margin-block: 6px; font-size: var(--mm-text-xs); }
+.proposal-notes { margin-block: 4px; padding-inline-start: 18px; font-size: var(--mm-text-xs); }
+.proposal-warning {
+  margin-block: 6px 0;
+  padding-block: 4px;
+  padding-inline: 8px;
+  background: var(--mm-warning-bg);
+  border-radius: var(--mm-radius-sm);
+  font-size: var(--mm-text-xs);
+}
+.written-toggle { margin-block-start: 6px; font-size: var(--mm-text-xs); }
+.as-written {
+  margin: 0;
+  font-family: var(--mm-mono);
+  font-size: var(--mm-text-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hidden-char {
+  padding-inline: 2px;
+  border: 1px solid var(--mm-danger);
+  border-radius: var(--mm-radius-sm);
+  color: var(--mm-danger);
+}
+.diff ins { background: var(--mm-highlight); text-decoration: none; }
+.diff del { color: var(--mm-danger); }
+.md-link-shown { display: inline; }
+.md-link-target {
+  margin-inline-start: 4px;
+  font-size: var(--mm-text-xs);
+  color: var(--mm-text-muted);
+  overflow-wrap: anywhere;
+}
+.md-link-target::before { content: "→ "; }
+.proposal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-block-start: 8px; }
+.action {
+  padding-block: 4px;
+  padding-inline: 12px;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-bg);
+  cursor: pointer;
+}
+.action.primary { background: var(--mm-link); border-color: var(--mm-link); color: var(--mm-bg); font-weight: 600; }
+.action:disabled { opacity: 0.6; cursor: progress; }
+.proposal-editor {
+  box-sizing: border-box;
+  inline-size: 100%;
+  margin-block-start: 8px;
+  padding: 8px;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-bg);
+  color: var(--mm-text);
+  font: inherit;
+  resize: vertical;
+}
+.confirm {
+  margin-block: 8px;
+  padding: 10px;
+  border: 1px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius);
+  background: var(--mm-bg-subtle);
+}
+.confirm-title { margin: 0 0 4px; font-size: var(--mm-heading); }
+.confirm-question { margin: 0; }

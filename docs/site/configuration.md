@@ -103,6 +103,15 @@ setting left empty, counts as unset.
     ([ADR-031](adr/031-a-message-is-checked-before-it-is-posted.md)).
     `false` leaves it out.
 
+`MM_MCP_POST_FROM_VIEWS`
+:   Optional, `true` by default. In an AI app that shows mm-mcp's views, a post
+    the model proposes with `propose_post` shows as it will be posted, with
+    Post, and your press posts it, marked as written with AI
+    ([ADR-035](adr/035-a-proposed-post-waits-as-the-persons-draft.md)).
+    `false` takes Post out of the view, and the draft waits in Mattermost for
+    you to send. It is for an app that cannot be trusted to keep the view's own
+    tool from its model, or to press only when you click.
+
 `MM_MCP_DOWNLOAD_DIR`
 :   Optional. The directory `save_file` writes attachments to, when the server
     runs over stdio on your own machine. Your Downloads directory by default.

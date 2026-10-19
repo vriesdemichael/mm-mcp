@@ -110,12 +110,16 @@ function content() {
   return out;
 }
 
-// renderKind draws the kind of view the call asked for: show names it, and a
-// tool that posts answers with the post it posted.
+// renderKind draws the kind of view the call asked for: show names it, a
+// tool that posts answers with the post it posted, and propose_post with the
+// draft it proposed.
 function renderKind(data) {
   const named = view.input && typeof view.input.kind === "string" ? view.input.kind : "";
-  const kind = named || (typeof data.id === "string" && typeof data.author_id === "string" ? "posted" : "thread");
+  const kind = named || (typeof data.saved === "boolean" && typeof data.channel_id === "string" ? "proposal"
+    : typeof data.id === "string" && typeof data.author_id === "string" ? "posted" : "thread");
   switch (kind) {
+    case "proposal":
+      return renderProposal(data);
     case "posted":
       return renderPosted(data);
     case "thread":

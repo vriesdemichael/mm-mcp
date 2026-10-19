@@ -97,7 +97,7 @@ func pageMeta() mcp.Meta {
 // read by a host that renders the view; it is left out of the resources a
 // client lists, where it would be offered as something to attach.
 func registerView(server *mcp.Server, cfg config.Config) {
-	page := views.Page(resourceBase(serverAddress(cfg)), cfg.AllowWrites)
+	page := views.Page(resourceBase(serverAddress(cfg)), views.Settings{Changes: cfg.AllowWrites, Posts: cfg.PostFromViews})
 	server.AddResource(&mcp.Resource{
 		URI:         views.URI,
 		Name:        "view",

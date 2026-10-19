@@ -12,14 +12,16 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 )
 
 // Drafts: the model proposes a post as the person's draft, in their own
-// message box, and the person sends it (ADR-035). A proposal is the user's
-// alone and never asks, and never replaces a draft the person wrote; deleting
-// one loses words the person may have written, so it states how many and asks
-// where mm-mcp is set to (ADR-031, ADR-033).
+// message box, and the person sends it (ADR-035), from Mattermost or from the
+// proposal's view. A proposal is the user's alone and never asks, and never
+// replaces a draft the person wrote; deleting one loses words the person may
+// have written, so it states how many and asks where mm-mcp is set to
+// (ADR-031, ADR-033).
 
 // Draft is a draft in the user's message box.
 type Draft struct {
@@ -141,11 +143,69 @@ func proposed(draft *model.Draft) bool {
 
 type proposePostInput struct {
 	draftTarget
-	Message string `json:"message" jsonschema:"the post to propose, in Mattermost Markdown, as it would be sent"`
+	Message      string `json:"message" jsonschema:"the post to propose, in Mattermost Markdown, as it would be sent"`
+	RevisesDraft bool   `json:"revises_draft,omitempty" jsonschema:"set when the person asked you to change the draft they have there, which list_drafts reads: where the client renders views, the view shows your text as a revision of theirs, for them to apply or not. It replaces nothing itself"`
+}
+
+// Proposal is what propose_post answers: the draft as it waits for the
+// person, or, where a draft of theirs is in the way and the client renders
+// the proposal's view, the proposal and their draft, for them to choose
+// between in the view.
+type Proposal struct {
+	Draft
+	Saved  bool   `json:"saved" jsonschema:"whether the proposal waits as the person's draft; false while a draft of their own is in the way, which the view asks them about"`
+	Theirs *Draft `json:"theirs,omitempty" jsonschema:"the person's own draft where the proposal would go, left as it is, when the proposal was not saved"`
+}
+
+// Notifies is whom a message alerts at once, as Mattermost's web app tells
+// its sender before it sends the message.
+type Notifies struct {
+	People    int64    `json:"people" jsonschema:"how many people it alerts"`
+	Mentions  []string `json:"mentions" jsonschema:"the mentions that alert them, as the message has them"`
+	Timezones int      `json:"timezones,omitempty" jsonschema:"how many timezones they are in, for a mention of the whole channel, as Mattermost counts them"`
+}
+
+// notifiesOf is whom a message alerts at once, where Mattermost's web app has
+// its sender confirm it, or nil: its decision and its counts, the timezones of
+// the channel's members for a mention of all of them (use_submit.tsx).
+// GetChannelMembersTimezones.
+func notifiesOf(ctx context.Context, client *mattermost.Client, channelID string, loud loudness, specials bool) (*Notifies, error) {
+	if loud.count == 0 {
+		return nil, nil
+	}
+	out := &Notifies{People: loud.count, Mentions: loud.mentions}
+	if specials {
+		zones, err := client.ChannelTimezones(ctx, channelID)
+		if err != nil {
+			return nil, err
+		}
+		out.Timezones = len(zones)
+	}
+	return out, nil
+}
+
+// notifiesUses are the operations notifiesOf calls, and loudnessIn before it.
+func notifiesUses() []Use {
+	return append(impactUses(), Use{
+		Operation: "GetChannelMembersTimezones",
+		Params:    map[string]Coverage{"channel_id": Fixed("the draft's channel", "Mattermost's confirmation names the timezones of the members a mention of the whole channel alerts")},
+	})
+}
+
+// proposedShown is what propose_post tells the model it showed the person,
+// in a client that renders the proposal's view.
+func proposedShown(out Proposal) string {
+	if !out.Saved {
+		return "Not saved: the person has a draft of their own in " + out.Channel + ". The view shows it beside your proposal, and asks " +
+			"them which to keep. Learn what they chose from Mattermost, with list_drafts, rather than proposing it again."
+	}
+	return "Proposed as the person's draft in " + out.Channel + ", and shown to them as it will be posted: they post, change or " +
+		"discard it in the view, or in Mattermost. Learn what they did from Mattermost, with list_drafts or by reading the " +
+		"channel, rather than proposing it again; do not repeat the message unless they ask."
 }
 
 func proposePostSpec() Spec {
-	return unasked(toolSpec(
+	return unasked(shaping(toolSpec(
 		&mcp.Tool{
 			Name: "propose_post",
 			Description: "Propose a post for the person to send themselves: the message waits as their draft in a channel or a thread, " +
@@ -153,9 +213,12 @@ func proposePostSpec() Spec {
 				"person sees it. Use it whenever they should have the last word on the text, and where their MCP client does not let " +
 				"a post through. A direct or group message is proposed in by its channel, as get_user_channels gives it; one that " +
 				"does not exist yet is not started here, since starting one shows it to the other people at once. mm-mcp's own " +
-				"proposal there, unchanged, is replaced; a draft of the person's never is. The message is checked as a post's is. " +
-				"It answers with the draft and the link where it waits.",
+				"proposal there, unchanged, is replaced; a draft of the person's never is. In a client that renders MCP Apps views, " +
+				"the person sees the proposal as it will be posted, and posts, changes or discards it there; where a draft of " +
+				"theirs is in the way, the view asks them which to keep. The message is checked as a post's is. It answers with " +
+				"the draft and the link where it waits.",
 			Annotations: personal("Propose post"),
+			Meta:        viewToolMeta(),
 		},
 		uses([]Use{
 			{
@@ -184,30 +247,30 @@ func proposePostSpec() Spec {
 				Params:    map[string]Coverage{"channel_id": Fixed("the draft's channel", "the notes say how many people @channel, @all and @here would reach")},
 			},
 		}, draftsUses(), messageUses(false), describeUses(true)),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[proposePostInput, Draft] {
-			return func(ctx context.Context, request *mcp.CallToolRequest, input proposePostInput) (*mcp.CallToolResult, Draft, error) {
+		func(clientFor ClientFor) mcp.ToolHandlerFor[proposePostInput, Proposal] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input proposePostInput) (*mcp.CallToolResult, Proposal, error) {
 				client, err := clientFor(ctx, request)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				channelID, rootID, err := threadOf(ctx, client, input.ChannelID, input.RootID)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				self, err := client.Me(ctx)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				if err := draftsSync(ctx, client, self.Id); err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				channel, err := client.Channel(ctx, channelID)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				groups, err := groupNames(ctx, client, []*model.Channel{channel}, self.Id)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				checked, err := checkMessage(ctx, client, input.Message, place(channel, self.Id, nil, groups[channel.Id]), func(ctx context.Context) (int64, error) {
 					stats, err := client.ChannelStats(ctx, channelID)
@@ -217,50 +280,67 @@ func proposePostSpec() Spec {
 					return stats.MemberCount, nil
 				})
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				teamID, err := teamOf(ctx, client, channelID)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
 				// A draft of the person's is their unsent words, and maybe files,
 				// which a proposal never replaces; deleting it is delete_draft's,
-				// which states what goes. mm-mcp's own proposal, unchanged, is
-				// mm-mcp's to replace. The same text is there already, and is left
-				// as it is rather than written again, which would drop its files.
+				// which states what goes, and in the proposal's view the person's
+				// own press. mm-mcp's own proposal, unchanged, is mm-mcp's to
+				// replace. The same text is there already, and is left as it is
+				// rather than written again, which would drop its files.
 				there, err := existingDraft(ctx, client, self.Id, teamID, channelID, rootID)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
-				saved := there
+				views := rendersViews(request)
+				write, theirs := false, (*model.Draft)(nil)
 				switch {
 				case there == nil, there.Message != input.Message && proposed(there) && onlyText(there):
-					saved = nil
+					write = true
 				case there.Message == input.Message:
+				case views:
+					theirs = there
 				default:
 					held := ""
 					if files := int64(len(there.FileIds)); files > 0 {
 						held = fmt.Sprintf(", with %d %s", files, plural(files, "file", "files"))
 					}
-					return nil, Draft{}, fmt.Errorf("propose_post did not run: the person has a draft there, which was left as it is: “%s”%s. "+
+					return nil, Proposal{}, fmt.Errorf("propose_post did not run: the person has a draft there, which was left as it is: “%s”%s. "+
 						"If they asked you to change it, delete it with delete_draft, stating discards: %d, and propose again. If not, "+
 						"they can finish or clear it in Mattermost, or post with create_post", excerpt(there.Message), held, utf8.RuneCountInString(there.Message))
 				}
-				if saved == nil {
+				drafts := []*model.Draft{there}
+				switch {
+				case write:
 					props := model.StringInterface{proposalKey: proposalMark(input.Message)}
-					if saved, err = client.Draft(ctx, self.Id, channelID, rootID, input.Message, props); err != nil {
-						return nil, Draft{}, err
+					if drafts[0], err = client.Draft(ctx, self.Id, channelID, rootID, input.Message, props); err != nil {
+						return nil, Proposal{}, err
 					}
+				case theirs != nil:
+					// Nothing is written: the person chooses in the view.
+					drafts = []*model.Draft{{UserId: self.Id, ChannelId: channelID, RootId: rootID, Message: input.Message}, theirs}
 				}
-				drafts, err := describeDrafts(ctx, client, []*model.Draft{saved})
+				described, err := describeDrafts(ctx, client, drafts)
 				if err != nil {
-					return nil, Draft{}, err
+					return nil, Proposal{}, err
 				}
-				drafts[0].Notes = checked.notes
-				return nil, drafts[0], nil
+				out := Proposal{Draft: described[0], Saved: theirs == nil}
+				out.Notes = checked.notes
+				if theirs != nil {
+					out.Theirs = &described[1]
+				}
+				if !views {
+					return nil, out, nil
+				}
+				return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: proposedShown(out)}}}, out, nil
 			}
 		},
-	), "what it writes is the person's own draft, which only they see and only they send, and it never replaces one they wrote")
+	), map[string]string{"revises_draft": "says the proposal revises the person's own draft there, which the view shows as a revision; it sets no parameter"}),
+		"what it writes is the person's own draft, which only they see and only they send, and it never replaces one they wrote")
 }
 
 // describeDrafts is drafts with their channels and teams named, as posts'
@@ -527,4 +607,210 @@ func deleteDraftSpec() Spec {
 				})
 		},
 	), map[string]string{"discards": discardCheck}), "The person is asked to confirm, seeing the draft; if they decline or close the question, do not try again unless they ask.")
+}
+
+// DraftChange is what came of the person's press on a proposal's view.
+type DraftChange struct {
+	Status   string    `json:"status" jsonschema:"what came of the press: posted; confirm, nothing was posted, since Mattermost has the sender confirm a message that alerts this many people first; saved, the draft holds the new text; discarded; changed, the draft no longer holds what the view showed and was left as it is; elsewhere, it holds files or settings added in Mattermost, which a view cannot show, and is sent from there; gone, there is no draft there"`
+	Draft    Draft     `json:"draft,omitzero" jsonschema:"the draft as it is now, when it was saved, has changed, or is sent from Mattermost"`
+	Post     Post      `json:"post,omitzero" jsonschema:"the post, once posted"`
+	Notifies *Notifies `json:"notifies,omitempty" jsonschema:"for confirm: whom the message alerts, as Mattermost's confirmation names them"`
+}
+
+// pressDraft does what the person pressed in a proposal's view: post the
+// draft, change its text, discard it, or put the proposal in place of their
+// own (ADR-035). Each acts only while the draft holds what the view shows,
+// text alone: a draft typed on since, or given files or settings in
+// Mattermost, is left as it is, and the view draws it again. Posting checks
+// the message again; one that alerts as many people as Mattermost has its
+// sender confirm is posted only on a press that confirmed it, counted as the
+// press is made. It marks the post as written with AI, and deletes the draft,
+// so a second press finds nothing to post.
+func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Config, input viewChangeInput) (DraftChange, error) {
+	if input.Action == "post" && !cfg.PostFromViews {
+		return DraftChange{}, fmt.Errorf("this server does not post from a view (%s=false): the person sends the draft from Mattermost", config.EnvPostFromViews)
+	}
+	if input.Action == "edit" && strings.TrimSpace(input.Message) == "" {
+		return DraftChange{}, fmt.Errorf("the draft would be empty; Discard deletes it")
+	}
+	if input.Action == "edit" || input.Action == "replace" {
+		if err := checkLength(ctx, client, input.Message); err != nil {
+			return DraftChange{}, err
+		}
+	}
+	self, err := client.Me(ctx)
+	if err != nil {
+		return DraftChange{}, err
+	}
+	teamID, err := teamOf(ctx, client, input.ChannelID)
+	if err != nil {
+		return DraftChange{}, err
+	}
+	there, err := existingDraft(ctx, client, self.Id, teamID, input.ChannelID, input.RootID)
+	if err != nil {
+		return DraftChange{}, err
+	}
+	now := func(draft *model.Draft, status string) (DraftChange, error) {
+		described, err := describeDrafts(ctx, client, []*model.Draft{draft})
+		if err != nil {
+			return DraftChange{}, err
+		}
+		return DraftChange{Status: status, Draft: described[0]}, nil
+	}
+	switch {
+	case there == nil && input.Action == "replace":
+		// The person's own draft went meanwhile: nothing of theirs is in the
+		// way of the proposal they chose.
+	case there == nil:
+		return DraftChange{Status: "gone"}, nil
+	case there.Message != input.Shown:
+		return now(there, "changed")
+	case !onlyText(there):
+		return now(there, "elsewhere")
+	}
+	switch input.Action {
+	case "post":
+		channel, err := client.Channel(ctx, input.ChannelID)
+		if err != nil {
+			return DraftChange{}, err
+		}
+		groups, err := groupNames(ctx, client, []*model.Channel{channel}, self.Id)
+		if err != nil {
+			return DraftChange{}, err
+		}
+		// Checked again at the press: someone mentioned may be gone, and an
+		// edit in the view may have changed what it mentions.
+		where := place(channel, self.Id, nil, groups[channel.Id])
+		members := func(ctx context.Context) (int64, error) {
+			stats, err := client.ChannelStats(ctx, input.ChannelID)
+			if err != nil {
+				return 0, err
+			}
+			return stats.MemberCount, nil
+		}
+		checked, err := checkMessage(ctx, client, there.Message, where, members)
+		if err != nil {
+			return DraftChange{}, err
+		}
+		if !input.Confirmed && (len(checked.specials) > 0 || len(checked.groups) > 0) {
+			count, err := members(ctx)
+			if err != nil {
+				return DraftChange{}, err
+			}
+			loud, err := loudnessIn(ctx, client, self, channel, where, checked, count)
+			if err != nil {
+				return DraftChange{}, err
+			}
+			notifies, err := notifiesOf(ctx, client, input.ChannelID, loud, len(checked.specials) > 0)
+			if err != nil {
+				return DraftChange{}, err
+			}
+			if notifies != nil {
+				return DraftChange{Status: "confirm", Notifies: notifies}, nil
+			}
+		}
+		created, err := client.CreatePost(ctx, mattermost.NewPost{
+			ChannelID: input.ChannelID, RootID: input.RootID, Message: there.Message,
+			Props: aiMarker(cfg.MarkAIGenerated, self.Id),
+		})
+		if err != nil {
+			return DraftChange{}, err
+		}
+		// Gone once posted, as Mattermost's own client clears a draft it sends.
+		// The post stands whatever comes of this.
+		_ = client.DeleteDraft(ctx, self.Id, input.ChannelID, input.RootID)
+		posted, err := describePosts(ctx, client, []*model.Post{created})
+		if err != nil {
+			return DraftChange{Status: "posted", Post: Post{ID: created.Id, ChannelID: created.ChannelId, RootID: created.RootId, Message: created.Message, AuthorID: created.UserId}}, nil
+		}
+		return DraftChange{Status: "posted", Post: posted[0]}, nil
+	case "edit":
+		// Changed by the person, the draft is theirs: it carries no mark of a
+		// proposal, and a later proposal leaves it as it is.
+		saved, err := client.Draft(ctx, self.Id, input.ChannelID, input.RootID, input.Message, nil)
+		if err != nil {
+			return DraftChange{}, err
+		}
+		return now(saved, "saved")
+	case "discard":
+		if err := client.DeleteDraft(ctx, self.Id, input.ChannelID, input.RootID); err != nil {
+			return DraftChange{}, err
+		}
+		return DraftChange{Status: "discarded"}, nil
+	}
+	// Replace mine, the one action left, which the input's schema holds it to.
+	saved, err := client.Draft(ctx, self.Id, input.ChannelID, input.RootID, input.Message, model.StringInterface{proposalKey: proposalMark(input.Message)})
+	if err != nil {
+		return DraftChange{}, err
+	}
+	return now(saved, "saved")
+}
+
+// pressUses are the operations pressDraft calls.
+func pressUses() []Use {
+	return uses([]Use{
+		{
+			Operation: "GetDrafts",
+			Params: map[string]Coverage{
+				"user_id": Fixed("me", "a user's drafts are theirs"),
+				"team_id": Fixed("the channel's team", "Mattermost files a draft under its channel's team, and a direct message's under each of the user's teams"),
+			},
+			Releases: "11.7 serves GET /api/v4/users/{user_id}/teams/{team_id}/drafts, as its router shows, though its specification leaves it out; nothing differs in use",
+		},
+		{Operation: "GetChannel", Params: map[string]Coverage{"channel_id": SetBy("channel_id")}},
+		{
+			Operation: "GetTeamsForUser",
+			Params:    map[string]Coverage{"user_id": Fixed("me", "a direct message belongs to no team, and its drafts are filed under the user's")},
+		},
+		{
+			Operation: "CreatePost",
+			Params: map[string]Coverage{
+				"body.channel_id": SetBy("channel_id"),
+				"body.message":    SetBy("shown"),
+				"body.root_id":    SetBy("root_id"),
+				"body.file_ids":   Omitted("a proposal carries text; a draft given files in Mattermost is sent from there"),
+				"body.props": Fixed(`{"ai_generated_by": the user's id}`,
+					"marks the post as written with AI, as every post mm-mcp sends; MM_MCP_MARK_AI_GENERATED=false leaves it out"),
+				"body.metadata": Omitted("metadata such as a post's priority is a Mattermost feature beyond posting text, which the person is not shown"),
+				"set_online":    Omitted("Mattermost's default marks the user online when they post, as its own client does"),
+				"silent":        Omitted("a silent post notifies nobody it mentions, unlike a post from Mattermost's own message box"),
+			},
+			Releases: "11.7 has no silent parameter, which the tool never sends",
+		},
+		{
+			Operation: "UpsertDraft",
+			Params: map[string]Coverage{
+				"body.channel_id": SetBy("channel_id"),
+				"body.root_id":    SetBy("root_id"),
+				"body.message":    SetBy("message"),
+				"body.file_ids":   Omitted("a proposal carries text; the person attaches files in Mattermost"),
+				"body.priority":   Omitted("a message's priority is the person's to set when they send it"),
+				"body.props": Fixed(`{"mm_mcp_proposal": a mark of the message} for replace; none for edit`,
+					"a proposal put in place of the person's draft is mm-mcp's, unchanged; a draft the person changed is theirs"),
+				"body.type": Omitted("a draft is an ordinary message, which is the default"),
+			},
+			Releases: "11.7 serves POST /api/v4/drafts, as its router shows, though its specification leaves it out; nothing differs in use",
+		},
+		{
+			Operation: "DeleteDraft",
+			Params: map[string]Coverage{
+				"user_id":    Fixed("me", "a user's drafts are theirs"),
+				"channel_id": SetBy("channel_id"),
+			},
+			Releases: "11.7 serves DELETE /api/v4/users/{user_id}/channels/{channel_id}/drafts, as its router shows, though its specification leaves it out; nothing differs in use",
+		},
+		{
+			Operation: "DeleteDraftForThread",
+			Params: map[string]Coverage{
+				"user_id":    Fixed("me", "a user's drafts are theirs"),
+				"channel_id": SetBy("channel_id"),
+				"thread_id":  SetBy("root_id"),
+			},
+			Releases: "11.7 serves DELETE /api/v4/users/{user_id}/channels/{channel_id}/drafts/{thread_id}, as its router shows, though its specification leaves it out; nothing differs in use",
+		},
+		{
+			Operation: "GetChannelStats",
+			Params:    map[string]Coverage{"channel_id": Fixed("the draft's channel", "the message is checked again at the press, its mentions of everyone with it")},
+		},
+	}, messageUses(false), notifiesUses(), describeUses(true))
 }
