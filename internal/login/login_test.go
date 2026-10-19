@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 // Finding browsers, reading the ports they write, and finding Mattermost's
@@ -172,5 +173,29 @@ func TestWhatABrowserSaidIsQuotedByTheLineThatSaysWhy(t *testing.T) {
 	_, _ = long.Write([]byte(strings.Repeat("x", tailBytes*2) + "\nlast words"))
 	if len(long.kept) != tailBytes || !strings.HasSuffix(long.said(), "last words") {
 		t.Errorf("kept %d bytes, said %.40q", len(long.kept), long.said())
+	}
+}
+
+// A Chromium that exits saying the system refused its sandbox is given up on
+// at once, to be started again without it; one that exits saying nothing of
+// it may have handed its window to a process of its own, as Edge's launcher
+// does, and is waited for until the deadline.
+func TestABrowserRefusedItsSandboxIsGivenUpOnAtOnce(t *testing.T) {
+	t.Parallel()
+	exited := func(said string, patience time.Duration) *chromiumWindow {
+		w := &chromiumWindow{browser: Browser{Name: "Chromium"}, profile: t.TempDir(), patience: patience, output: &tail{}, exited: make(chan struct{})}
+		_, _ = w.output.Write([]byte(said))
+		close(w.exited)
+		return w
+	}
+	started := time.Now()
+	_, err := exited("FATAL: No usable sandbox! Update your kernel", time.Minute).devToolsEndpoint(t.Context())
+	var blocked *BlockedError
+	if !errors.As(err, &blocked) || !blocked.sandbox || time.Since(started) > 10*time.Second {
+		t.Errorf("a browser refused its sandbox answered %v after %s", err, time.Since(started))
+	}
+	_, err = exited("launched the browser", 300*time.Millisecond).devToolsEndpoint(t.Context())
+	if !errors.As(err, &blocked) || blocked.sandbox || !strings.Contains(err.Error(), "exited as it started") {
+		t.Errorf("a launcher that exited answered %v", err)
 	}
 }

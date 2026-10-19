@@ -143,7 +143,16 @@ func (w *chromiumWindow) devToolsEndpoint(ctx context.Context) (string, error) {
 		}
 		// The program started may exit at once and leave the browser to a
 		// process of its own, as Edge's launcher does; the port file still
-		// comes, so only the deadline ends the wait.
+		// comes, so only the deadline ends the wait. A browser that exits
+		// saying the system refused its sandbox opens no port, so it is
+		// started again without one at once.
+		select {
+		case <-w.exited:
+			if w.output.mentions("sandbox") {
+				return "", &BlockedError{Browser: w.browser, Reason: "exited as it started, without opening its DevTools port" + w.output.said(), sandbox: true}
+			}
+		default:
+		}
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
