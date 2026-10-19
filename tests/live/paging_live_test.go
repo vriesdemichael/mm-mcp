@@ -48,7 +48,7 @@ func TestListsLongerThanMattermostsPageAreReadToTheirEnd(t *testing.T) {
 	channel := seedChannel(t, admin, team, user, other)
 	author := clientAs(t, user)
 	base := model.GetMillis() + 1000
-	roots := make([]string, many)
+	roots, replies := make([]string, many), make([]string, many)
 	inParallel(t, many, func(i int) {
 		root, _, err := author.CreatePost(t.Context(), &model.Post{ChannelId: channel.Id, Message: fmt.Sprintf("thread %d", i)})
 		if err != nil {
@@ -59,7 +59,9 @@ func TestListsLongerThanMattermostsPageAreReadToTheirEnd(t *testing.T) {
 		reply, _, err := admin.CreatePost(t.Context(), &model.Post{ChannelId: channel.Id, RootId: root.Id, Message: "reply", CreateAt: base + int64(i/10)})
 		if err != nil || reply.CreateAt != base+int64(i/10) {
 			t.Errorf("replied at %v: %v", reply, err)
+			return
 		}
+		replies[i] = reply.Id
 	})
 	if t.Failed() {
 		t.FailNow()
@@ -74,9 +76,11 @@ func TestListsLongerThanMattermostsPageAreReadToTheirEnd(t *testing.T) {
 		}
 		return followed.Total == many, fmt.Sprintf("the user follows %d threads", followed.Total)
 	})
+	// The replies are saved: ten in each millisecond, so the millisecond
+	// Mattermost's first page ends in goes on in its second.
 	var saved model.Preferences
-	for _, root := range roots {
-		saved = append(saved, model.Preference{UserId: user.Id, Category: model.PreferenceCategoryFlaggedPost, Name: root, Value: "true"})
+	for _, reply := range replies {
+		saved = append(saved, model.Preference{UserId: user.Id, Category: model.PreferenceCategoryFlaggedPost, Name: reply, Value: "true"})
 	}
 	// Mattermost takes at most 100 preferences in one request.
 	for start := 0; start < len(saved); start += 100 {
@@ -90,14 +94,16 @@ func TestListsLongerThanMattermostsPageAreReadToTheirEnd(t *testing.T) {
 		t.Errorf("list_threads paged through %d threads; want the %d the user started", len(threads), many)
 	}
 	savedPosts := flat(t, everyPage(t, session, &mcp.CallToolParams{Name: "list_saved", Arguments: map[string]any{}}, 100, "posts", "id"))
-	if len(savedPosts) != many || !sameItems(savedPosts, roots) {
+	if len(savedPosts) != many || !sameItems(savedPosts, replies) {
 		t.Errorf("list_saved paged through %d posts; want the %d saved", len(savedPosts), many)
 	}
-	// Two of Mattermost's pages hold them all, and a third, empty, says so: its
-	// page parameter is an offset in posts, and asked as a page number it would
-	// take one request a post.
-	if reads := reachedLast(t, session, "GetFlaggedPostsForUser"); reads != 3 {
-		t.Errorf("reading %d saved posts took %d requests; want 3", many, reads)
+	// Two of Mattermost's pages hold them all; the second starts in the
+	// millisecond the first ended in, so it is read again from that
+	// millisecond's first post; and a fourth, empty, says the end. Its page
+	// parameter is an offset in posts: asked as a page number it would take one
+	// request a post.
+	if reads := reachedLast(t, session, "GetFlaggedPostsForUser"); reads != 4 {
+		t.Errorf("reading %d saved posts took %d requests; want 4", many, reads)
 	}
 }
 
