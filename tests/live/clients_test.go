@@ -11,12 +11,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/mattermost/mattermost/server/public/model"
 
 	"github.com/vriesdemichael/mm-mcp/internal/scriptedmodel"
 	"github.com/vriesdemichael/mm-mcp/internal/testclients"
@@ -64,6 +67,8 @@ type clientRun struct {
 type clientOptions struct {
 	// approve has Goose ask before each of the model's calls, its approve mode.
 	approve bool
+	// writes has mm-mcp allow writes, as MM_MCP_ALLOW_WRITES does.
+	writes bool
 }
 
 // startClient starts a client against the scripted model, with mm-mcp acting
@@ -84,7 +89,7 @@ func startClient(t *testing.T, client, token string, options clientOptions) *cli
 	home := t.TempDir()
 	logs := filepath.Join(home, "logs")
 	check(t, os.MkdirAll(logs, 0o755))
-	wrapper := writeWrapper(t, home, server, token, filepath.Join(logs, "mm-mcp.log"))
+	wrapper := writeWrapper(t, home, server, token, filepath.Join(logs, "mm-mcp.log"), options.writes)
 	run := &clientRun{t: t, client: client, port: freePort(t), model: model, logs: logs}
 
 	var args []string
@@ -129,9 +134,9 @@ func startClient(t *testing.T, client, token string, options clientOptions) *cli
 // writeWrapper writes the program a client starts as mm-mcp: mm-mcp with its
 // configuration, since Goose's desktop app passes on no environment of its
 // own. It holds the token, in the test's own folder.
-func writeWrapper(t *testing.T, home, server, token, log string) string {
+func writeWrapper(t *testing.T, home, server, token, log string, writes bool) string {
 	t.Helper()
-	settings := [][2]string{{"MM_URL", liveURL}, {"MM_TOKEN", token}, {"MM_MCP_ALLOW_WRITES", "false"}}
+	settings := [][2]string{{"MM_URL", liveURL}, {"MM_TOKEN", token}, {"MM_MCP_ALLOW_WRITES", fmt.Sprint(writes)}}
 	var script, path string
 	if runtime.GOOS == "windows" {
 		path = filepath.Join(home, "mm-mcp.cmd")
@@ -279,8 +284,8 @@ func script(tool string, arguments map[string]any) string {
 	return "SCRIPT " + tool + " " + string(encoded)
 }
 
-// keep saves a screenshot and the logs under .tmp/clients-artifacts, which CI
-// uploads when the job fails.
+// keep saves a screenshot, the logs and the model's requests under
+// .tmp/clients-artifacts, which CI uploads when the job fails.
 func (c *clientRun) keep() {
 	dir := filepath.Join(clientsRoot, ".tmp", "clients-artifacts", strings.ReplaceAll(c.t.Name(), "/", "-"))
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -297,7 +302,11 @@ func (c *clientRun) keep() {
 			_ = os.WriteFile(filepath.Join(dir, entry.Name()), content, 0o600)
 		}
 	}
-	c.t.Logf("kept a screenshot and the logs in %s", dir)
+	// What the client put in front of the model, request by request.
+	if requests, err := json.MarshalIndent(c.model.Requests(), "", "  "); err == nil {
+		_ = os.WriteFile(filepath.Join(dir, "model-requests.json"), requests, 0o600)
+	}
+	c.t.Logf("kept a screenshot, the logs and the model's requests in %s", dir)
 }
 
 // offered is every tool the client put in front of the model, by its bare
@@ -379,4 +388,42 @@ func TestClientsGooseInApproveModeRefusesAViewsCall(t *testing.T) {
 	run.send(script("show", map[string]any{"kind": "thread", "post_id": root.Id, "limit": 2}), map[string]any{"approve": true})
 	refused := run.drive("press", map[string]any{"text": root.Message, "button": "1 more reply", "until": "This app does not load more of the thread here."})
 	mustContain(t, "the refused view", fmt.Sprint(refused["text"]), "Open in Mattermost")
+}
+
+// What is unread is shown in every client, a channel opens in place, and,
+// where writes are allowed, Mark read in the view marks it read in
+// Mattermost, through the tool only views call that changes something.
+func TestClientsShowWhatIsUnreadAndMarkAChannelReadFromTheView(t *testing.T) {
+	for _, client := range testclients.Clients {
+		t.Run(client, func(t *testing.T) {
+			admin := admin(t)
+			user, other := seedUser(t, admin), seedUser(t, admin)
+			team := seedTeam(t, admin, user, other)
+			channel := seedChannel(t, admin, team, user, other)
+			own := clientAs(t, user)
+			_, _, err := own.ViewChannel(t.Context(), user.Id, &model.ChannelView{ChannelId: channel.Id})
+			check(t, err)
+			tag := word(t)
+			author := clientAs(t, other)
+			postAs(t, author, channel.Id, "", "The "+tag+" build is red")
+			newest := postAs(t, author, channel.Id, "", "and the "+tag+" deploy waits")
+
+			run := startClient(t, client, personalAccessToken(t, admin, user.Id).Token, clientOptions{writes: true})
+			run.drive("ready", nil)
+			run.send(script("show", map[string]any{"kind": "unreads"}), nil)
+			shown := run.drive("view", map[string]any{"text": channel.DisplayName})
+			// The view writes a team's name in capitals, as Mattermost's sidebar does.
+			mustContain(t, "the unread view", strings.ToLower(fmt.Sprint(shown["text"])), strings.ToLower(team.DisplayName), "2 unread", "mark read")
+
+			opened := run.drive("press", map[string]any{"text": channel.DisplayName, "button": regexp.QuoteMeta(channel.DisplayName), "until": newest.Message})
+			mustContain(t, "the channel opened in place", fmt.Sprint(opened["text"]), "New messages", newest.Message)
+
+			run.drive("press", map[string]any{"text": channel.DisplayName, "button": "^Mark read$", "until": "Marked read"})
+			unread, _, err := own.GetChannelUnread(t.Context(), channel.Id, user.Id)
+			check(t, err)
+			if unread.MsgCount != 0 {
+				t.Errorf("Mark read in the view left %d messages unread in Mattermost", unread.MsgCount)
+			}
+		})
+	}
 }

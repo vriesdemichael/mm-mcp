@@ -18,7 +18,7 @@ func said(role, content string) message {
 
 func TestTheScriptCallsTheToolTheMessageNames(t *testing.T) {
 	t.Parallel()
-	offered := []string{"mattermost__read_post", "mattermost__show", "mcp_mm-mcp_get_me", "mcp_mm-mcp_read_channel"}
+	offered := tools("mattermost__read_post", "mattermost__show", "mcp_mm-mcp_get_me", "mcp_mm-mcp_read_channel")
 	for _, c := range []struct {
 		messages   []message
 		name, args string
@@ -35,9 +35,9 @@ func TestTheScriptCallsTheToolTheMessageNames(t *testing.T) {
 		{[]message{said("user", "hello")}, "", "", "Say SCRIPT"},
 		{nil, "", "", "nothing to answer"},
 	} {
-		name, args, text := answer(c.messages, offered)
+		name, args, text := answer(c.messages, offered, "")
 		if c.messages != nil && c.name == "" && c.textSays != Done {
-			if _, _, untitled := answer(c.messages, nil); untitled != Untitled {
+			if _, _, untitled := answer(c.messages, nil, ""); untitled != Untitled {
 				t.Errorf("%v with no tool offered answered %q", c.messages, untitled)
 			}
 		}
@@ -118,10 +118,10 @@ func TestTheModelAnswersAsTheChatCompletionsAPI(t *testing.T) {
 
 func TestTheScriptsEdgesAnswerInWords(t *testing.T) {
 	t.Parallel()
-	if _, _, text := answer([]message{said("user", "SCRIPT ")}, []string{"mattermost__show"}); !strings.Contains(text, "names no tool") {
+	if _, _, text := answer([]message{said("user", "SCRIPT ")}, tools("mattermost__show"), ""); !strings.Contains(text, "names no tool") {
 		t.Errorf("SCRIPT and nothing: %q", text)
 	}
-	if _, _, text := answer([]message{said("assistant", "hello")}, []string{"mattermost__show"}); !strings.Contains(text, "Say SCRIPT") {
+	if _, _, text := answer([]message{said("assistant", "hello")}, tools("mattermost__show"), ""); !strings.Contains(text, "Say SCRIPT") {
 		t.Errorf("nothing the person said: %q", text)
 	}
 	if got := text(json.RawMessage(`42`)); got != "42" {
@@ -142,5 +142,56 @@ func TestATextAnswerStreams(t *testing.T) {
 	(&Model{}).Handler().ServeHTTP(streamed, httptest.NewRequest(http.MethodPost, "/chat/completions", strings.NewReader(string(body))))
 	if !strings.Contains(streamed.Body.String(), Untitled) || !strings.Contains(streamed.Body.String(), `"stop"`) || !strings.HasSuffix(strings.TrimSpace(streamed.Body.String()), "[DONE]") {
 		t.Errorf("streamed %s", streamed.Body)
+	}
+}
+
+func tools(names ...string) []offeredTool {
+	out := make([]offeredTool, len(names))
+	for i, name := range names {
+		out[i] = offeredTool{Name: name}
+	}
+	return out
+}
+
+// A tool a client offers only inside a group is reached by opening the group
+// first, and called once the group's result is in.
+func TestAToolInAGroupIsReachedByOpeningTheGroup(t *testing.T) {
+	t.Parallel()
+	grouped := append(tools("mcp_mm-mcp_read_post"), offeredTool{
+		Name:        "activate_fallback_mcp_mm-mcp_save_post_1",
+		Description: "Call this tool when you need access to a new category of tools. Contains the tools: mcp_mm-mcp_save_post, mcp_mm-mcp_show, mcp_mm-mcp_typing.",
+	})
+	asked := []message{said("user", `SCRIPT show {"kind":"unreads"}`)}
+	if name, args, _ := answer(asked, grouped, ""); name != "activate_fallback_mcp_mm-mcp_save_post_1" || args != "{}" {
+		t.Fatalf("the model opened %q %s", name, args)
+	}
+	opened := append(grouped, offeredTool{Name: "mcp_mm-mcp_show"})
+	afterGroup := append(asked, said("assistant", ""), said("tool", "the tools are open"))
+	if name, args, _ := answer(afterGroup, opened, "activate_fallback_mcp_mm-mcp_save_post_1"); name != "mcp_mm-mcp_show" || args != `{"kind":"unreads"}` {
+		t.Errorf("after the group, the model called %q %s", name, args)
+	}
+	// A group opened already is not opened again.
+	if _, _, text := answer(afterGroup, grouped, "activate_fallback_mcp_mm-mcp_save_post_1"); !strings.Contains(text, "no tool offered is show") {
+		t.Errorf("a group that did not offer the tool: %q", text)
+	}
+	if holds("no list here", "show") || !holds("Contains the tools: mcp_mm-mcp_show.", "show") {
+		t.Error("reading a group's description")
+	}
+
+	// Through the handler, the group's result is answered with the call.
+	model := &Model{}
+	post := func(messages []map[string]string, offered []map[string]any) string {
+		body, _ := json.Marshal(map[string]any{"messages": messages, "tools": offered})
+		recorder := httptest.NewRecorder()
+		model.Handler().ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(string(body))))
+		return recorder.Body.String()
+	}
+	group := map[string]any{"type": "function", "function": map[string]string{"name": "activate_group_1", "description": "Contains the tools: mcp_mm-mcp_show"}}
+	first := post([]map[string]string{{"role": "user", "content": "SCRIPT show {}"}}, []map[string]any{group})
+	second := post([]map[string]string{{"role": "user", "content": "SCRIPT show {}"}, {"role": "tool", "content": "open"}},
+		[]map[string]any{group, {"type": "function", "function": map[string]string{"name": "mcp_mm-mcp_show"}}})
+	third := post([]map[string]string{{"role": "user", "content": "SCRIPT show {}"}, {"role": "tool", "content": "shown"}}, nil)
+	if !strings.Contains(first, "activate_group_1") || !strings.Contains(second, "mcp_mm-mcp_show") || !strings.Contains(third, Done) {
+		t.Errorf("answered %s, then %s, then %s", first, second, third)
 	}
 }
