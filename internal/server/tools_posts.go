@@ -576,20 +576,9 @@ func listSavedSpec() Spec {
 				if err != nil {
 					return nil, SearchResults{}, err
 				}
-				var all []*model.Post
-				// Until a page comes back empty: Mattermost leaves out of a page,
-				// after counting it, posts the person may no longer read, so a short
-				// page need not be the last.
-				for read := 0; ; {
-					list, err := client.SavedPosts(ctx, read, serverPageSize)
-					if err != nil {
-						return nil, SearchResults{}, err
-					}
-					if len(list.Order) == 0 {
-						break
-					}
-					all = append(all, orderedPosts(list, false)...)
-					read += len(list.Order)
+				all, err := savedPosts(ctx, client)
+				if err != nil {
+					return nil, SearchResults{}, err
 				}
 				page, next := offsetPage(newestFirst(uniquePosts(all)), at, limit)
 				posts, err := describePosts(ctx, client, page)
@@ -806,4 +795,44 @@ func readUnreadUses() []Use {
 			},
 		},
 	}, describeUses(true))
+}
+
+// savedPosts is every post the user saved, read a page of Mattermost's at a
+// time, until a page comes back empty: Mattermost leaves out of a page, after
+// counting it, posts the person may no longer read, so a short page need not
+// be the last. Mattermost orders saved posts by their time alone, and posts
+// that share a millisecond may stand in another order on the next page's
+// read, so a page that starts in the millisecond the last one ended in is read
+// again from that millisecond's first post: its posts then come in one page,
+// none left out. GetFlaggedPostsForUser.
+func savedPosts(ctx context.Context, client *mattermost.Client) ([]*model.Post, error) {
+	var all []*model.Post
+	var endedAt int64
+	ending, again := 0, false
+	for read := 0; ; {
+		list, err := client.SavedPosts(ctx, read, serverPageSize)
+		if err != nil {
+			return nil, err
+		}
+		page := orderedPosts(list, false)
+		if len(page) == 0 {
+			return all, nil
+		}
+		if !again && ending > 0 && page[0].CreateAt == endedAt {
+			read -= ending
+			again = true
+			continue
+		}
+		again = false
+		all = append(all, page...)
+		endedAt, ending = page[len(page)-1].CreateAt, 0
+		for i := len(page) - 1; i >= 0 && page[i].CreateAt == endedAt; i-- {
+			ending++
+		}
+		if ending == len(page) {
+			// A page all of one millisecond cannot be read whole again.
+			ending = 0
+		}
+		read += len(page)
+	}
 }
