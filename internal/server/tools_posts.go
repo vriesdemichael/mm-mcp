@@ -646,73 +646,12 @@ func readUnreadSpec() Spec {
 		}, describeUses(true)),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[readUnreadInput, UnreadPosts] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input readUnreadInput) (*mcp.CallToolResult, UnreadPosts, error) {
-				limit, err := limitOf(input.Limit, defaultPostsPerRead, maxPostsPerRead)
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
-				at, err := openCursor("read_unread", input, input.Cursor)
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, UnreadPosts{}, err
 				}
-				self, err := client.Me(ctx)
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
-				membership, err := client.Membership(ctx, input.ChannelID, self.Id)
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
-				// A channel the person never opened has nothing read in it: all of
-				// it is unread, and it reads as read_channel reads it, the newest
-				// first and then further back.
-				neverRead := membership.LastViewedAt == 0
-				at.Back = neverRead
-				var page []*model.Post
-				var more bool
-				switch {
-				case neverRead || at.After != "":
-					// Each page ends on a whole millisecond, the next reading on from it.
-					page, more, err = readOn(func(perPage int) (*model.PostList, error) {
-						if neverRead {
-							return client.Posts(ctx, mattermost.PostsPage{ChannelID: input.ChannelID, PerPage: perPage, Before: at.After})
-						}
-						return client.Posts(ctx, mattermost.PostsPage{ChannelID: input.ChannelID, PerPage: perPage, After: at.After})
-					}, neverRead, limit)
-				default:
-					page, more, err = sinceLastRead(ctx, client, input.ChannelID, membership.LastViewedAt, limit)
-				}
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
-				posts, err := describePosts(ctx, client, page)
-				if err != nil {
-					return nil, UnreadPosts{}, err
-				}
-				out := UnreadPosts{ChannelID: input.ChannelID, Posts: posts}
-				out.onePlace, out.Posts = inOneChannel(out.Posts)
-				for _, post := range page {
-					if post.UserId == self.Id || post.CreateAt <= membership.LastViewedAt {
-						continue
-					}
-					out.Unread++
-					if out.FirstUnreadID == "" {
-						out.FirstUnreadID = post.Id
-					}
-				}
-				switch {
-				case len(page) == 0:
-				case neverRead && more:
-					at.After = page[0].Id
-					out.NextCursor = at.String()
-				case !neverRead && more:
-					at.After = page[len(page)-1].Id
-					out.NextCursor = at.String()
-				}
-				return nil, out, nil
+				out, err := readUnread(ctx, client, input)
+				return nil, out, err
 			}
 		},
 	), nil)
@@ -794,4 +733,71 @@ func orderedPosts(list *model.PostList, chronological bool) []*model.Post {
 		})
 	}
 	return posts
+}
+
+// readUnread is what read_unread answers, and what a channel opened in the unread view draws.
+func readUnread(ctx context.Context, client *mattermost.Client, input readUnreadInput) (UnreadPosts, error) {
+	limit, err := limitOf(input.Limit, defaultPostsPerRead, maxPostsPerRead)
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	at, err := openCursor("read_unread", input, input.Cursor)
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	self, err := client.Me(ctx)
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	membership, err := client.Membership(ctx, input.ChannelID, self.Id)
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	// A channel the person never opened has nothing read in it: all of
+	// it is unread, and it reads as read_channel reads it, the newest
+	// first and then further back.
+	neverRead := membership.LastViewedAt == 0
+	at.Back = neverRead
+	var page []*model.Post
+	var more bool
+	switch {
+	case neverRead || at.After != "":
+		// Each page ends on a whole millisecond, the next reading on from it.
+		page, more, err = readOn(func(perPage int) (*model.PostList, error) {
+			if neverRead {
+				return client.Posts(ctx, mattermost.PostsPage{ChannelID: input.ChannelID, PerPage: perPage, Before: at.After})
+			}
+			return client.Posts(ctx, mattermost.PostsPage{ChannelID: input.ChannelID, PerPage: perPage, After: at.After})
+		}, neverRead, limit)
+	default:
+		page, more, err = sinceLastRead(ctx, client, input.ChannelID, membership.LastViewedAt, limit)
+	}
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	posts, err := describePosts(ctx, client, page)
+	if err != nil {
+		return UnreadPosts{}, err
+	}
+	out := UnreadPosts{ChannelID: input.ChannelID, Posts: posts}
+	out.onePlace, out.Posts = inOneChannel(out.Posts)
+	for _, post := range page {
+		if post.UserId == self.Id || post.CreateAt <= membership.LastViewedAt {
+			continue
+		}
+		out.Unread++
+		if out.FirstUnreadID == "" {
+			out.FirstUnreadID = post.Id
+		}
+	}
+	switch {
+	case len(page) == 0:
+	case neverRead && more:
+		at.After = page[0].Id
+		out.NextCursor = at.String()
+	case !neverRead && more:
+		at.After = page[len(page)-1].Id
+		out.NextCursor = at.String()
+	}
+	return out, nil
 }

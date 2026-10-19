@@ -66,46 +66,12 @@ func listMentionsSpec() Spec {
 		}, channelLookupUses("in", SetBy("team_id")), fromUses(), describeUses(true)),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[listMentionsInput, Mentions] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input listMentionsInput) (*mcp.CallToolResult, Mentions, error) {
-				limit, err := limitOf(input.Limit, defaultPostsPerSearch, maxPostsPerSearch)
-				if err != nil {
-					return nil, Mentions{}, err
-				}
-				at, err := openCursor("list_mentions", input, input.Cursor)
-				if err != nil {
-					return nil, Mentions{}, err
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, Mentions{}, err
 				}
-				self, err := client.Me(ctx)
-				if err != nil {
-					return nil, Mentions{}, err
-				}
-				keys := mentionKeys(self)
-				terms, teamID, offset, err := searchTerms(ctx, client, searchable(keys), input.TeamID, input.searchFilters)
-				if err != nil {
-					return nil, Mentions{}, err
-				}
-				list, err := client.SearchPosts(ctx, mattermost.Search{
-					TeamID: teamID, Terms: terms, MatchAny: true, Page: 0, PerPage: maxPostsPerSearch, TimeOffset: offset,
-				})
-				if err != nil {
-					return nil, Mentions{}, err
-				}
-				all := newestFirst(orderedPosts(list, false))
-				// The search matches words, so a post that says "here" matches
-				// @here; only a post that mentions the person as Mattermost would
-				// notify them is kept, and none of their own.
-				found := slices.DeleteFunc(slices.Clone(all), func(post *model.Post) bool {
-					return post.UserId == self.Id || !mentionsOf(keys).in(post.Message)
-				})
-				page, next := offsetPage(found, at, limit)
-				posts, err := describePosts(ctx, client, page)
-				if err != nil {
-					return nil, Mentions{}, err
-				}
-				return nil, Mentions{Posts: clip(posts), MentionKeys: keys, capped: capped{len(all) >= searchReach}, pageInfo: pageInfo{NextCursor: next}}, nil
+				out, err := listMentions(ctx, client, input)
+				return nil, out, err
 			}
 		},
 	), withShapes(searchFilterShapes, pagingShapes))
@@ -177,4 +143,44 @@ func (m mentionMatcher) in(message string) bool {
 		}
 	}
 	return false
+}
+
+// listMentions is what list_mentions answers, and show's unread view draws.
+func listMentions(ctx context.Context, client *mattermost.Client, input listMentionsInput) (Mentions, error) {
+	limit, err := limitOf(input.Limit, defaultPostsPerSearch, maxPostsPerSearch)
+	if err != nil {
+		return Mentions{}, err
+	}
+	at, err := openCursor("list_mentions", input, input.Cursor)
+	if err != nil {
+		return Mentions{}, err
+	}
+	self, err := client.Me(ctx)
+	if err != nil {
+		return Mentions{}, err
+	}
+	keys := mentionKeys(self)
+	terms, teamID, offset, err := searchTerms(ctx, client, searchable(keys), input.TeamID, input.searchFilters)
+	if err != nil {
+		return Mentions{}, err
+	}
+	list, err := client.SearchPosts(ctx, mattermost.Search{
+		TeamID: teamID, Terms: terms, MatchAny: true, Page: 0, PerPage: maxPostsPerSearch, TimeOffset: offset,
+	})
+	if err != nil {
+		return Mentions{}, err
+	}
+	all := newestFirst(orderedPosts(list, false))
+	// The search matches words, so a post that says "here" matches
+	// @here; only a post that mentions the person as Mattermost would
+	// notify them is kept, and none of their own.
+	found := slices.DeleteFunc(slices.Clone(all), func(post *model.Post) bool {
+		return post.UserId == self.Id || !mentionsOf(keys).in(post.Message)
+	})
+	page, next := offsetPage(found, at, limit)
+	posts, err := describePosts(ctx, client, page)
+	if err != nil {
+		return Mentions{}, err
+	}
+	return Mentions{Posts: clip(posts), MentionKeys: keys, capped: capped{len(all) >= searchReach}, pageInfo: pageInfo{NextCursor: next}}, nil
 }
