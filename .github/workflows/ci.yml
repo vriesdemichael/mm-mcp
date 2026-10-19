@@ -231,6 +231,65 @@ jobs:
       - name: Run the view tests
         run: task test:views
 
+  # The views in real clients (ADR-036): Goose's desktop app and VS Code at the
+  # versions tool-versions.env pins, each driven with a scripted model under
+  # Xvfb, against the newest supported release. No inference and no account.
+  client-tests:
+    name: Client Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Resolve the pinned tool versions
+        run: grep -E "^[A-Za-z_][A-Za-z0-9_]*=" .github/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Task
+        uses: ./.github/actions/setup-task
+        with:
+          version: ${{ env.GO_TASK_VERSION }}
+
+      # Each install is checked against its publisher's checksum, so a cached
+      # one is the one it was.
+      - name: Cache the clients
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .tmp/clients
+          key: clients-${{ runner.os }}-goose-${{ env.GOOSE_VERSION }}-vscode-${{ env.VSCODE_VERSION }}
+
+      - name: Start Mattermost and bootstrap it
+        run: task stack:up STACK=latest
+
+      - name: Run the client tests
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: task test:clients STACK=latest
+
+      - name: Keep what the clients showed
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: client-tests
+          path: .tmp/clients-artifacts
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Dump Mattermost's log on failure
+        if: failure()
+        run: task stack:logs STACK=latest
+
   # The live suite against both supported ends (ADR-025), through the tasks a
   # developer runs. Team Edition needs no licence and no secret, so this runs on
   # pull requests from forks too.
@@ -485,6 +544,7 @@ jobs:
       - unit-tests-other-os
       - browser-tests
       - view-tests
+      - client-tests
       - live-tests
       - coverage-gates
       - codecov
