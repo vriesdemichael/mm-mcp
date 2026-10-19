@@ -160,3 +160,26 @@ func TestAClientIsInstalledOnceAndFoundThereafter(t *testing.T) {
 		t.Errorf("installing again asked the publisher: %q, %v", again, err)
 	}
 }
+
+// An install whose download is not what its publisher gives leaves nothing
+// that is taken for installed.
+func TestAFailedInstallLeavesNothingInstalled(t *testing.T) {
+	t.Parallel()
+	p := newPublisher(t)
+	root := t.TempDir()
+	p.archive = []byte("not the archive the checksum is of")
+	installer := p.installer(root)
+	if _, err := installer.Install(t.Context(), VSCode, "1.142.0"); err == nil || !strings.Contains(err.Error(), "publisher gives") {
+		t.Fatalf("a download that fails its checksum: %v", err)
+	}
+	if _, err := Executable(root, VSCode, "1.142.0", This()); err == nil {
+		t.Error("a failed install was taken for installed")
+	}
+	if _, err := installer.Install(t.Context(), VSCode, "1.0.0"); err == nil {
+		t.Error("a version the publisher does not have was installed")
+	}
+	p.Close()
+	if _, err := installer.Newest(t.Context(), Goose); err == nil {
+		t.Error("a publisher that does not answer")
+	}
+}
