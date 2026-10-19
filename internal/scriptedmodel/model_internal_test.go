@@ -115,3 +115,32 @@ func TestTheModelAnswersAsTheChatCompletionsAPI(t *testing.T) {
 		t.Errorf("a broken request answered %d", bad.Code)
 	}
 }
+
+func TestTheScriptsEdgesAnswerInWords(t *testing.T) {
+	t.Parallel()
+	if _, _, text := answer([]message{said("user", "SCRIPT ")}, []string{"mattermost__show"}); !strings.Contains(text, "names no tool") {
+		t.Errorf("SCRIPT and nothing: %q", text)
+	}
+	if _, _, text := answer([]message{said("assistant", "hello")}, []string{"mattermost__show"}); !strings.Contains(text, "Say SCRIPT") {
+		t.Errorf("nothing the person said: %q", text)
+	}
+	if got := text(json.RawMessage(`42`)); got != "42" {
+		t.Errorf("a content that is neither text nor parts: %q", got)
+	}
+	for name, want := range map[string]string{"show": "show", "mattermost__read_post": "read_post", "mcp_mm-mcp_get_me": "get_me", "mcp_alone": "mcp_alone"} {
+		if got := Bare(name); got != want {
+			t.Errorf("Bare(%q) = %q; want %q", name, got, want)
+		}
+	}
+}
+
+// A text answer streams as one delta and a finish.
+func TestATextAnswerStreams(t *testing.T) {
+	t.Parallel()
+	body, _ := json.Marshal(map[string]any{"stream": true, "messages": []map[string]string{{"role": "user", "content": "hello"}}})
+	streamed := httptest.NewRecorder()
+	(&Model{}).Handler().ServeHTTP(streamed, httptest.NewRequest(http.MethodPost, "/chat/completions", strings.NewReader(string(body))))
+	if !strings.Contains(streamed.Body.String(), Untitled) || !strings.Contains(streamed.Body.String(), `"stop"`) || !strings.HasSuffix(strings.TrimSpace(streamed.Body.String()), "[DONE]") {
+		t.Errorf("streamed %s", streamed.Body)
+	}
+}

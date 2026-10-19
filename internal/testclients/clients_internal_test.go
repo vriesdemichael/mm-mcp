@@ -137,3 +137,28 @@ func write(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestWhatCannotBeUnpackedOrFoundSaysSo(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	broken := filepath.Join(dir, "broken")
+	write(t, broken, "neither a zip, a gzip nor a deb")
+	for _, kind := range []string{"zip", "tar.gz", "deb"} {
+		if err := unpack(kind, broken, filepath.Join(dir, kind)); err == nil {
+			t.Errorf("a broken %s was unpacked", kind)
+		}
+	}
+	if _, err := Pinned(filepath.Join(dir, "no checkout")); err == nil {
+		t.Error("a checkout without tool-versions.env")
+	}
+	twice := Dir(dir, Goose, "1.55.0", Platform{"windows", "amd64"})
+	write(t, filepath.Join(twice, "a", "Goose.exe"), "")
+	write(t, filepath.Join(twice, "b", "Goose.exe"), "")
+	write(t, filepath.Join(twice, installedMark), "sum\n")
+	if _, err := Executable(dir, Goose, "1.55.0", Platform{"windows", "amd64"}); err == nil || !strings.Contains(err.Error(), "2 copies") {
+		t.Errorf("two copies of the program: %v", err)
+	}
+	if !Known(Goose) || Known("other") || Pin(VSCode) != "VSCODE_VERSION" {
+		t.Error("the clients the tests drive")
+	}
+}
