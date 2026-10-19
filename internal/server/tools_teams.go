@@ -294,58 +294,12 @@ func getUserChannelsSpec() Spec {
 		},
 		func(clientFor ClientFor) mcp.ToolHandlerFor[getUserChannelsInput, Channels] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input getUserChannelsInput) (*mcp.CallToolResult, Channels, error) {
-				limit, err := limitOf(input.Limit, defaultListed, maxListed)
-				if err != nil {
-					return nil, Channels{}, err
-				}
-				at, err := openCursor("get_user_channels", input, input.Cursor)
-				if err != nil {
-					return nil, Channels{}, err
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, Channels{}, err
 				}
-				mine, err := readMyChannels(ctx, client)
-				if err != nil {
-					return nil, Channels{}, err
-				}
-				memberships := map[string]model.ChannelMember{}
-				for teamID := range mine.teams {
-					members, err := client.ChannelMemberships(ctx, teamID)
-					if err != nil {
-						return nil, Channels{}, err
-					}
-					for _, member := range members {
-						memberships[member.ChannelId] = member
-					}
-				}
-				var all []Channel
-				for _, channel := range mine.channels {
-					if input.TeamID != "" && channel.TeamId != "" && channel.TeamId != input.TeamID {
-						continue
-					}
-					listed := mine.describe(channel)
-					if member, ok := memberships[channel.Id]; ok {
-						unread := max(channel.TotalMsgCount-member.MsgCount, 0)
-						mentions := member.MentionCount
-						listed.Unread, listed.Mentions = &unread, &mentions
-					}
-					if input.UnreadOnly && (listed.Unread == nil || *listed.Unread == 0) && (listed.Mentions == nil || *listed.Mentions == 0) {
-						continue
-					}
-					all = append(all, listed)
-				}
-				// Most recently active first, and by id between channels as recent,
-				// so a page is the same slice of the list each time it is read.
-				slices.SortFunc(all, func(a, b Channel) int {
-					if order := strings.Compare(b.LastPostAt, a.LastPostAt); order != 0 {
-						return order
-					}
-					return strings.Compare(a.ID, b.ID)
-				})
-				page, next := offsetPage(all, at, limit)
-				return nil, Channels{Channels: page, pageInfo: pageInfo{NextCursor: next}}, nil
+				out, err := listUserChannels(ctx, client, input)
+				return nil, out, err
 			}
 		},
 	), withShapes(pagingShapes, map[string]string{
@@ -857,4 +811,56 @@ func getChannelStatsSpec() Spec {
 			}
 		},
 	)
+}
+
+// listUserChannels is what get_user_channels answers, and show's unread view draws.
+func listUserChannels(ctx context.Context, client *mattermost.Client, input getUserChannelsInput) (Channels, error) {
+	limit, err := limitOf(input.Limit, defaultListed, maxListed)
+	if err != nil {
+		return Channels{}, err
+	}
+	at, err := openCursor("get_user_channels", input, input.Cursor)
+	if err != nil {
+		return Channels{}, err
+	}
+	mine, err := readMyChannels(ctx, client)
+	if err != nil {
+		return Channels{}, err
+	}
+	memberships := map[string]model.ChannelMember{}
+	for teamID := range mine.teams {
+		members, err := client.ChannelMemberships(ctx, teamID)
+		if err != nil {
+			return Channels{}, err
+		}
+		for _, member := range members {
+			memberships[member.ChannelId] = member
+		}
+	}
+	var all []Channel
+	for _, channel := range mine.channels {
+		if input.TeamID != "" && channel.TeamId != "" && channel.TeamId != input.TeamID {
+			continue
+		}
+		listed := mine.describe(channel)
+		if member, ok := memberships[channel.Id]; ok {
+			unread := max(channel.TotalMsgCount-member.MsgCount, 0)
+			mentions := member.MentionCount
+			listed.Unread, listed.Mentions = &unread, &mentions
+		}
+		if input.UnreadOnly && (listed.Unread == nil || *listed.Unread == 0) && (listed.Mentions == nil || *listed.Mentions == 0) {
+			continue
+		}
+		all = append(all, listed)
+	}
+	// Most recently active first, and by id between channels as recent,
+	// so a page is the same slice of the list each time it is read.
+	slices.SortFunc(all, func(a, b Channel) int {
+		if order := strings.Compare(b.LastPostAt, a.LastPostAt); order != 0 {
+			return order
+		}
+		return strings.Compare(a.ID, b.ID)
+	})
+	page, next := offsetPage(all, at, limit)
+	return Channels{Channels: page, pageInfo: pageInfo{NextCursor: next}}, nil
 }

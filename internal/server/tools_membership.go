@@ -461,14 +461,8 @@ func markChannelReadSpec() Spec {
 				if err != nil {
 					return nil, Read{}, err
 				}
-				self, err := client.Me(ctx)
-				if err != nil {
-					return nil, Read{}, err
-				}
-				if err := client.MarkRead(ctx, self.Id, input.ChannelID); err != nil {
-					return nil, Read{}, err
-				}
-				return nil, Read{ChannelID: input.ChannelID, Read: true}, nil
+				out, err := markRead(ctx, client, input)
+				return nil, out, err
 			}
 		},
 	), "what the person has read is theirs alone, and they asked for it to be marked")
@@ -657,4 +651,16 @@ func setStatusSpec() Spec {
 				})
 		},
 	), map[string]string{"clear_text": "chooses UnsetUserCustomStatus"}), "The person is asked to confirm first; if they decline or close the question, do not try again unless they ask.")
+}
+
+// markRead is what mark_channel_read does, and Mark read in the unread view.
+func markRead(ctx context.Context, client *mattermost.Client, input channelInput) (Read, error) {
+	self, err := client.Me(ctx)
+	if err != nil {
+		return Read{}, err
+	}
+	if err := client.MarkRead(ctx, self.Id, input.ChannelID); err != nil {
+		return Read{}, err
+	}
+	return Read{ChannelID: input.ChannelID, Read: true}, nil
 }

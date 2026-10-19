@@ -78,42 +78,12 @@ func listThreadsSpec() Spec {
 		}, describeUses(true)),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[listThreadsInput, Threads] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input listThreadsInput) (*mcp.CallToolResult, Threads, error) {
-				limit, err := limitOf(input.Limit, defaultThreads, maxThreads)
-				if err != nil {
-					return nil, Threads{}, err
-				}
-				at, err := openCursor("list_threads", input, input.Cursor)
-				if err != nil {
-					return nil, Threads{}, err
-				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, Threads{}, err
 				}
-				followed, err := followedThreads(ctx, client, input.TeamID)
-				if err != nil {
-					return nil, Threads{}, err
-				}
-				var matching []*model.ThreadResponse
-				for _, thread := range followed {
-					if !input.UnreadOnly || thread.UnreadReplies > 0 {
-						matching = append(matching, thread)
-					}
-				}
-				kept, next := offsetPage(matching, at, limit)
-				started := make([]*model.Post, 0, len(kept))
-				for _, thread := range kept {
-					started = append(started, thread.Post)
-				}
-				posts, zone, err := describe(ctx, client, started)
-				if err != nil {
-					return nil, Threads{}, err
-				}
-				out := Threads{Threads: make([]ThreadSummary, 0, len(kept)), pageInfo: pageInfo{NextCursor: next}}
-				for i, thread := range kept {
-					out.Threads = append(out.Threads, toThreadSummary(thread, posts[i], zone))
-				}
-				return nil, out, nil
+				out, err := listThreads(ctx, client, input)
+				return nil, out, err
 			}
 		},
 	), withShapes(pagingShapes, map[string]string{
@@ -204,4 +174,40 @@ func toThreadSummary(thread *model.ThreadResponse, started Post, zone *time.Loca
 		UnreadReplies:  thread.UnreadReplies,
 		UnreadMentions: thread.UnreadMentions,
 	}
+}
+
+// listThreads is what list_threads answers, and show's unread view draws.
+func listThreads(ctx context.Context, client *mattermost.Client, input listThreadsInput) (Threads, error) {
+	limit, err := limitOf(input.Limit, defaultThreads, maxThreads)
+	if err != nil {
+		return Threads{}, err
+	}
+	at, err := openCursor("list_threads", input, input.Cursor)
+	if err != nil {
+		return Threads{}, err
+	}
+	followed, err := followedThreads(ctx, client, input.TeamID)
+	if err != nil {
+		return Threads{}, err
+	}
+	var matching []*model.ThreadResponse
+	for _, thread := range followed {
+		if !input.UnreadOnly || thread.UnreadReplies > 0 {
+			matching = append(matching, thread)
+		}
+	}
+	kept, next := offsetPage(matching, at, limit)
+	started := make([]*model.Post, 0, len(kept))
+	for _, thread := range kept {
+		started = append(started, thread.Post)
+	}
+	posts, zone, err := describe(ctx, client, started)
+	if err != nil {
+		return Threads{}, err
+	}
+	out := Threads{Threads: make([]ThreadSummary, 0, len(kept)), pageInfo: pageInfo{NextCursor: next}}
+	for i, thread := range kept {
+		out.Threads = append(out.Threads, toThreadSummary(thread, posts[i], zone))
+	}
+	return out, nil
 }
