@@ -42,3 +42,4 @@ holds and why, and the alternatives it turned down.
 - [ADR-033: The client decides whether a write runs, and mm-mcp enforces its own guards](033-the-client-decides-whether-a-write-runs.md)
 - [ADR-034: Agents are let in visibly, not kept out](034-agents-are-let-in-visibly-not-kept-out.md)
 - [ADR-035: A proposed post waits as the person's draft, for them to send](035-a-proposed-post-waits-as-the-persons-draft.md)
+- [ADR-036: Real clients run the views at pinned versions, with a scripted model](036-real-clients-run-the-views-at-pinned-versions-with-a-scripted-model.md)
