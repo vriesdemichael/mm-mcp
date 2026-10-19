@@ -153,7 +153,7 @@ func viewsCheck(request *mcp.CallToolRequest) doctor.Check {
 	types := declaredViewTypes(request)
 	switch {
 	case rendersViews(request):
-		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client renders MCP Apps views, so show puts a thread in front of the person laid out as Mattermost lays it out"}
+		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client renders MCP Apps views, so show puts a thread, or what is unread for the person, in front of them laid out as Mattermost lays it out"}
 	case types != nil:
 		return doctor.Check{Name: name, Status: doctor.OK, Detail: fmt.Sprintf(
 			"this client renders MCP Apps views of %s, not of %s, mm-mcp's, so show shows nothing and the model answers in words",

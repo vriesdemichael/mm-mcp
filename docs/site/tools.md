@@ -9,10 +9,10 @@ hide:
 your own words; it picks the tool. Writing is off until you allow it.</p>
 
 <div class="mm-stats">
-<a class="mm-stat" href="#every-tool"><strong>47</strong> tools</a>
+<a class="mm-stat" href="#every-tool"><strong>48</strong> tools</a>
 <span class="mm-stat mm-stat--read"><strong>26</strong> only read</span>
 <span class="mm-stat mm-stat--checked"><strong>14</strong> checked writes</span>
-<span class="mm-stat mm-stat--yours"><strong>6</strong> yours alone</span>
+<span class="mm-stat mm-stat--yours"><strong>7</strong> yours alone</span>
 <span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
 </div>
 
@@ -57,13 +57,14 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 
     ---
 
-    In an AI app that shows MCP Apps views, a thread appears in the chat as
-    Mattermost lays it out: names and pictures, Markdown, reactions and images.
+    In an AI app that shows MCP Apps views, a thread, or what is waiting for
+    you, appears in the chat as Mattermost lays it out: names and pictures,
+    Markdown, reactions and images, and what is unread where.
 
     “Show me the thread about last night's outage.”
     { .mm-example }
 
-    [`show`](#show){ .mm-chip } [`view_action`](#view_action){ .mm-chip }
+    [`show`](#show){ .mm-chip } [`view_action`](#view_action){ .mm-chip } [`view_change`](#view_change){ .mm-chip .mm-chip--yours }
 
 -   :material-file-document-outline:{ .lg .middle } **Open the attachments**
 
@@ -229,21 +230,41 @@ The tools that write are offered only once you allow writes, with
 ### See it as Mattermost shows it
 
 `show`: Show { #show }
-:   Puts a thread in front of you in the chat, laid out as Mattermost lays it
-    out: who wrote each post, with their profile picture, when, the Markdown
-    drawn, `@mentions` and `~channels`, reactions with who reacted, images
-    you can open whole and file cards, and the edited and pinned marks. It
-    shows the first 30 posts, says how many more the thread has, and loads
-    more as you ask. Links open in Mattermost. Your agent calls it when you
-    ask to see something, after it found it; it reads with `read_post`, and
-    `show` answers with what `read_post` answers, so the chat holds nothing
-    the view adds. In an app that shows no views it shows nothing, and says so,
-    and your agent answers in words ([Views](#views)).
+:   Puts what you asked to see in front of you in the chat, laid out as
+    Mattermost lays it out.
+
+    - Kind `thread` shows a thread: who wrote each post, with their profile
+      picture, when, the Markdown drawn, `@mentions` and `~channels`,
+      reactions with who reacted, images you can open whole and file cards,
+      and the edited and pinned marks. It shows the first 30 posts, says how
+      many more the thread has, and loads more as you ask.
+    - Kind `unreads` shows what is waiting for you: up to 20 channels with
+      something unread, grouped by team, with their unread and mention
+      counts; up to 10 posts that mention you; and up to 10 threads you follow
+      with unread replies. It says when Mattermost has more. A channel's
+      unread messages or a thread open in place, or in Mattermost where your
+      app does not let the view load them, and once you allow writes, a
+      channel can be marked read from the view.
+
+    Links open in Mattermost. Your agent calls it when you ask to see
+    something, after it found it, or ask what is waiting for you. It answers
+    with what `read_post`, or `get_user_channels`, `list_mentions` and
+    `list_threads`, answer, so the chat holds nothing the view adds. In an app
+    that shows no views it shows nothing, and says so, and your agent answers
+    in words ([Views](#views)).
 
 `view_action`: Act in a view { #view_action }
-:   What you do in a view, such as loading more of a thread, goes through this
+:   What you do in a view that changes nothing, such as loading more of a
+    thread or opening a channel's unread messages in place, goes through this
     tool. Only a view calls it: an app that shows views keeps it from your
     agent, and mm-mcp offers it only to an app that says it shows views.
+
+`view_change`: Change in a view { #view_change .mm-yours }
+:   What you do in a view that changes something goes through this tool:
+    marking a channel read from the unread view, as `mark_channel_read` does.
+    Only a view calls it, on your press: an app that shows views keeps it from
+    your agent, and mm-mcp offers it only to an app that says it shows views,
+    once you allow writes.
 
 ### Open the attachments
 
@@ -543,11 +564,11 @@ resources: a conversation has no end to read it whole to.
 
 ### Views
 
-In an AI app that shows MCP Apps views, [`show`](#show) puts a thread in the
-chat as Mattermost lays it out
+In an AI app that shows MCP Apps views, [`show`](#show) puts a thread, or what
+is unread for you, in the chat as Mattermost lays it out
 ([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)). The view is a
-page in mm-mcp itself, which reaches no network: the app reads the thread from
-mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
+page in mm-mcp itself, which reaches no network: the app reads what it shows
+from mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
 credential. Where the app reads no pictures, people are their initials and a
 custom emoji its name. The page takes the app's light or dark theme and its
 language, where mm-mcp has words for it, and English otherwise. Goose's desktop

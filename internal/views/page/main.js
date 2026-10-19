@@ -2,7 +2,8 @@
 //
 // What a person does here goes through the host: a link opens through
 // ui/open-link, a picture is read through resources/read, and more of a
-// thread comes from the tool only views call. The view never speaks for the
+// thread, or a channel or a thread opened in place, comes from the tools only
+// views call. The view never speaks for the
 // person, so it never writes in the conversation in their name, and it acts
 // only on a click: hosts run a view's code again when a conversation is
 // reopened.
@@ -115,6 +116,8 @@ function renderKind(data) {
   switch (kind) {
     case "thread":
       return renderThread(data);
+    case "unreads":
+      return renderUnreads(data);
     default:
       return el("p", { class: "muted", role: "status" }, t("view.unknown_kind", { kind }));
   }

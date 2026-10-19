@@ -169,7 +169,9 @@ func ownTeam(ctx context.Context, client *mattermost.Client, name string) (strin
 }
 
 // idFields are the string fields of an input type that idArgs names, by
-// their argument name, with where each is, embedded structs searched too.
+// their argument name, with where each is, embedded structs searched too. A
+// field tagged `ids:"only"` takes an id alone and is left out: a tool only
+// views call is given the ids its data carries, never a name or a link.
 func idFields(input reflect.Type) map[string][]int {
 	found := map[string][]int{}
 	if input.Kind() != reflect.Struct {
@@ -185,6 +187,9 @@ func idFields(input reflect.Type) map[string][]int {
 				continue
 			}
 			name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+			if field.Tag.Get("ids") == "only" {
+				continue
+			}
 			switch name {
 			case channelArg, teamArg, postArg, rootArg, fileArg:
 				if field.Type.Kind() == reflect.String && field.IsExported() {
@@ -236,9 +241,10 @@ func inputSchema[In any]() *jsonschema.Schema {
 	if err != nil {
 		panic(fmt.Sprintf("the input schema of %v: %v", reflect.TypeFor[In](), err))
 	}
+	ids := idFields(reflect.TypeFor[In]())
 	for name, property := range schema.Properties {
 		note, ok := idNotes[name]
-		if !ok {
+		if _, isID := ids[name]; !ok || !isID {
 			continue
 		}
 		if property.Description == "" {

@@ -593,28 +593,79 @@ func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
 	}
 }
 
-// viewData is the data tool each tool a view draws from answers as: a view
-// draws the data tool's output, unchanged.
-var viewData = map[string]string{"show": "read_post", "view_action": "read_post"}
+// viewData is what each tool a view draws from answers as, one entry for
+// each shape it answers in: a data tool's output, unchanged, named under "",
+// or, for show's unread view, the outputs of three, each unchanged under the
+// property named. A tool that answers in more shapes than one says it answers
+// as one of them.
+var viewData = map[string][]map[string]string{
+	"show":        {{"": "read_post"}, {"channels": "get_user_channels", "mentions": "list_mentions", "threads": "list_threads"}},
+	"view_action": {{"": "read_post"}, {"": "read_unread"}},
+	"view_change": {{"": "mark_channel_read"}},
+}
 
 func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
 	t.Parallel()
-	schemas := map[string]string{}
+	schemas := map[string]map[string]any{}
 	for _, tool := range listTools(t, writingConfig) {
 		data, err := json.Marshal(tool.OutputSchema)
 		if err != nil {
 			t.Fatal(err)
 		}
-		schemas[tool.Name] = string(data)
+		var schema map[string]any
+		if err := json.Unmarshal(data, &schema); err != nil {
+			t.Fatal(err)
+		}
+		schemas[tool.Name] = schema
 	}
-	for name, data := range viewData {
-		if schemas[name] == "" || schemas[name] != schemas[data] {
-			t.Errorf("%s answers as\n%s\nwhere %s answers as\n%s", name, schemas[name], data, schemas[data])
+	// same compares two schemas, leaving out what describes the one as a part
+	// of another.
+	same := func(a, b any) bool {
+		strip := func(schema any) string {
+			copied := map[string]any{}
+			if fields, ok := schema.(map[string]any); ok {
+				for name, value := range fields {
+					if name != "description" {
+						copied[name] = value
+					}
+				}
+			}
+			data, _ := json.Marshal(copied)
+			return string(data)
+		}
+		return strip(a) == strip(b)
+	}
+	for name, shapes := range viewData {
+		answers := []any{schemas[name]}
+		if len(shapes) > 1 {
+			answers, _ = schemas[name]["oneOf"].([]any)
+		}
+		if len(answers) != len(shapes) {
+			t.Errorf("%s answers in %d shapes; want %d: %v", name, len(answers), len(shapes), schemas[name])
+			continue
+		}
+		for i, shape := range shapes {
+			answer, _ := answers[i].(map[string]any)
+			if data, whole := shape[""]; whole {
+				if !same(answer, schemas[data]) {
+					t.Errorf("%s answers as\n%v\nwhere %s answers as\n%v", name, answer, data, schemas[data])
+				}
+				continue
+			}
+			properties, _ := answer["properties"].(map[string]any)
+			if len(properties) != len(shape) {
+				t.Errorf("%s answers with %d parts; want %d: %v", name, len(properties), len(shape), answer)
+			}
+			for property, data := range shape {
+				if !same(properties[property], schemas[data]) {
+					t.Errorf("%s's %s is\n%v\nwhere %s answers as\n%v", name, property, properties[property], data, schemas[data])
+				}
+			}
 		}
 	}
 	for _, spec := range server.AllSpecs() {
 		ui, _ := spec.Tool.Meta["ui"].(map[string]any)
-		if _, linked := ui["resourceUri"]; (linked || isForViews(spec.Tool)) && viewData[spec.Tool.Name] == "" {
+		if _, linked := ui["resourceUri"]; (linked || isForViews(spec.Tool)) && viewData[spec.Tool.Name] == nil {
 			t.Errorf("%s answers a view, but names no data tool it answers as", spec.Tool.Name)
 		}
 	}
@@ -631,6 +682,13 @@ func isForViews(tool *mcp.Tool) bool {
 		return slices.Equal(visibility, []any{"app"})
 	}
 	return false
+}
+
+// viewCalls are arguments each tool only views call takes, that would reach
+// Mattermost from a client that renders views.
+var viewCalls = map[string]map[string]any{
+	"view_action": {"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz"},
+	"view_change": {"action": "mark_read", "channel_id": "abcdefghijklmnopqrstuvwxyz"},
 }
 
 func TestEveryToolOnlyViewsCallIsForViewsAlone(t *testing.T) {
@@ -655,7 +713,12 @@ func TestEveryToolOnlyViewsCallIsForViewsAlone(t *testing.T) {
 		}
 		// Refused before Mattermost is reached: the unit tests block the
 		// network, which would fail otherwise with another error.
-		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: tool.Name, Arguments: map[string]any{"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz"}})
+		arguments, ok := viewCalls[tool.Name]
+		if !ok {
+			t.Errorf("%s is for views alone, and viewCalls has no call of it", tool.Name)
+			continue
+		}
+		result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: tool.Name, Arguments: arguments})
 		if err != nil {
 			t.Fatal(err)
 		}

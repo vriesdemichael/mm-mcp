@@ -6,9 +6,10 @@
 //
 // Page assembles it into one self-contained document: the style, then one
 // script that runs every file in Scripts in one scope, in that order, after
-// the data the page needs: where this Mattermost's resources start, the
-// emoji that come with Mattermost, from Mattermost's own table, and the
-// catalogs of the page's own words.
+// the data the page needs: where this Mattermost's resources start, whether
+// the server lets a view mark a channel read, the emoji that come with
+// Mattermost, from Mattermost's own table, and the catalogs of the page's own
+// words.
 package views
 
 import (
@@ -38,7 +39,7 @@ var assets embed.FS
 
 // Scripts is every script of the page, in the order they run; main.js, which
 // starts the view, runs last.
-var Scripts = []string{"bridge.js", "dom.js", "i18n.js", "format.js", "pictures.js", "markdown.js", "thread.js", "main.js"}
+var Scripts = []string{"bridge.js", "dom.js", "i18n.js", "format.js", "pictures.js", "markdown.js", "thread.js", "unreads.js", "main.js"}
 
 const (
 	stylePlaceholder  = "/*MM_VIEW_STYLE*/"
@@ -68,7 +69,8 @@ func Catalogs() (map[string]map[string]any, error) {
 }
 
 // shell is the page with everything but where this Mattermost's resources
-// start: the same for every server, so made once.
+// start and whether it lets a view mark a channel read: the same for every
+// server, so made once.
 var shell = sync.OnceValue(func() string {
 	page := mustAsset("page.html")
 	style := mustAsset("view.css")
@@ -79,6 +81,7 @@ var shell = sync.OnceValue(func() string {
 	var script strings.Builder
 	script.WriteString("(() => {\n\"use strict\";\n")
 	script.WriteString("const RESOURCE_BASE = " + baseMarker + ";\n")
+	script.WriteString("const MARKS_READ = " + marksReadMarker + ";\n")
 	script.WriteString("const SYSTEM_EMOJI = " + mustJSON(systemEmoji()) + ";\n")
 	script.WriteString("const CATALOGS = " + mustJSON(catalogs) + ";\n")
 	for _, name := range Scripts {
@@ -93,14 +96,20 @@ var shell = sync.OnceValue(func() string {
 	return strings.Replace(strings.Replace(page, stylePlaceholder, style, 1), scriptPlaceholder, script.String(), 1)
 })
 
-// baseMarker stands in the shell for where this Mattermost's resources
-// start, which Page puts in.
-const baseMarker = `"\u0000MM_RESOURCE_BASE\u0000"`
+// baseMarker and marksReadMarker stand in the shell for where this
+// Mattermost's resources start and whether a view may mark a channel read,
+// which Page puts in.
+const (
+	baseMarker      = `"\u0000MM_RESOURCE_BASE\u0000"`
+	marksReadMarker = `"\u0000MM_MARKS_READ\u0000"`
+)
 
 // Page is the view page for the Mattermost whose resources start at base, as
-// mattermost://chat.example.com does.
-func Page(base string) string {
-	return strings.Replace(shell(), baseMarker, mustJSON(base), 1)
+// mattermost://chat.example.com does. marksRead says the server offers the
+// tool a view marks a channel read through, which it does where writes are
+// allowed: the view offers Mark read only then.
+func Page(base string, marksRead bool) string {
+	return strings.NewReplacer(baseMarker, mustJSON(base), marksReadMarker, mustJSON(marksRead)).Replace(shell())
 }
 
 // systemEmoji is Mattermost's table of the emoji that come with it: each

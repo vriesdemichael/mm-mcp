@@ -28,7 +28,7 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestEveryToolArgumentSetsAParameterItCalls`: every argument a tool takes sets a parameter it declares, shapes the answer, or is checked against a count mm-mcp makes, saying how, and every declared argument is taken.
 - `TestEveryDifferenceBetweenSupportedReleasesIsHandled`: an operation that differs on the oldest supported release is handled, said so, and listed on the releases page.
 - `TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView`: only a tool whose every call the person should see carries an MCP Apps view (ADR-022).
-- `TestAViewDrawsItsDataToolsOutputUnchanged`: every tool a view draws from answers exactly as the data tool it reads with.
+- `TestAViewDrawsItsDataToolsOutputUnchanged`: every tool a view draws from answers exactly as the data tools it reads with, in each shape it answers in.
 - `TestEveryToolOnlyViewsCallIsForViewsAlone`: a tool marked for views alone is offered only to a client that renders views, and refuses one that does not, before Mattermost is reached.
 - `TestThePageBuildsNoHTMLFromStrings`: the view page's scripts build elements, never HTML from a string, and set no picture they have not checked.
 - `TestThePageNeverSpeaksForThePerson`: the view page sends no message in the person's name.

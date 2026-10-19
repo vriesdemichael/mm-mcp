@@ -104,7 +104,7 @@ func TestAClientWithoutViewsIsShownNothingAndReadNothing(t *testing.T) {
 func TestShowLinksThePageAndTheToolOnlyViewsCallIsMarkedForThem(t *testing.T) {
 	t.Parallel()
 	tools := map[string]*mcp.Tool{}
-	for _, tool := range listTools(t, readOnlyConfig) {
+	for _, tool := range listTools(t, writingConfig) {
 		tools[tool.Name] = tool
 	}
 	ui := func(name string) map[string]any {
@@ -116,14 +116,16 @@ func TestShowLinksThePageAndTheToolOnlyViewsCallIsMarkedForThem(t *testing.T) {
 	if got := ui("show")["resourceUri"]; got != views.URI || tools["show"].Meta["ui/resourceUri"] != views.URI {
 		t.Errorf("show links %v", tools["show"].Meta)
 	}
-	if got, _ := ui("view_action")["visibility"].([]any); !slices.Equal(got, []any{"app"}) {
-		t.Errorf("view_action is visible to %v; it is for views alone", got)
-	}
-	if _, linked := ui("view_action")["resourceUri"]; linked {
-		t.Error("view_action links the page; a call of it draws no view of its own")
+	for _, name := range []string{"view_action", "view_change"} {
+		if got, _ := ui(name)["visibility"].([]any); !slices.Equal(got, []any{"app"}) {
+			t.Errorf("%s is visible to %v; it is for views alone", name, got)
+		}
+		if _, linked := ui(name)["resourceUri"]; linked {
+			t.Errorf("%s links the page; a call of it draws no view of its own", name)
+		}
 	}
 	kinds, _ := json.Marshal(tools["show"].InputSchema)
-	if !strings.Contains(string(kinds), `"enum":["thread"]`) {
+	if !strings.Contains(string(kinds), `"enum":["thread","unreads"]`) {
 		t.Errorf("show's kinds are %s", kinds)
 	}
 }
