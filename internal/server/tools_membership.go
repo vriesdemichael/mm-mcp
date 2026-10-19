@@ -443,18 +443,7 @@ func markChannelReadSpec() Spec {
 				"Only when the person asks for it: reading a channel for them is not their reading it, so never mark one read because you read it.",
 			Annotations: personal("Mark channel read"),
 		},
-		[]Use{
-			{
-				Operation: "ViewChannel",
-				Params: map[string]Coverage{
-					"user_id":                          Fixed("me", "a person marks channels read for themselves"),
-					"body.channel_id":                  SetBy("channel_id"),
-					"body.prev_channel_id":             Omitted("Mattermost marks the channel left read too; the tool leaves no channel"),
-					"body.collapsed_threads_supported": Undocumented("", "api4's viewChannel reads it to mark threads read with the channel when true; Mattermost's client sends false, and threads keep their own unread state"),
-				},
-			},
-			{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "the channel is marked read for the user")}},
-		},
+		markReadUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[channelInput, Read] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input channelInput) (*mcp.CallToolResult, Read, error) {
 				client, err := clientFor(ctx, request)
@@ -663,4 +652,21 @@ func markRead(ctx context.Context, client *mattermost.Client, input channelInput
 		return Read{}, err
 	}
 	return Read{ChannelID: input.ChannelID, Read: true}, nil
+}
+
+// markReadUses are the operations markRead calls, for a tool that marks a
+// channel given by its channel_id read.
+func markReadUses() []Use {
+	return []Use{
+		{
+			Operation: "ViewChannel",
+			Params: map[string]Coverage{
+				"user_id":                          Fixed("me", "a person marks channels read for themselves"),
+				"body.channel_id":                  SetBy("channel_id"),
+				"body.prev_channel_id":             Omitted("Mattermost marks the channel left read too; the tool leaves no channel"),
+				"body.collapsed_threads_supported": Undocumented("", "api4's viewChannel reads it to mark threads read with the channel when true; Mattermost's client sends false, and threads keep their own unread state"),
+			},
+		},
+		{Operation: "GetUser", Params: map[string]Coverage{"user_id": Fixed("me", "the channel is marked read for the user")}},
+	}
 }

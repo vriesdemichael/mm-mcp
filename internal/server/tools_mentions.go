@@ -29,22 +29,6 @@ type listMentionsInput struct {
 }
 
 func listMentionsSpec() Spec {
-	coverage := func(teamID Coverage) map[string]Coverage {
-		params := map[string]Coverage{
-			"body.terms": Fixed("the person's mention keys",
-				"what mentions the person is in their notification settings, as Mattermost's own Recent Mentions searches for them"),
-			"body.is_or_search": Fixed("true", "a post mentions the person by any one of their mention keys"),
-			"body.page":         Fixed("0", "Mattermost's database search, which Team Edition uses, answers the first page with every match"),
-			"body.per_page":     Fixed("100", "the database search answers with its 100 most recent matches; the tool pages through them itself"),
-			"body.time_zone_offset": Fixed("the offset of the person's timezone on the day given",
-				"on:, before: and after: days are the person's own, as in Mattermost's search box; 0 when no day is given"),
-			"body.include_deleted_channels": Omitted("archived channels are left out, as they are out of get_user_channels"),
-		}
-		if teamID.How != "" {
-			params["team_id"] = teamID
-		}
-		return params
-	}
 	return shaping(toolSpec(
 		&mcp.Tool{
 			Name: "list_mentions",
@@ -55,15 +39,7 @@ func listMentionsSpec() Spec {
 				"Mattermost's database search skips \"all\" and \"here\" as too common to index, so @all and @here are found only on a server that searches with Elasticsearch.",
 			Annotations: readOnly("List mentions"),
 		},
-		uses([]Use{
-			{
-				Operation: "SearchPostsInAllTeams",
-				Params:    coverage(Coverage{}),
-				Releases: "11.7's router serves POST /api/v4/posts/search, as its route table shows; only its specification leaves it out. " +
-					"The tool calls it the same way on every supported release, and the live suite runs it on both.",
-			},
-			{Operation: "SearchPosts", Params: coverage(SetBy("team_id"))},
-		}, channelLookupUses("in", SetBy("team_id")), fromUses(), describeUses(true)),
+		listMentionsUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[listMentionsInput, Mentions] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input listMentionsInput) (*mcp.CallToolResult, Mentions, error) {
 				client, err := clientFor(ctx, request)
@@ -183,4 +159,33 @@ func listMentions(ctx context.Context, client *mattermost.Client, input listMent
 		return Mentions{}, err
 	}
 	return Mentions{Posts: clip(posts), MentionKeys: keys, capped: capped{len(all) >= searchReach}, pageInfo: pageInfo{NextCursor: next}}, nil
+}
+
+// listMentionsUses are the operations listMentions calls.
+func listMentionsUses() []Use {
+	coverage := func(teamID Coverage) map[string]Coverage {
+		params := map[string]Coverage{
+			"body.terms": Fixed("the person's mention keys",
+				"what mentions the person is in their notification settings, as Mattermost's own Recent Mentions searches for them"),
+			"body.is_or_search": Fixed("true", "a post mentions the person by any one of their mention keys"),
+			"body.page":         Fixed("0", "Mattermost's database search, which Team Edition uses, answers the first page with every match"),
+			"body.per_page":     Fixed("100", "the database search answers with its 100 most recent matches; the tool pages through them itself"),
+			"body.time_zone_offset": Fixed("the offset of the person's timezone on the day given",
+				"on:, before: and after: days are the person's own, as in Mattermost's search box; 0 when no day is given"),
+			"body.include_deleted_channels": Omitted("archived channels are left out, as they are out of get_user_channels"),
+		}
+		if teamID.How != "" {
+			params["team_id"] = teamID
+		}
+		return params
+	}
+	return uses([]Use{
+		{
+			Operation: "SearchPostsInAllTeams",
+			Params:    coverage(Coverage{}),
+			Releases: "11.7's router serves POST /api/v4/posts/search, as its route table shows; only its specification leaves it out. " +
+				"The tool calls it the same way on every supported release, and the live suite runs it on both.",
+		},
+		{Operation: "SearchPosts", Params: coverage(SetBy("team_id"))},
+	}, channelLookupUses("in", SetBy("team_id")), fromUses(), describeUses(true))
 }
