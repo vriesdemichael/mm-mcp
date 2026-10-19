@@ -3,12 +3,18 @@ name: Client Drift
 # The client tests against each client's newest release (ADR-036), daily, so a
 # client that changes what the views rely on shows here rather than on a pull
 # request. Dependabot does not follow these clients: when the newest releases
-# pass, this proposes moving the pins to them; when they fail, it says which
-# client changed in an issue.
+# pass, this proposes moving the pins to them; when they fail, it says so in an
+# issue. Releases it already proposed or reported are not tried again, so a
+# day without a new release does nothing.
 on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      again:
+        description: Try the newest releases even when they were proposed or reported already
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,6 +39,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GITHUB_TOKEN: ${{ github.token }}
       BRANCH: chore/client-pins
+      TITLE: "Client drift: the client tests fail on the clients' newest releases"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,29 +63,58 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Resolve the pinned tool versions
+      # The releases are tried once: not again while the open pull request
+      # moves the pins to them, or while the open issue last reported them.
+      - name: See whether these releases were tried
+        id: tried
         if: steps.bump.outputs.moved != ''
+        env:
+          AGAIN: ${{ inputs.again }}
+        run: |
+          pins=$(grep -E '^(GOOSE|VSCODE)_VERSION=' .github/tool-versions.env)
+          key=$(echo "$pins" | tr '\n' ' ' | sed 's/ $//')
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+          issue=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+          seen=""
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN \
+            && git fetch -q origin "$BRANCH" \
+            && [ "$(git show FETCH_HEAD:.github/tool-versions.env | grep -E '^(GOOSE|VSCODE)_VERSION=')" = "$pins" ]; then
+            seen="proposed in the open pull request from $BRANCH"
+          elif [ -n "$issue" ] \
+            && gh issue view "$issue" --json body,comments --jq '([.body] + [.comments[].body]) | last' | grep -qF "<!-- tried: $key -->"; then
+            seen="reported in #$issue"
+          fi
+          if [ -n "$seen" ] && [ "$AGAIN" != true ]; then
+            echo "These releases were $seen already: $key"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve the pinned tool versions
+        if: steps.tried.outputs.run == 'true'
         run: grep -E "^[A-Za-z_][A-Za-z0-9_]*=" .github/tool-versions.env >> "$GITHUB_ENV"
 
       - name: Setup Node
-        if: steps.bump.outputs.moved != ''
+        if: steps.tried.outputs.run == 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup Task
-        if: steps.bump.outputs.moved != ''
+        if: steps.tried.outputs.run == 'true'
         uses: ./.github/actions/setup-task
         with:
           version: ${{ env.GO_TASK_VERSION }}
 
       - name: Start Mattermost and bootstrap it
-        if: steps.bump.outputs.moved != ''
+        if: steps.tried.outputs.run == 'true'
         run: task stack:up STACK=latest
 
       - name: Run the client tests on the newest releases
         id: test
-        if: steps.bump.outputs.moved != ''
+        if: steps.tried.outputs.run == 'true'
         run: task test:clients STACK=latest
 
       - name: Keep what the clients showed
@@ -91,10 +127,13 @@ jobs:
           if-no-files-found: ignore
 
       # One branch and one pull request, moved along as the clients release.
+      # An issue about releases that failed before is closed: newer ones pass.
       - name: Propose the new pins
         if: steps.test.outcome == 'success'
         env:
           MOVED: ${{ steps.bump.outputs.moved }}
+          ISSUE: ${{ steps.tried.outputs.issue }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           summary=$(echo "$MOVED" | awk '{ printf "%s%s %s", sep, $1, $3; sep=", " }')
           git config user.name "github-actions[bot]"
@@ -109,21 +148,23 @@ jobs:
             gh pr create --base next --head "$BRANCH" --title "chore(deps): the client tests run $summary" --body "$body"
           fi
           gh workflow run ci.yml --ref "$BRANCH"
+          if [ -n "$ISSUE" ]; then
+            gh issue close "$ISSUE" --comment "The client tests pass on $summary, which the pull request from $BRANCH moves the pins to: $RUN"
+          fi
 
-      # One issue, commented on again while the newest releases fail, naming
-      # which versions were tried; the run's log names the test that failed.
+      # One issue, with the releases tried marked in what it last says, so the
+      # same releases are not reported twice; the run names the test that failed.
       - name: Say that the newest clients fail
         if: failure() && steps.test.outcome == 'failure'
         env:
           MOVED: ${{ steps.bump.outputs.moved }}
+          KEY: ${{ steps.tried.outputs.key }}
+          ISSUE: ${{ steps.tried.outputs.issue }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          title="Client drift: the client tests fail on the clients' newest releases"
           tried=$(echo "$MOVED" | awk '{ printf "- %s %s, pinned at %s\n", $1, $3, $2 }')
-          body=$(printf 'The client tests (ADR-036) fail on these releases, which the pins in .github/tool-versions.env do not run yet:\n\n%s\n\nA client changed something the views rely on, or the tests need to follow it. The run, with the test that failed, a screenshot and the logs: %s\n' "$tried" "$RUN")
-          number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
-          if [ -n "$number" ]; then
-            gh issue comment "$number" --body "$(printf 'Still failing on:\n\n%s\n\n%s\n' "$tried" "$RUN")"
+          if [ -n "$ISSUE" ]; then
+            gh issue comment "$ISSUE" --body "$(printf 'The client tests fail on these releases as well:\n\n%s\n\nThe run: %s\n\n<!-- tried: %s -->\n' "$tried" "$RUN" "$KEY")"
           else
-            gh issue create --title "$title" --body "$body"
+            gh issue create --title "$TITLE" --body "$(printf 'The client tests (ADR-036) fail on these releases, which the pins in .github/tool-versions.env do not run yet:\n\n%s\n\nA client changed something the views rely on, or the tests need to follow it. The run, with the test that failed, a screenshot and the logs: %s\n\n<!-- tried: %s -->\n' "$tried" "$RUN" "$KEY")"
           fi
