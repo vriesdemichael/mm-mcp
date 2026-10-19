@@ -162,12 +162,31 @@ tasks:
       - npx --yes "playwright@${PLAYWRIGHT_VERSION}" install chromium
       - go test -tags=views -count=1 -timeout 10m ./internal/views/
 
+  test:clients:
+    desc: The views in real clients, Goose and VS Code at the versions .github/tool-versions.env pins, driven with a scripted model against this checkout's instance, which it starts first (ADR-036). Needs Node, and a display, or Xvfb on Linux
+    deps: [stack:up]
+    env:
+      MM_LIVE_STACK: '{{.STACK}}'
+      MM_LIVE_RELEASE: '{{.RELEASE}}'
+    cmds:
+      - go run ./tools/clients install
+      - npm ci --prefix tests/live/clients --no-audit --no-fund
+      # Linux without a display draws the clients on a virtual one.
+      - |
+        if [ "{{OS}}" = linux ] && [ -z "${DISPLAY:-}" ]; then
+          xvfb-run -a -s "-screen 0 1600x1000x24" go test -tags=live,clients -count=1 -timeout 20m -run '^TestClients' ./tests/live/
+        else
+          go test -tags=live,clients -count=1 -timeout 20m -run '^TestClients' ./tests/live/
+        fi
+
   test:live:compile:
-    desc: Build the live suite without running it, so a break shows in seconds
+    desc: Build the live suite and its client tests without running them, so a break shows in seconds
     # It catches a live test that no longer compiles, not one whose assertion has
     # gone stale; only running it does that. -c builds the test binary and runs
     # nothing, not even TestMain, which would look for an instance.
-    cmd: go test -tags=live -c -o .tmp/live.test ./tests/live
+    cmds:
+      - go test -tags=live -c -o .tmp/live.test ./tests/live
+      - go test -tags=live,clients -c -o .tmp/live.test ./tests/live
 
   # ------------------------------------------------------------------ local stack
 
