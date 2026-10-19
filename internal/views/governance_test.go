@@ -66,7 +66,7 @@ var external = regexp.MustCompile(`(?i)https?://[a-z0-9-]+\.[a-z0-9.-]+`)
 
 func TestThePageIsOneSelfContainedDocument(t *testing.T) {
 	t.Parallel()
-	page := views.Page("mattermost://chat.example.com", true)
+	page := views.Page("mattermost://chat.example.com", views.Settings{Changes: true, Posts: true})
 	if !strings.HasPrefix(page, "<!doctype html>") {
 		t.Error("the page is not an HTML document")
 	}

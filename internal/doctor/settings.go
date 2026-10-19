@@ -50,6 +50,11 @@ func Settings(lookup func(string) string, urlGiven bool) []Check {
 			"posts and edits the model writes are marked as written with AI",
 			"posts and edits the model writes are not marked as written with AI"))
 	}
+	if raw := lookup(config.EnvPostFromViews); strings.TrimSpace(raw) != "" {
+		checks = append(checks, boolean(config.EnvPostFromViews, raw, true,
+			"a proposal's view offers Post, where the client renders it",
+			"a proposal's view offers no Post: the draft waits in Mattermost for the person to send"))
+	}
 	if raw := strings.TrimSpace(lookup(config.EnvDownloadDir)); raw != "" && !config.Placeholder(raw) {
 		checks = append(checks, downloadDir(raw))
 	}
@@ -202,6 +207,9 @@ func Loaded(cfg config.Config, where string) []Check {
 	}
 	if !cfg.MarkAIGenerated {
 		checks = append(checks, ok(config.EnvMarkAIGenerated, "posts and edits the model writes are not marked as written with AI"))
+	}
+	if cfg.AllowWrites && !cfg.PostFromViews {
+		checks = append(checks, ok(config.EnvPostFromViews, "a proposal's view offers no Post: the draft waits in Mattermost for the person to send"))
 	}
 	if cfg.CAFile != "" {
 		checks = append(checks, ok(config.EnvCAFile, "the certificate authorities in %s are trusted beside the system's", cfg.CAFile))

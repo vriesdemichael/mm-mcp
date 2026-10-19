@@ -55,15 +55,24 @@ disclosure only to what the agent asks to read.
   ask the person as well, which is a convenience where the application shows
   the question, not a safeguard ([Configuration](configuration.md)).
 - **Make a few changes only the person sees, never asked about:** following a
-  thread, saving a post, setting a reminder, saving a draft to their message
-  box, showing the typing indicator, and marking a channel read when asked
+  thread, saving a post, setting a reminder, proposing a post as their draft,
+  showing the typing indicator, and marking a channel read when asked
   ([Tools](tools.md)).
+- **Act on the person's press in a view**, where the AI application shows
+  mm-mcp's views: posting, changing or discarding a proposal, and marking a
+  channel read. The press goes through a tool only views call, which the
+  application keeps from its model; mm-mcp cannot tell a click from a script,
+  so `MM_MCP_POST_FROM_VIEWS=false` takes Post out of the view for an
+  application that cannot be trusted with that
+  ([ADR-035](adr/035-a-proposed-post-waits-as-the-persons-draft.md)).
 - **Save attachments to the local disk**, when it runs on the person's machine:
   to their download directory, never over an existing file, and marked as
   downloaded from the internet.
 
 By default, every post and edit is marked as written with AI, as Mattermost
-displays it. `MM_MCP_MARK_AI_GENERATED=false` turns the mark off.
+displays it, a post from a proposal's view included; what the person sends from
+Mattermost themselves is not. `MM_MCP_MARK_AI_GENERATED=false` turns the mark
+off.
 
 ## Prompt injection
 
@@ -81,8 +90,8 @@ message.
   information through other tools. An agent instructed by a message to read the
   person's direct messages can do so, and if the AI application also offers a
   tool that sends data out, such as one that fetches web pages or sends email,
-  mm-mcp cannot prevent its use. Changes only the person sees, such as saving
-  a draft or following a thread, are not checked.
+  mm-mcp cannot prevent its use. Changes only the person sees, such as
+  proposing a post as their draft or following a thread, are not checked.
 
 Further protection lies in the AI application: which other tools it offers in
 the same session, and which tool calls it asks the person to approve.

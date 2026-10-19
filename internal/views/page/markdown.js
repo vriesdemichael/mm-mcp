@@ -37,12 +37,14 @@ const MD_ENTITIES = {
 // renderMarkdown draws source. options.base is the address a link starting
 // with "/" is taken against, the Mattermost the message is on, and
 // options.team the address of its team, which a ~channel reference opens in.
+// options.targets shows beside each link where it leads, when its text says
+// otherwise, as a proposal's preview does.
 function renderMarkdown(source, options) {
   const lines = String(source || "")
     .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((line) => line.replace(/^\t+/, (tabs) => "    ".repeat(tabs.length)));
-  const context = { base: options.base, team: options.team, references: markdownReferences(lines) };
+  const context = { base: options.base, team: options.team, targets: Boolean(options.targets), references: markdownReferences(lines) };
   return el("div", { class: "markdown" }, markdownBlocks(lines, context, 0));
 }
 
@@ -563,19 +565,28 @@ function webAddress(url, base) {
 function markdownLink(children, url, title, context) {
   const target = webAddress(url, context.base);
   if (!target) return el("span", { class: "md-link-text" }, children);
-  return el("button", {
+  const link = el("button", {
     type: "button",
     class: "md-link",
     title: title ? title + " (" + target + ")" : target,
     onclick: () => openLink(target),
   }, children);
+  return context.targets ? el("span", { class: "md-link-shown" }, link, linkTarget(link.textContent, target)) : link;
+}
+
+// linkTarget shows where a link leads, when its text does not say it.
+function linkTarget(text, target) {
+  const said = text.trim();
+  if (said === target || said + "/" === target) return null;
+  return el("span", { class: "md-link-target" }, target);
 }
 
 function markdownImage(alt, url, context) {
   const target = webAddress(url, context.base);
   const label = [icon("image"), alt || t("markdown.image")];
   if (!target) return el("span", { class: "md-image", title: t("markdown.image_unseen") }, label);
-  return el("button", { type: "button", class: "md-link md-image", title: t("markdown.image_open", { url: target }), onclick: () => openLink(target) }, label);
+  const image = el("button", { type: "button", class: "md-link md-image", title: t("markdown.image_open", { url: target }), onclick: () => openLink(target) }, label);
+  return context.targets ? el("span", { class: "md-link-shown" }, image, linkTarget("", target)) : image;
 }
 
 // emphasis reads emphasis, strong emphasis or strikethrough opening at

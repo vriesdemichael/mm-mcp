@@ -8,6 +8,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 )
 
@@ -22,9 +23,9 @@ import (
 // A view calls two tools for what the person does in it: view_action for
 // what changes nothing, more of a thread, or a thread or a channel opened in
 // place, and view_change for what changes something, marking a channel read,
-// offered only where writes are allowed. Both are for views alone: listed
-// only to a request that declared views, and refusing a call whose request
-// declared none.
+// or posting, changing or discarding a proposal, offered only where writes are
+// allowed. Both are for views alone: listed only to a request that declared
+// views, and refusing a call whose request declared none.
 
 // defaultShownPage is how many posts of a thread a view shows at first: about
 // a screen, where read_post reads a hundred for the model.
@@ -49,7 +50,7 @@ const noViewsHere = "Nothing was shown: this MCP client renders no MCP Apps view
 var (
 	showKinds   = []any{"thread", "unreads"}
 	viewActions = []any{"more", "thread", "unread"}
-	viewChanges = []any{"mark_read"}
+	viewChanges = []any{"mark_read", "post", "edit", "discard", "replace"}
 )
 
 type showInput struct {
@@ -78,15 +79,22 @@ type viewActionInput struct {
 }
 
 type viewChangeInput struct {
-	Action    string `json:"action" jsonschema:"what the person did in the view; mark_read: marked a channel read"`
+	Action    string `json:"action" jsonschema:"what the person did in the view; mark_read: marked a channel read; post: posted a proposal; edit: changed its text; discard: discarded it; replace: put a proposal in place of their own draft"`
 	ChannelID string `json:"channel_id" ids:"only" jsonschema:"the channel, by its id"`
+	RootID    string `json:"root_id,omitempty" ids:"only" jsonschema:"for a draft that replies in a thread: the thread's first post, by its id"`
+	Shown     string `json:"shown,omitempty" jsonschema:"for a draft: the text the view shows it holding; the press acts only while the draft holds it"`
+	Message   string `json:"message,omitempty" jsonschema:"for edit, the draft's new text; for replace, the proposal that takes the place of the person's draft"`
+	Confirmed bool   `json:"confirmed,omitempty" jsonschema:"for post: the person confirmed, as Mattermost asks, that the message alerts the people a press without it was told it does"`
 }
 
 // show's and the view tools' arguments that set no parameter.
 var (
 	showShapes       = withShapes(readPostShapes, map[string]string{"kind": "chooses the view show draws, and what it reads for it; it sets no parameter"})
 	viewActionShapes = map[string]string{"action": "chooses what a view reads for the person: more of a thread, GetPostThread, or a channel from where they stopped, read_unread's operations"}
-	viewChangeShapes = map[string]string{"action": "names what the person did in a view; it sets no parameter"}
+	viewChangeShapes = map[string]string{
+		"action":    "names what the person did in a view; it sets no parameter",
+		"confirmed": "says the person confirmed alerting the people a post notifies, which Mattermost asks first; it sets no parameter",
+	}
 )
 
 // eitherOutput is the output schema of a tool that answers as one data tool
@@ -224,32 +232,52 @@ func viewActionSpec() Spec {
 }
 
 func viewChangeSpec() Spec {
-	spec := unasked(shaping(toolSpec(
-		&mcp.Tool{
-			Name:        "view_change",
-			Description: "Only mm-mcp's MCP Apps views call this, for what the person does in one that changes something. Never call it yourself.",
-			Annotations: personal("Change in a view"),
-			Meta:        appOnlyMeta(),
-		},
-		markReadUses(),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[viewChangeInput, Read] {
-			return func(ctx context.Context, request *mcp.CallToolRequest, input viewChangeInput) (*mcp.CallToolResult, Read, error) {
+	tool := &mcp.Tool{
+		Name:         "view_change",
+		Description:  "Only mm-mcp's MCP Apps views call this, for what the person does in one that changes something. Never call it yourself.",
+		Annotations:  pressed("Change in a view"),
+		Meta:         appOnlyMeta(),
+		OutputSchema: eitherOutput(reflect.TypeFor[Read](), reflect.TypeFor[DraftChange]()),
+	}
+	spec := unasked(shaping(configuredToolSpec(tool, uses(markReadUses(), pressUses()),
+		func(clientFor ClientFor, cfg config.Config) mcp.ToolHandlerFor[viewChangeInput, any] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input viewChangeInput) (*mcp.CallToolResult, any, error) {
 				if !rendersViews(request) {
-					return nil, Read{}, fmt.Errorf("view_change is called by mm-mcp's views alone, from a client that renders them")
+					return nil, nil, fmt.Errorf("view_change is called by mm-mcp's views alone, from a client that renders them")
 				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
-					return nil, Read{}, err
+					return nil, nil, err
 				}
-				// Marked read as mark_channel_read marks it, on the person's own
-				// press: what they have read is theirs alone.
-				out, err := markRead(ctx, client, channelInput{ChannelID: input.ChannelID})
-				return nil, out, err
+				if input.Action == "mark_read" {
+					// Marked read as mark_channel_read marks it, on the person's
+					// own press: what they have read is theirs alone.
+					out, err := markRead(ctx, client, channelInput{ChannelID: input.ChannelID})
+					if err != nil {
+						return nil, nil, err
+					}
+					return nil, out, nil
+				}
+				out, err := pressDraft(ctx, client, cfg, input)
+				if err != nil {
+					return nil, nil, err
+				}
+				return nil, out, nil
 			}
 		},
-	), viewChangeShapes), "what the person has read is theirs alone, and they pressed Mark read in the view")
+	), viewChangeShapes),
+		"every call is the person's own press in a view, which a call from a view never asks about (ADR-022, ADR-035): marking a channel read, or posting, changing or discarding what a proposal's view shows")
 	only(spec, "action", viewChanges)
 	return spec
+}
+
+// pressed is the annotation of the tool a view calls for what the person
+// does in it that changes something: it posts what they press Post on, and
+// replaces or deletes the draft they press Replace mine or Discard on.
+func pressed(title string) *mcp.ToolAnnotations {
+	annotations := writes(title, false)
+	annotations.DestructiveHint = ptr(true)
+	return annotations
 }
 
 // shown is what show tells the model it put in front of the person, without

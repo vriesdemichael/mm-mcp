@@ -139,6 +139,23 @@ func TestWritesAreAskedAboutOnlyWithElicitationOptedIn(t *testing.T) {
 	}
 }
 
+func TestAProposalIsPostedFromItsViewUnlessTurnedOff(t *testing.T) {
+	t.Parallel()
+	for value, posts := range map[string]bool{
+		"": true, "  ": true, "${user_config.post_from_views}": true, "true": true, "1": true,
+		"false": false, "0": false, "off": false,
+	} {
+		cfg, err := config.FromEnv(testsupport.Env(with(config.EnvPostFromViews, value)))
+		if err != nil || cfg.PostFromViews != posts {
+			t.Errorf("%q: got %v, %v; want PostFromViews %v", value, cfg, err, posts)
+		}
+	}
+	_, err := config.FromEnv(testsupport.Env(with(config.EnvPostFromViews, "sometimes")))
+	if err == nil || !strings.Contains(err.Error(), config.EnvPostFromViews) {
+		t.Fatalf("got %v", err)
+	}
+}
+
 // MM_MCP_ASK_BEFORE_WRITES sets nothing, so a server started with it stops and
 // names MM_MCP_ELICITATION_OPT_IN rather than leave it believed to decide.
 func TestAskBeforeWritesSetsNothingAndStopsTheServer(t *testing.T) {

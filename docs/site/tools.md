@@ -261,10 +261,11 @@ The tools that write are offered only once you allow writes, with
 
 `view_change`: Change in a view { #view_change .mm-yours }
 :   What you do in a view that changes something goes through this tool:
-    marking a channel read from the unread view, as `mark_channel_read` does.
-    Only a view calls it, on your press: an app that shows views keeps it from
-    your agent, and mm-mcp offers it only to an app that says it shows views,
-    once you allow writes.
+    marking a channel read from the unread view, as `mark_channel_read` does,
+    and posting, changing or discarding a proposal
+    ([`propose_post`](#propose_post)). Only a view calls it, on your press: an
+    app that shows views keeps it from your agent, and mm-mcp offers it only to
+    an app that says it shows views, once you allow writes.
 
 ### Open the attachments
 
@@ -439,6 +440,21 @@ states before it acts ([below](#how-a-write-is-checked)).
     yours, without the mark of a post written with AI. Whatever your app
     approves, it is a way to post only what you send yourself.
 
+    In an app that shows views, the proposal appears in the chat as it will be
+    posted, where it waits, and what its mentions do, with Post, Edit and
+    Discard ([Views](#views)). Each acts on the text the view shows, and only
+    while your draft still holds it: a draft you typed on in Mattermost is
+    drawn again as it is now. Post marks the post as written with AI, and asks
+    first, in Mattermost's own words, where Mattermost would ask before an
+    `@channel` or `@here` reaches more than five people. A link shows where it
+    leads, a character you cannot see or that turns the text's direction is
+    flagged, and the text as written is a click away. Where a draft of yours is
+    in the way, the view shows yours beside the proposal, or the proposal as a
+    revision of yours when your agent says so with `revises_draft`, and nothing
+    is written until you press Replace mine, or Apply, or Keep mine.
+    `MM_MCP_POST_FROM_VIEWS=false` takes Post out of the view
+    ([Configuration](configuration.md)).
+
 `list_drafts`: List drafts { #list_drafts }
 :   Your drafts, in channels and threads, with where each is, by link and
     address, and its `length`, which `delete_draft` states.
@@ -573,8 +589,9 @@ resources: a conversation has no end to read it whole to.
 ### Views
 
 In an AI app that shows MCP Apps views, [`show`](#show) puts a thread, or what
-is unread for you, in the chat as Mattermost lays it out, and every post your
-agent makes shows itself there as posted
+is unread for you, in the chat as Mattermost lays it out, every post your
+agent makes shows itself there as posted, and a post it proposes with
+[`propose_post`](#propose_post) waits there for you to post, change or discard
 ([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)). The view is a
 page in mm-mcp itself, which reaches no network: the app reads what it shows
 from mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
@@ -734,9 +751,10 @@ A thirteenth reply arriving before the model calls again with `deletes: 13`
 gets the same refusal, with 14.
 
 `propose_post` takes nothing away. A draft of yours where the proposal would go,
-one you wrote or typed in, is left as it is, and the call is refused with what
-it holds. For example, proposing a reply in ~Town Square, where you started one
-of your own:
+one you wrote or typed in, is left as it is. In an app that shows views, the
+view asks you which to keep; in one that does not, the call is refused with what
+the draft holds. For example, proposing a reply in ~Town Square, where you
+started one of your own:
 
 !!! warning "Refused"
 

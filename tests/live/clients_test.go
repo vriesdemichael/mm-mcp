@@ -428,6 +428,41 @@ func TestClientsShowWhatIsUnreadAndMarkAChannelReadFromTheView(t *testing.T) {
 	}
 }
 
+// A proposal is shown in every client as it will be posted, and Post in the
+// view posts it, through the tool only views call that changes something,
+// marked as written with AI; the draft goes with it (ADR-035). VS Code asks
+// the person before propose_post, a tool that writes, and not before the
+// view's press, which is theirs.
+func TestClientsProposeAPostAndThePersonPostsItFromTheView(t *testing.T) {
+	for _, client := range testclients.Clients {
+		t.Run(client, func(t *testing.T) {
+			admin := admin(t)
+			user, other := seedUser(t, admin), seedUser(t, admin)
+			team := seedTeam(t, admin, user, other)
+			channel := seedChannel(t, admin, team, user, other)
+			message := "The " + word(t) + " notes are ready."
+
+			run := startClient(t, client, personalAccessToken(t, admin, user.Id).Token, clientOptions{writes: true})
+			run.drive("ready", nil)
+			run.send(script("propose_post", map[string]any{"channel_id": channel.Id, "message": message}), map[string]any{"approve": client == testclients.VSCode})
+			shown := run.drive("view", map[string]any{"text": message})
+			mustContain(t, "the proposal", fmt.Sprint(shown["text"]), "Proposed post", channel.DisplayName, "Nothing is sent until you post it")
+			if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
+				t.Fatalf("proposing posted %d messages", len(posts))
+			}
+
+			run.drive("press", map[string]any{"text": message, "button": "^Post$", "until": "Posted"})
+			posts := messagesIn(t, admin, channel.Id)
+			if len(posts) != 1 || posts[0].Message != message || posts[0].GetProp("ai_generated_by") != user.Id {
+				t.Fatalf("Post in the view left %d posts in the channel; want the proposal, marked as written with AI", len(posts))
+			}
+			if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "" {
+				t.Errorf("the posted draft is still there: %q", got)
+			}
+		})
+	}
+}
+
 // A post shows itself as posted in every client: create_post's view draws
 // the post it answers with, under where it went. VS Code asks the person
 // before a tool that writes, showing its arguments, the channel's address and
