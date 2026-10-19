@@ -23,7 +23,9 @@ function activate(context) {
       async provideLanguageModelChatInformation() {
         return [{
           id: "scripted-model", name: "Scripted model", family: "scripted", version: "1",
-          maxInputTokens: 100000, maxOutputTokens: 4000, capabilities: { toolCalling: true },
+          // Room for every tool VS Code and a writing server offer, so VS Code
+          // offers each rather than groups the model must open first.
+          maxInputTokens: 1000000, maxOutputTokens: 4000, capabilities: { toolCalling: 1000 },
           isUserSelectable: true, tooltip: "The client tests' scripted model", detail: "scripted",
         }];
       },
@@ -44,8 +46,9 @@ function activate(context) {
         }
         if (message.content) progress.report(new vscode.LanguageModelTextPart(message.content));
       },
+      // About four characters a token, as models count.
       async provideTokenCount(model, value) {
-        return typeof value === "string" ? value.length : 100;
+        return typeof value === "string" ? Math.ceil(value.length / 4) : 100;
       },
     }),
   );

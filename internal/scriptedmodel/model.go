@@ -8,8 +8,12 @@
 //	SCRIPT <tool> <json arguments>
 //
 // is answered with a call of the offered tool <tool>, with those arguments,
-// whatever the client puts before its name (Bare). A tool's result is answered
-// with the text Done. A request that offers no tool, as when a client asks
+// whatever the client puts before its name (Bare). A client that offers a
+// large server's tools in groups, as VS Code does, offers a tool for each
+// group whose description lists the tools in it: the model opens the group
+// that holds the tool first, and calls the tool once it is offered, as a model
+// that reads the description would. A tool's result is answered with the text
+// Done. A request that offers no tool, as when a client asks
 // its model to name the conversation, is answered with Untitled. Anything
 // else is answered with the script itself.
 //
@@ -69,7 +73,10 @@ type Request struct {
 type Model struct {
 	mu       sync.Mutex
 	requests []Request
-	ids      atomic.Int64
+	// opened is the group the model last opened, while it waits to call the
+	// tool it opened the group for.
+	opened string
+	ids    atomic.Int64
 }
 
 // Requests is every request so far, oldest first.
@@ -85,9 +92,14 @@ type message struct {
 }
 
 type tool struct {
-	Function struct {
-		Name string `json:"name"`
-	} `json:"function"`
+	Function offeredTool `json:"function"`
+}
+
+// offeredTool is a tool a client offers its model: its name, and what its
+// description says.
+type offeredTool struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type chatRequest struct {
@@ -122,14 +134,19 @@ func (m *Model) complete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	offered := make([]string, len(request.Tools))
+	offered := make([]offeredTool, len(request.Tools))
+	names := make([]string, len(request.Tools))
 	for i, t := range request.Tools {
-		offered[i] = t.Function.Name
+		offered[i], names[i] = t.Function, t.Function.Name
 	}
 	said := lastSaid(request.Messages)
-	name, arguments, text := answer(request.Messages, offered)
 	m.mu.Lock()
-	m.requests = append(m.requests, Request{Tools: offered, Said: said, Answer: name})
+	name, arguments, text := answer(request.Messages, offered, m.opened)
+	m.opened = ""
+	if strings.HasPrefix(name, groupPrefix) {
+		m.opened = name
+	}
+	m.requests = append(m.requests, Request{Tools: names, Said: said, Answer: name})
 	m.mu.Unlock()
 	id := fmt.Sprintf("chatcmpl-%d", m.ids.Add(1))
 	if request.Stream {
@@ -139,14 +156,19 @@ func (m *Model) complete(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, m.completion(id, name, arguments, text))
 }
 
+// groupPrefix starts the name of a tool that opens a group of tools.
+const groupPrefix = "activate_"
+
 // answer is the script: a tool's result is answered with Done, and "SCRIPT
 // <tool> <json>" in the last thing the person said with a call of the offered
-// tool <tool>. name is empty when the answer is text.
-func answer(messages []message, offered []string) (name, arguments, text string) {
+// tool <tool>, or of the group that holds it. After opened, a group's result
+// is answered with the call the group was opened for. name is empty when the
+// answer is text.
+func answer(messages []message, offered []offeredTool, opened string) (name, arguments, text string) {
 	if len(messages) == 0 {
 		return "", "", "There is nothing to answer."
 	}
-	if messages[len(messages)-1].Role == "tool" {
+	if messages[len(messages)-1].Role == "tool" && opened == "" {
 		return "", "", Done
 	}
 	if len(offered) == 0 {
@@ -172,12 +194,21 @@ func answer(messages []message, offered []string) (name, arguments, text string)
 		}
 		arguments = string(value)
 	}
-	for _, name := range offered {
-		if Bare(name) == wanted {
-			return name, arguments, ""
+	for _, tool := range offered {
+		if Bare(tool.Name) == wanted {
+			return tool.Name, arguments, ""
 		}
 	}
-	return "", "", fmt.Sprintf("no tool offered is %s; offered: %s", wanted, strings.Join(offered, ", "))
+	for _, tool := range offered {
+		if strings.HasPrefix(tool.Name, groupPrefix) && tool.Name != opened && holds(tool.Description, wanted) {
+			return tool.Name, "{}", ""
+		}
+	}
+	names := make([]string, len(offered))
+	for i, tool := range offered {
+		names[i] = tool.Name
+	}
+	return "", "", fmt.Sprintf("no tool offered is %s; offered: %s", wanted, strings.Join(names, ", "))
 }
 
 // lastSaid is the last message the person sent, as text.
@@ -267,4 +298,19 @@ func (m *Model) stream(w http.ResponseWriter, id, name, arguments, text string) 
 func writeJSON(w http.ResponseWriter, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(value)
+}
+
+// holds reports whether a group's description lists the tool wanted, as
+// VS Code's does: "Contains the tools: a, b, c".
+func holds(description, wanted string) bool {
+	_, listed, ok := strings.Cut(description, "Contains the tools: ")
+	if !ok {
+		return false
+	}
+	for _, part := range strings.Split(listed, ",") {
+		if fields := strings.Fields(part); len(fields) > 0 && Bare(strings.TrimRight(fields[0], ".")) == wanted {
+			return true
+		}
+	}
+	return false
 }
