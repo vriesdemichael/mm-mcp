@@ -82,7 +82,7 @@ func TestDeleteDraftStopsWhenTheDraftChangesWhileThePersonIsAsked(t *testing.T) 
 	team := seedTeam(t, admin, user)
 	channel := seedChannel(t, admin, team, user)
 	writer, _ := writingSession(t, admin, user, accept)
-	saveDraft(t, writer, map[string]any{"channel_id": channel.Id, "message": "half a thought"})
+	proposePost(t, writer, map[string]any{"channel_id": channel.Id, "message": "half a thought"})
 	own := clientAs(t, user)
 	questions := &asked{}
 	session := mcpWriting(t, personalAccessToken(t, admin, user.Id).Token, func(question *mcp.ElicitParams) *mcp.ElicitResult {
@@ -104,27 +104,38 @@ func TestDeleteDraftStopsWhenTheDraftChangesWhileThePersonIsAsked(t *testing.T) 
 	}
 }
 
-func TestSaveDraftLeavesADraftWithFilesAsItIs(t *testing.T) {
+func TestProposePostLeavesADraftWithFilesAsItIs(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user := seedUser(t, admin)
 	team := seedTeam(t, admin, user)
-	channel := seedChannel(t, admin, team, user)
+	channel, attached := seedChannel(t, admin, team, user), seedChannel(t, admin, team, user)
 	own := clientAs(t, user)
-	uploaded, _, err := own.UploadFile(t.Context(), []byte("x"), channel.Id, "plan.txt")
-	check(t, err)
-	_, _, err = own.UpsertDraft(t.Context(), &model.Draft{UserId: user.Id, ChannelId: channel.Id, Message: "see plan", FileIds: []string{uploaded.FileInfos[0].Id}})
+	upload := func(channelID string) string {
+		uploaded, _, err := own.UploadFile(t.Context(), []byte("x"), channelID, "plan.txt")
+		check(t, err)
+		return uploaded.FileInfos[0].Id
+	}
+	_, _, err := own.UpsertDraft(t.Context(), &model.Draft{UserId: user.Id, ChannelId: channel.Id, Message: "see plan", FileIds: []string{upload(channel.Id)}})
 	check(t, err)
 	session, _ := writingSession(t, admin, user, accept)
 
-	saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "see plan"})
-	if result := saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "something else"}); !result.IsError || !strings.Contains(errorText(result), "files") {
-		t.Errorf("a different draft over one with files: %s", errorText(result))
-	}
+	// The same text is left as it is, files and all.
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "see plan"})
+	refusedSaying(t, session, "propose_post", map[string]any{"channel_id": channel.Id, "message": "something else"}, "“see plan”, with 1 file", "delete_draft")
+
+	// A proposal the person attached a file to is theirs, its text unchanged.
+	proposePost(t, session, map[string]any{"channel_id": attached.Id, "message": "the plan, attached"})
+	proposal := draftIn(t, user, team.Id, attached.Id, "")
+	proposal.FileIds = []string{upload(attached.Id)}
+	_, _, err = own.UpsertDraft(t.Context(), proposal)
+	check(t, err)
+	refusedSaying(t, session, "propose_post", map[string]any{"channel_id": attached.Id, "message": "the plan, rewritten"}, "with 1 file")
+
 	drafts, _, err := own.GetDrafts(t.Context(), user.Id, team.Id)
 	check(t, err)
-	if len(drafts) != 1 || len(drafts[0].FileIds) != 1 {
-		t.Fatalf("the draft is %+v; want it with its file", drafts)
+	if len(drafts) != 2 || len(drafts[0].FileIds) != 1 || len(drafts[1].FileIds) != 1 {
+		t.Fatalf("the drafts are %+v; want both with their file", drafts)
 	}
 }
 

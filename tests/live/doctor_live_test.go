@@ -190,7 +190,7 @@ func TestDiagnoseSaysAClientThatCannotAskCannotWrite(t *testing.T) {
 
 	result := diagnosed(t, mcpWriting(t, token, nil), token, true)
 
-	if got := checkNamed(t, result, "confirmations"); got.Status != doctor.Failed || !strings.Contains(got.Next, "save_draft") {
+	if got := checkNamed(t, result, "confirmations"); got.Status != doctor.Failed || !strings.Contains(got.Next, "propose_post") {
 		t.Errorf("confirmations: %+v", got)
 	}
 	if got := checkNamed(t, result, "test question"); got.Status != doctor.Skipped {

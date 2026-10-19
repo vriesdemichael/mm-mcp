@@ -34,7 +34,7 @@ release's own route table and specification
 | `CreatePost` | `create_post`, `dm`, `group_message` | No `silent` parameter, which the tool never sends. Nothing differs in use. |
 | `DeleteDraft` | `delete_draft` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
 | `DeleteDraftForThread` | `delete_draft` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
-| `GetDrafts` | `save_draft`, `list_drafts`, `delete_draft` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
-| `UpsertDraft` | `save_draft` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
+| `GetDrafts` | `propose_post`, `list_drafts`, `delete_draft` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
+| `UpsertDraft` | `propose_post` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
 | `GetTeamByName` | `get_team_info` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
 | `SearchPostsInAllTeams` | `search_posts` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |

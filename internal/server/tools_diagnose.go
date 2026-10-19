@@ -128,7 +128,7 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 			Name: name, Status: doctor.Failed,
 			Detail: fmt.Sprintf("%s is true, but this client does not declare form elicitation, so it cannot show mm-mcp's question: "+
 				"every post, reply, edit, deletion, reaction, pin and channel change is refused before anything is written", config.EnvElicitationOptIn),
-			Next: "Tell the person. They can use an MCP client that supports elicitation, or have save_draft put the message in their " +
+			Next: "Tell the person. They can use an MCP client that supports elicitation, or have propose_post put the message in their " +
 				"Mattermost message box for them to send." + letTheClientAsk,
 		})
 	case !asked:
@@ -237,13 +237,13 @@ func answerToTestQuestion(answer any, state string) *doctor.Check {
 		return &doctor.Check{
 			Name: name, Status: doctor.Warning,
 			Detail: fmt.Sprintf("the question was accepted after %s without the box ticked, as a client that accepts questions on its own does; a write is refused on such an answer", took),
-			Next:   "Ask the person whether they saw the question. If not, their client answers mm-mcp's questions itself, and save_draft is the way to post: the message waits in their Mattermost message box for them to send." + letTheClientAsk,
+			Next:   "Ask the person whether they saw the question. If not, their client answers mm-mcp's questions itself, and propose_post is the way to post: the message waits in their Mattermost message box for them to send." + letTheClientAsk,
 		}
 	case fast:
 		return &doctor.Check{
 			Name: name, Status: doctor.Failed,
 			Detail: fmt.Sprintf("the question was answered with %s after %s, too soon for a person to have read it: the client most likely answered it itself, without showing it, and answers every question before a write the same way", result.Action, took),
-			Next:   "Tell the person their MCP client does not show mm-mcp's questions, so every write is refused. save_draft puts a message in their Mattermost message box for them to send themselves." + letTheClientAsk,
+			Next:   "Tell the person their MCP client does not show mm-mcp's questions, so every write is refused. propose_post puts a message in their Mattermost message box for them to send themselves." + letTheClientAsk,
 		}
 	case result.Action == "cancel":
 		return &doctor.Check{Name: name, Status: doctor.Warning, Detail: fmt.Sprintf("the question was closed without an answer after %s", took), Next: "Ask the person whether they saw it."}

@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"slices"
 	"strings"
@@ -13,10 +15,11 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/mattermost"
 )
 
-// Drafts: the model writes into the person's own message box, and the person
-// sends. Saving one is the user's alone and never asks; deleting one loses
-// words the person may have written, so it states how many and asks where
-// mm-mcp is set to (ADR-031, ADR-033).
+// Drafts: the model proposes a post as the person's draft, in their own
+// message box, and the person sends it (ADR-035). A proposal is the user's
+// alone and never asks, and never replaces a draft the person wrote; deleting
+// one loses words the person may have written, so it states how many and asks
+// where mm-mcp is set to (ADR-031, ADR-033).
 
 // Draft is a draft in the user's message box.
 type Draft struct {
@@ -26,6 +29,7 @@ type Draft struct {
 	Team       string   `json:"team,omitempty"`
 	RootID     string   `json:"root_id,omitempty" jsonschema:"the thread the draft replies in, if it does"`
 	Address    string   `json:"address,omitempty" jsonschema:"where the draft waits, as delete_draft takes it: its channel's address, or for a reply its thread's post's"`
+	URL        string   `json:"url,omitempty" jsonschema:"where the draft waits, as a link that opens it in Mattermost: its channel, or for a reply its thread"`
 	Message    string   `json:"message"`
 	Length     int      `json:"length" jsonschema:"how many characters the draft holds, as Mattermost counts a message's length: what delete_draft states as discards"`
 	UpdatedAt  string   `json:"updated_at,omitempty"`
@@ -83,9 +87,15 @@ func existingDraft(ctx context.Context, client *mattermost.Client, userID, teamI
 }
 
 // onlyText reports whether a draft is text alone, with no files, priority or
-// properties a person set in Mattermost, which saving over it would drop.
+// properties a person set in Mattermost: a proposal they added any of these
+// to is theirs. The mark a proposal carries is mm-mcp's own.
 func onlyText(draft *model.Draft) bool {
-	return len(draft.FileIds) == 0 && draft.Priority == nil && len(draft.GetProps()) == 0
+	for key := range draft.GetProps() {
+		if key != proposalKey {
+			return false
+		}
+	}
+	return len(draft.FileIds) == 0 && draft.Priority == nil
 }
 
 // draftsSync refuses a draft the person would never see: one on a server that
@@ -104,25 +114,48 @@ func draftsSync(ctx context.Context, client *mattermost.Client, userID string) e
 		return err
 	}
 	if preference != nil && preference.Value == "false" {
-		return fmt.Errorf("the person turned off syncing their drafts in Mattermost's settings, so a draft saved here would not reach their clients; give them the text instead")
+		return fmt.Errorf("the person turned off syncing their drafts in Mattermost's settings, so a draft saved here would not reach their clients; give them the text instead, or post with create_post")
 	}
 	return nil
 }
 
-type saveDraftInput struct {
-	draftTarget
-	Message string `json:"message" jsonschema:"the draft's text, in Mattermost Markdown"`
+// proposalKey is the property a draft mm-mcp proposed carries: a mark of the
+// text it proposed, so the draft is known for mm-mcp's own until the person
+// changes it, and then for theirs (ADR-035). Mattermost's own client sends a
+// draft's properties with the post, where nothing shows this one. A proposal
+// carries no AI marker: what the person sends from Mattermost is theirs
+// (ADR-031).
+const proposalKey = "mm_mcp_proposal"
+
+// proposalMark is the mark of a proposed text.
+func proposalMark(message string) string {
+	sum := sha256.Sum256([]byte(strings.TrimSpace(message)))
+	return hex.EncodeToString(sum[:8])
 }
 
-func saveDraftSpec() Spec {
+// proposed reports whether a draft is mm-mcp's own proposal, unchanged.
+func proposed(draft *model.Draft) bool {
+	mark, _ := draft.GetProps()[proposalKey].(string)
+	return mark != "" && mark == proposalMark(draft.Message)
+}
+
+type proposePostInput struct {
+	draftTarget
+	Message string `json:"message" jsonschema:"the post to propose, in Mattermost Markdown, as it would be sent"`
+}
+
+func proposePostSpec() Spec {
 	return unasked(toolSpec(
 		&mcp.Tool{
-			Name: "save_draft",
-			Description: "Put a message in the user's message box in Mattermost, in a channel or a thread, as a draft for them to read, " +
-				"change and send themselves. Nothing is sent, and only the user sees it. A different draft already there is never " +
-				"replaced: the tool fails with what is there. The message is checked as a post's is. Prefer it to create_post when " +
-				"the person wants the last word before anything goes out.",
-			Annotations: personal("Save draft"),
+			Name: "propose_post",
+			Description: "Propose a post for the person to send themselves: the message waits as their draft in a channel or a thread, " +
+				"in their message box in every Mattermost client, for them to read, change and send. Nothing is sent, and only the " +
+				"person sees it. Use it whenever they should have the last word on the text, and where their MCP client does not let " +
+				"a post through. A direct or group message is proposed in by its channel, as get_user_channels gives it; one that " +
+				"does not exist yet is not started here, since starting one shows it to the other people at once. mm-mcp's own " +
+				"proposal there, unchanged, is replaced; a draft of the person's never is. The message is checked as a post's is. " +
+				"It answers with the draft and the link where it waits.",
+			Annotations: personal("Propose post"),
 		},
 		uses([]Use{
 			{
@@ -131,10 +164,11 @@ func saveDraftSpec() Spec {
 					"body.channel_id": SetBy("channel_id"),
 					"body.root_id":    SetBy("root_id"),
 					"body.message":    SetBy("message"),
-					"body.file_ids":   Omitted("a draft carries text; the person attaches files in Mattermost"),
+					"body.file_ids":   Omitted("a proposal carries text; the person attaches files in Mattermost"),
 					"body.priority":   Omitted("a message's priority is the person's to set when they send it"),
-					"body.props":      Omitted("props carry integrations' attachments and Mattermost's own settings; a draft is text"),
-					"body.type":       Omitted("a draft is an ordinary message, which is the default"),
+					"body.props": Fixed(`{"mm_mcp_proposal": a mark of the message}`,
+						"marks the draft as mm-mcp's proposal, so it is replaced only while unchanged; no AI marker, since what the person sends from Mattermost is theirs"),
+					"body.type": Omitted("a draft is an ordinary message, which is the default"),
 				},
 				Releases: "11.7 serves POST /api/v4/drafts, as its router shows, though its specification leaves it out; nothing differs in use",
 			},
@@ -150,8 +184,8 @@ func saveDraftSpec() Spec {
 				Params:    map[string]Coverage{"channel_id": Fixed("the draft's channel", "the notes say how many people @channel, @all and @here would reach")},
 			},
 		}, draftsUses(), messageUses(false), describeUses(true)),
-		func(clientFor ClientFor) mcp.ToolHandlerFor[saveDraftInput, Draft] {
-			return func(ctx context.Context, request *mcp.CallToolRequest, input saveDraftInput) (*mcp.CallToolResult, Draft, error) {
+		func(clientFor ClientFor) mcp.ToolHandlerFor[proposePostInput, Draft] {
+			return func(ctx context.Context, request *mcp.CallToolRequest, input proposePostInput) (*mcp.CallToolResult, Draft, error) {
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, Draft{}, err
@@ -189,23 +223,32 @@ func saveDraftSpec() Spec {
 				if err != nil {
 					return nil, Draft{}, err
 				}
-				// A draft is the person's unsent words, and maybe files; replacing
-				// one would lose them. The same text is there already, and is left
+				// A draft of the person's is their unsent words, and maybe files,
+				// which a proposal never replaces; deleting it is delete_draft's,
+				// which states what goes. mm-mcp's own proposal, unchanged, is
+				// mm-mcp's to replace. The same text is there already, and is left
 				// as it is rather than written again, which would drop its files.
 				there, err := existingDraft(ctx, client, self.Id, teamID, channelID, rootID)
 				if err != nil {
 					return nil, Draft{}, err
 				}
-				switch {
-				case there != nil && there.Message == input.Message:
-				case there != nil && !onlyText(there):
-					return nil, Draft{}, fmt.Errorf("there is a draft there already, with files or settings the person added, which was left as it is: “%s”. Ask the person what to do with it", excerpt(there.Message))
-				case there != nil:
-					return nil, Draft{}, fmt.Errorf("there is a draft there already, which was left as it is: “%s”. Ask the person what to do with it", excerpt(there.Message))
-				}
 				saved := there
+				switch {
+				case there == nil, there.Message != input.Message && proposed(there) && onlyText(there):
+					saved = nil
+				case there.Message == input.Message:
+				default:
+					held := ""
+					if files := int64(len(there.FileIds)); files > 0 {
+						held = fmt.Sprintf(", with %d %s", files, plural(files, "file", "files"))
+					}
+					return nil, Draft{}, fmt.Errorf("propose_post did not run: the person has a draft there, which was left as it is: “%s”%s. "+
+						"If they asked you to change it, delete it with delete_draft, stating discards: %d, and propose again. If not, "+
+						"they can finish or clear it in Mattermost, or post with create_post", excerpt(there.Message), held, utf8.RuneCountInString(there.Message))
+				}
 				if saved == nil {
-					if saved, err = client.Draft(ctx, self.Id, channelID, rootID, input.Message); err != nil {
+					props := model.StringInterface{proposalKey: proposalMark(input.Message)}
+					if saved, err = client.Draft(ctx, self.Id, channelID, rootID, input.Message, props); err != nil {
 						return nil, Draft{}, err
 					}
 				}
@@ -217,7 +260,7 @@ func saveDraftSpec() Spec {
 				return nil, drafts[0], nil
 			}
 		},
-	), "only the user sees a draft, nothing is sent until they send it, and a draft already there is never replaced")
+	), "what it writes is the person's own draft, which only they see and only they send, and it never replaces one they wrote")
 }
 
 // describeDrafts is drafts with their channels and teams named, as posts'
@@ -225,7 +268,7 @@ func saveDraftSpec() Spec {
 func describeDrafts(ctx context.Context, client *mattermost.Client, drafts []*model.Draft) ([]Draft, error) {
 	posts := make([]*model.Post, 0, len(drafts))
 	for _, draft := range drafts {
-		posts = append(posts, &model.Post{ChannelId: draft.ChannelId, UserId: draft.UserId})
+		posts = append(posts, &model.Post{Id: draft.RootId, ChannelId: draft.ChannelId, UserId: draft.UserId})
 	}
 	described, zone, err := describe(ctx, client, posts)
 	if err != nil {
@@ -237,7 +280,11 @@ func describeDrafts(ctx context.Context, client *mattermost.Client, drafts []*mo
 			ChannelID: draft.ChannelId, Channel: described[i].Channel, ChannelURL: described[i].ChannelURL, Team: described[i].Team,
 			RootID: draft.RootId, Message: draft.Message, Length: utf8.RuneCountInString(draft.Message), UpdatedAt: timestamp(draft.UpdateAt, zone),
 			Address: draftAddress(asAddress(described[i].ChannelURL), draft.RootId),
+			URL:     described[i].ChannelURL,
 		})
+		if draft.RootId != "" {
+			out[i].URL = described[i].URL
+		}
 	}
 	return out, nil
 }
