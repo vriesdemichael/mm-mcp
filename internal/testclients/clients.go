@@ -159,6 +159,23 @@ type Installer struct {
 	// GitHubToken, when set, raises GitHub's limit on API reads, which CI's
 	// shared addresses exhaust.
 	GitHubToken string
+	// githubAPI and vscodeUpdate are where the publishers answer, when not
+	// their own addresses: a test's server.
+	githubAPI, vscodeUpdate string
+}
+
+func (i Installer) github() string {
+	if i.githubAPI != "" {
+		return i.githubAPI
+	}
+	return "https://api.github.com"
+}
+
+func (i Installer) vscode() string {
+	if i.vscodeUpdate != "" {
+		return i.vscodeUpdate
+	}
+	return "https://update.code.visualstudio.com"
 }
 
 // Source is where a client's version for a platform is published.
@@ -197,7 +214,7 @@ func (i Installer) gooseSource(ctx context.Context, version string, platform Pla
 			Digest string `json:"digest"`
 		} `json:"assets"`
 	}
-	if err := i.getJSON(ctx, "https://api.github.com/repos/block/goose/releases/tags/v"+version, &release); err != nil {
+	if err := i.getJSON(ctx, i.github()+"/repos/block/goose/releases/tags/v"+version, &release); err != nil {
 		return Download{}, fmt.Errorf("reading Goose %s's release: %w", version, err)
 	}
 	for _, a := range release.Assets {
@@ -231,7 +248,7 @@ func (i Installer) vscodeSource(ctx context.Context, version string, platform Pl
 		URL    string `json:"url"`
 		SHA256 string `json:"sha256hash"`
 	}
-	if err := i.getJSON(ctx, fmt.Sprintf("https://update.code.visualstudio.com/api/versions/%s/%s/stable", version, target.name), &build); err != nil {
+	if err := i.getJSON(ctx, fmt.Sprintf("%s/api/versions/%s/%s/stable", i.vscode(), version, target.name), &build); err != nil {
 		return Download{}, fmt.Errorf("reading VS Code %s for %s: %w", version, target.name, err)
 	}
 	if build.URL == "" || build.SHA256 == "" {
@@ -248,13 +265,13 @@ func (i Installer) Newest(ctx context.Context, client string) (string, error) {
 		var release struct {
 			Tag string `json:"tag_name"`
 		}
-		if err := i.getJSON(ctx, "https://api.github.com/repos/block/goose/releases/latest", &release); err != nil {
+		if err := i.getJSON(ctx, i.github()+"/repos/block/goose/releases/latest", &release); err != nil {
 			return "", err
 		}
 		return strings.TrimPrefix(release.Tag, "v"), nil
 	case VSCode:
 		var versions []string
-		if err := i.getJSON(ctx, "https://update.code.visualstudio.com/api/releases/stable", &versions); err != nil {
+		if err := i.getJSON(ctx, i.vscode()+"/api/releases/stable", &versions); err != nil {
 			return "", err
 		}
 		if len(versions) == 0 {
@@ -272,7 +289,7 @@ func (i Installer) get(ctx context.Context, url string) (*http.Response, error) 
 	if err != nil {
 		return nil, err
 	}
-	if i.GitHubToken != "" && strings.HasPrefix(url, "https://api.github.com/") {
+	if i.GitHubToken != "" && strings.HasPrefix(url, i.github()+"/") {
 		request.Header.Set("Authorization", "Bearer "+i.GitHubToken)
 	}
 	response, err := httpClient.Do(request)
