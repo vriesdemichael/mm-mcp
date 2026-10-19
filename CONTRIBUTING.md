@@ -146,6 +146,7 @@ git add --renormalize .
 | Unit Tests | formatting, line endings, the decision records, the vendored specifications, golangci-lint, govulncheck, the unit suite with coverage and under the race detector, and that the live suite compiles |
 | Unit Tests (windows-latest), Unit Tests (macos-latest) | the unit suite on Windows and macOS |
 | View Tests | the MCP Apps view page in Playwright's Chromium, inside the official MCP Apps bridge (`task test:views`) |
+| Client Tests | the views in Goose and VS Code at their pinned versions, with a scripted model, against the newest release (`task test:clients`) |
 | Live Tests | starts Mattermost and runs the live suite, on the newest release and the Extended Support Release |
 | Coverage Gates | global and patch coverage over the unit and live profiles merged |
 | Codecov | publishes coverage history and the README badge |
@@ -156,6 +157,20 @@ git add --renormalize .
 A weekly workflow also runs the live suite against every Mattermost release
 between the two ends. Live tests run on pull requests from forks; if they fail
 on yours, the failure is real.
+
+## The views in real clients
+
+`task test:clients` installs Goose's desktop app and VS Code at the versions
+`.github/tool-versions.env` pins, starts Mattermost, and runs the client tests
+(ADR-036). Each client draws on your screen while it runs; on Linux without a
+display the task uses Xvfb. A failed test leaves a screenshot and the logs in
+`.tmp/clients-artifacts`.
+
+To watch a client do what a test does, serve the scripted model with
+`go run ./tools/scriptedmodel`, point the client's OpenAI-compatible provider
+at `http://127.0.0.1:18080/v1` with the model `scripted-model`, add mm-mcp as
+a server named `mattermost`, and send, for example,
+`SCRIPT show {"kind":"thread","post_id":"<id>"}`.
 
 ## Translating the views
 

@@ -45,6 +45,7 @@ task test:live STACK=esr
 task test:live RELEASE=11.9.2
 task test:browser
 task test:views
+task test:clients
 task quality:verify
 task quality:format
 task docs:validate
@@ -52,7 +53,7 @@ task docs:adr-index
 task openapi:refresh
 ```
 
-`test:live` starts this checkout's Mattermost if needed. `test:browser` drives every browser on the machine, Playwright's Chromium included, which it installs with Node. `test:views` runs the MCP Apps view page in Chromium inside the official MCP Apps bridge, which it bundles with Node. `quality:verify` is every
+`test:live` starts this checkout's Mattermost if needed. `test:browser` drives every browser on the machine, Playwright's Chromium included, which it installs with Node. `test:views` runs the MCP Apps view page in Chromium inside the official MCP Apps bridge, which it bundles with Node. `test:clients` runs the views in Goose and VS Code at their pinned versions, which it installs, with a scripted model; on Linux without a display it uses Xvfb. `quality:verify` is every
 static gate but one, golangci-lint included; govulncheck (`quality:vulncheck`)
 runs in CI only, because its answer comes from a vulnerability database it
 fetches (ADR-014). Run `docs:adr-index` after adding or removing a record,
@@ -74,9 +75,12 @@ and `openapi:refresh` after a stack's image tag changes.
 | `internal/apisurface` | reads the vendored specifications and route tables: matching, parameters, release differences |
 | `internal/adr` | reads the decision records and renders their index |
 | `internal/teststack` | how the live-test instances are named, found and bootstrapped |
+| `internal/testclients` | installs and finds the MCP clients the client tests drive |
+| `internal/scriptedmodel` | the chat model the client tests give a client: scripted, no inference |
 | `internal/testsupport` | the unit-test seal |
 | `internal/repository` | repository-wide governance tests |
-| `tests/live` | the live suite (build tag `live`) |
+| `tests/live` | the live suite (build tag `live`), and the client tests (`live` and `clients`) |
+| `tests/live/clients` | the driver that operates the clients over CDP, and VS Code's scripted model extension |
 | `tools/` | one Go command per directory, each with its reason in its package comment |
 | `openapi/` | the vendored specification and route table of each supported release, as reference |
 | `docker/` | the compose file of each live-test stack, `latest` and `esr`, and its settings |
