@@ -163,29 +163,38 @@ func listMentions(ctx context.Context, client *mattermost.Client, input listMent
 
 // listMentionsUses are the operations listMentions calls.
 func listMentionsUses() []Use {
-	coverage := func(teamID Coverage) map[string]Coverage {
-		params := map[string]Coverage{
-			"body.terms": Fixed("the person's mention keys",
-				"what mentions the person is in their notification settings, as Mattermost's own Recent Mentions searches for them"),
-			"body.is_or_search": Fixed("true", "a post mentions the person by any one of their mention keys"),
-			"body.page":         Fixed("0", "Mattermost's database search, which Team Edition uses, answers the first page with every match"),
-			"body.per_page":     Fixed("100", "the database search answers with its 100 most recent matches; the tool pages through them itself"),
-			"body.time_zone_offset": Fixed("the offset of the person's timezone on the day given",
-				"on:, before: and after: days are the person's own, as in Mattermost's search box; 0 when no day is given"),
-			"body.include_deleted_channels": Omitted("archived channels are left out, as they are out of get_user_channels"),
-		}
-		if teamID.How != "" {
-			params["team_id"] = teamID
-		}
-		return params
-	}
 	return uses([]Use{
-		{
-			Operation: "SearchPostsInAllTeams",
-			Params:    coverage(Coverage{}),
-			Releases: "11.7's router serves POST /api/v4/posts/search, as its route table shows; only its specification leaves it out. " +
-				"The tool calls it the same way on every supported release, and the live suite runs it on both.",
-		},
-		{Operation: "SearchPosts", Params: coverage(SetBy("team_id"))},
+		mentionSearchUse(mentionSearchParams(Coverage{})),
+		{Operation: "SearchPosts", Params: mentionSearchParams(SetBy("team_id"))},
 	}, channelLookupUses("in", SetBy("team_id")), fromUses(), describeUses(true))
+}
+
+// mentionSearchUse is the search across every team listMentions makes when
+// it is given no team, with what sets each of its parameters.
+func mentionSearchUse(params map[string]Coverage) Use {
+	return Use{
+		Operation: "SearchPostsInAllTeams",
+		Params:    params,
+		Releases: "11.7's router serves POST /api/v4/posts/search, as its route table shows; only its specification leaves it out. " +
+			"The tool calls it the same way on every supported release, and the live suite runs it on both.",
+	}
+}
+
+// mentionSearchParams is what sets each parameter of the search listMentions
+// makes, with how the team it searches is chosen.
+func mentionSearchParams(teamID Coverage) map[string]Coverage {
+	params := map[string]Coverage{
+		"body.terms": Fixed("the person's mention keys",
+			"what mentions the person is in their notification settings, as Mattermost's own Recent Mentions searches for them"),
+		"body.is_or_search": Fixed("true", "a post mentions the person by any one of their mention keys"),
+		"body.page":         Fixed("0", "Mattermost's database search, which Team Edition uses, answers the first page with every match"),
+		"body.per_page":     Fixed("100", "the database search answers with its 100 most recent matches; the tool pages through them itself"),
+		"body.time_zone_offset": Fixed("the offset of the person's timezone on the day given",
+			"on:, before: and after: days are the person's own, as in Mattermost's search box; 0 when no day is given"),
+		"body.include_deleted_channels": Omitted("archived channels are left out, as they are out of get_user_channels"),
+	}
+	if teamID.How != "" {
+		params["team_id"] = teamID
+	}
+	return params
 }

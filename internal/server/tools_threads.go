@@ -53,7 +53,7 @@ func listThreadsSpec() Spec {
 				"mentions the person has not read. unread_only keeps those with unread replies. Reading them here marks nothing read.",
 			Annotations: readOnly("List threads"),
 		},
-		listThreadsUses(),
+		followedThreadUses(SetBy("team_id")),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[listThreadsInput, Threads] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input listThreadsInput) (*mcp.CallToolResult, Threads, error) {
 				client, err := clientFor(ctx, request)
@@ -190,14 +190,15 @@ func listThreads(ctx context.Context, client *mattermost.Client, input listThrea
 	return out, nil
 }
 
-// listThreadsUses are the operations listThreads calls.
-func listThreadsUses() []Use {
+// followedThreadUses are the operations listThreads calls, with how the
+// team it reads is chosen.
+func followedThreadUses(team Coverage) []Use {
 	return uses([]Use{
 		{
 			Operation: "GetUserThreads",
 			Params: map[string]Coverage{
 				"user_id":  Fixed("me", "the threads are the ones the user follows"),
-				"team_id":  SetBy("team_id"),
+				"team_id":  team,
 				"per_page": Fixed(fmt.Sprint(serverPageSize), "the tool reads every followed thread, a page of Mattermost's at a time, and pages through them itself"),
 				"before": Undocumented("", "getThreadsForUser in server/channels/api4/user.go reads before, the last thread of the page before, and pages by it; "+
 					"the specification leaves it out"),
