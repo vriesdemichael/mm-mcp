@@ -262,36 +262,7 @@ func getUserChannelsSpec() Spec {
 				"messages and mentions are unread in each. Use it to find a channel to read, or with unread_only to see what needs attention.",
 			Annotations: readOnly("List the user's channels"),
 		},
-		[]Use{
-			{
-				Operation: "GetUser",
-				Params:    map[string]Coverage{"user_id": Fixed("me", "the user's own id tells which side of a direct message is the other person")},
-			},
-			{
-				Operation: "GetChannelsForUser",
-				Params: map[string]Coverage{
-					"user_id":         Fixed("me", "the tool lists the channels of the user the credential belongs to"),
-					"last_delete_at":  Fixed("0", "archived channels are not listed: a person asking for their channels means the ones they can talk in; list_archived_channels lists the others"),
-					"include_deleted": Omitted("archived channels are not listed, for the same reason"),
-				},
-			},
-			{
-				Operation: "GetChannelMembersForUser",
-				Params: map[string]Coverage{
-					"user_id": Fixed("me", "the unread counts are the user's own"),
-					"team_id": Fixed("each team a listed channel is in", "Mattermost gives memberships, which hold the unread counts, one team at a time"),
-				},
-			},
-			{
-				Operation: "GetTeamsForUser",
-				Params:    map[string]Coverage{"user_id": Fixed("me", "each channel names its team")},
-			},
-			{
-				Operation: "GetUsersByIds",
-				Params:    map[string]Coverage{"since": Omitted("the tool reads the other person of each direct message, whenever they changed")},
-			},
-			groupNamesUse,
-		},
+		userChannelsUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[getUserChannelsInput, Channels] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input getUserChannelsInput) (*mcp.CallToolResult, Channels, error) {
 				client, err := clientFor(ctx, request)
@@ -863,4 +834,38 @@ func listUserChannels(ctx context.Context, client *mattermost.Client, input getU
 	})
 	page, next := offsetPage(all, at, limit)
 	return Channels{Channels: page, pageInfo: pageInfo{NextCursor: next}}, nil
+}
+
+// userChannelsUses are the operations listUserChannels calls.
+func userChannelsUses() []Use {
+	return []Use{
+		{
+			Operation: "GetUser",
+			Params:    map[string]Coverage{"user_id": Fixed("me", "the user's own id tells which side of a direct message is the other person")},
+		},
+		{
+			Operation: "GetChannelsForUser",
+			Params: map[string]Coverage{
+				"user_id":         Fixed("me", "the tool lists the channels of the user the credential belongs to"),
+				"last_delete_at":  Fixed("0", "archived channels are not listed: a person asking for their channels means the ones they can talk in; list_archived_channels lists the others"),
+				"include_deleted": Omitted("archived channels are not listed, for the same reason"),
+			},
+		},
+		{
+			Operation: "GetChannelMembersForUser",
+			Params: map[string]Coverage{
+				"user_id": Fixed("me", "the unread counts are the user's own"),
+				"team_id": Fixed("each team a listed channel is in", "Mattermost gives memberships, which hold the unread counts, one team at a time"),
+			},
+		},
+		{
+			Operation: "GetTeamsForUser",
+			Params:    map[string]Coverage{"user_id": Fixed("me", "each channel names its team")},
+		},
+		{
+			Operation: "GetUsersByIds",
+			Params:    map[string]Coverage{"since": Omitted("the tool reads the other person of each direct message, whenever they changed")},
+		},
+		groupNamesUse,
+	}
 }

@@ -632,18 +632,7 @@ func readUnreadSpec() Spec {
 				"first, the pages after going further back. It reads only; the channel stays unread for the person until they read it themselves.",
 			Annotations: readOnly("Read unread posts"),
 		},
-		uses([]Use{
-			channelReadUses(SetBy("cursor"), SetBy("cursor"),
-				Fixed("when the person last read the channel", "the unread posts are those written since; Mattermost's read around the last unread post leaves out the posts written in the first unread one's millisecond"),
-				Undocumented("", "getPostsForChannel in server/channels/api4/post.go reads it; Mattermost's client sends it false, keeping replies among the posts")),
-			{
-				Operation: "GetChannelMember",
-				Params: map[string]Coverage{
-					"channel_id": SetBy("channel_id"),
-					"user_id":    Fixed("me", "the membership holds when the user last read the channel"),
-				},
-			},
-		}, describeUses(true)),
+		readUnreadUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[readUnreadInput, UnreadPosts] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input readUnreadInput) (*mcp.CallToolResult, UnreadPosts, error) {
 				client, err := clientFor(ctx, request)
@@ -800,4 +789,21 @@ func readUnread(ctx context.Context, client *mattermost.Client, input readUnread
 		out.NextCursor = at.String()
 	}
 	return out, nil
+}
+
+// readUnreadUses are the operations readUnread calls, for a tool that reads
+// a channel given by its channel_id from where the person stopped.
+func readUnreadUses() []Use {
+	return uses([]Use{
+		channelReadUses(SetBy("cursor"), SetBy("cursor"),
+			Fixed("when the person last read the channel", "the unread posts are those written since; Mattermost's read around the last unread post leaves out the posts written in the first unread one's millisecond"),
+			Undocumented("", "getPostsForChannel in server/channels/api4/post.go reads it; Mattermost's client sends it false, keeping replies among the posts")),
+		{
+			Operation: "GetChannelMember",
+			Params: map[string]Coverage{
+				"channel_id": SetBy("channel_id"),
+				"user_id":    Fixed("me", "the membership holds when the user last read the channel"),
+			},
+		},
+	}, describeUses(true))
 }

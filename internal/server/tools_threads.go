@@ -53,29 +53,7 @@ func listThreadsSpec() Spec {
 				"mentions the person has not read. unread_only keeps those with unread replies. Reading them here marks nothing read.",
 			Annotations: readOnly("List threads"),
 		},
-		uses([]Use{
-			{
-				Operation: "GetUserThreads",
-				Params: map[string]Coverage{
-					"user_id":  Fixed("me", "the threads are the ones the user follows"),
-					"team_id":  SetBy("team_id"),
-					"per_page": Fixed(fmt.Sprint(serverPageSize), "the tool reads every followed thread, a page of Mattermost's at a time, and pages through them itself"),
-					"before": Undocumented("", "getThreadsForUser in server/channels/api4/user.go reads before, the last thread of the page before, and pages by it; "+
-						"the specification leaves it out"),
-					"extended": Fixed("true", "each thread says who took part"),
-					"since":    Omitted("a sync for clients that already hold the threads"),
-					"deleted":  Omitted("a deleted thread is gone for the person too"),
-					"page": Omitted("the specification documents it, but getThreadsForUser does not read it: Mattermost pages threads by before, " +
-						"which the tool sends instead"),
-					"totalsOnly":  Omitted("the tool returns the threads, and counts what it returns"),
-					"threadsOnly": Omitted("Mattermost's totals come with the threads at no cost to the answer"),
-				},
-			},
-			{
-				Operation: "GetTeamsForUser",
-				Params:    map[string]Coverage{"user_id": Fixed("me", "without team_id, every team the user belongs to is read")},
-			},
-		}, describeUses(true)),
+		listThreadsUses(),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[listThreadsInput, Threads] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input listThreadsInput) (*mcp.CallToolResult, Threads, error) {
 				client, err := clientFor(ctx, request)
@@ -210,4 +188,31 @@ func listThreads(ctx context.Context, client *mattermost.Client, input listThrea
 		out.Threads = append(out.Threads, toThreadSummary(thread, posts[i], zone))
 	}
 	return out, nil
+}
+
+// listThreadsUses are the operations listThreads calls.
+func listThreadsUses() []Use {
+	return uses([]Use{
+		{
+			Operation: "GetUserThreads",
+			Params: map[string]Coverage{
+				"user_id":  Fixed("me", "the threads are the ones the user follows"),
+				"team_id":  SetBy("team_id"),
+				"per_page": Fixed(fmt.Sprint(serverPageSize), "the tool reads every followed thread, a page of Mattermost's at a time, and pages through them itself"),
+				"before": Undocumented("", "getThreadsForUser in server/channels/api4/user.go reads before, the last thread of the page before, and pages by it; "+
+					"the specification leaves it out"),
+				"extended": Fixed("true", "each thread says who took part"),
+				"since":    Omitted("a sync for clients that already hold the threads"),
+				"deleted":  Omitted("a deleted thread is gone for the person too"),
+				"page": Omitted("the specification documents it, but getThreadsForUser does not read it: Mattermost pages threads by before, " +
+					"which the tool sends instead"),
+				"totalsOnly":  Omitted("the tool returns the threads, and counts what it returns"),
+				"threadsOnly": Omitted("Mattermost's totals come with the threads at no cost to the answer"),
+			},
+		},
+		{
+			Operation: "GetTeamsForUser",
+			Params:    map[string]Coverage{"user_id": Fixed("me", "without team_id, every team the user belongs to is read")},
+		},
+	}, describeUses(true))
 }
