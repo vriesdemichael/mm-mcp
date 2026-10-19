@@ -229,3 +229,18 @@ function moreReplies(data, root, left) {
     button,
     linkButton(root.url, [t("thread.open")], { class: "link muted" }));
 }
+
+// renderPosted is a post as posted, as create_post, dm and group_message
+// answer with it: the post alone, under where it went, and for a reply, the
+// way to its thread.
+function renderPosted(post) {
+  const place = placeOf(post);
+  return el("article", { class: "thread posted" },
+    el("header", { class: "thread-header" },
+      el("span", { class: "muted posted-label" }, post.root_id ? t("post.replied") : t("post.posted")),
+      el("h2", { class: "thread-title" },
+        place.channel ? linkButton(place.channelURL, [place.channel], { class: "link channel-name" }) : t("thread.title")),
+      place.team ? el("span", { class: "muted team" }, place.team) : null),
+    el("ol", { class: "posts", "aria-label": t("thread.posts") }, renderPost(post, { asked: false, continued: false, place })),
+    post.root_id ? el("div", { class: "more-row" }, linkButton(post.url, [t("thread.open")], { class: "link muted" })) : null);
+}

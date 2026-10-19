@@ -570,9 +570,10 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 }
 
 // The tools that put a view in front of the person (ADR-022): those whose
-// every call the person should see. A view on a tool the model reads with
-// would take space in the conversation on every read.
-var toolsWithAView = map[string]bool{"show": true}
+// every call the person should see, show and every tool that posts, which
+// shows the post as posted. A view on a tool the model reads with would take
+// space in the conversation on every read.
+var toolsWithAView = map[string]bool{"show": true, "create_post": true, "dm": true, "group_message": true}
 
 func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
 	t.Parallel()
@@ -602,6 +603,10 @@ var viewData = map[string][]map[string]string{
 	"show":        {{"": "read_post"}, {"channels": "get_user_channels", "mentions": "list_mentions", "threads": "list_threads"}},
 	"view_action": {{"": "read_post"}, {"": "read_unread"}},
 	"view_change": {{"": "mark_channel_read"}},
+	// A tool that posts shows the post it answers with.
+	"create_post":   {{"": "create_post"}},
+	"dm":            {{"": "dm"}},
+	"group_message": {{"": "group_message"}},
 }
 
 func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
