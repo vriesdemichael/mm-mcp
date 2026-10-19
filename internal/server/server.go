@@ -268,7 +268,7 @@ func catalogue() []Spec {
 		followThreadSpec(),
 		savePostSpec(),
 		setPostReminderSpec(),
-		saveDraftSpec(),
+		proposePostSpec(),
 		listDraftsSpec(),
 		deleteDraftSpec(),
 	}

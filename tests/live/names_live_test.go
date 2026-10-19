@@ -39,7 +39,7 @@ func TestEveryToolTakesAChannelOrTeamByItsNameAndAPostByItsLink(t *testing.T) {
 		{Name: "list_archived_channels", Arguments: map[string]any{"team_id": team.Name}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": byName}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": byName, "stop": true}},
-		{Name: "save_draft", Arguments: map[string]any{"channel_id": bySign, "message": "a draft found by name"}},
+		{Name: "propose_post", Arguments: map[string]any{"channel_id": bySign, "message": "a draft found by name"}},
 		{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id, "discards": chars("a draft found by name")}},
 		{Name: "create_post", Arguments: map[string]any{"channel_id": channel.Id, "message": "posted at the channel's address", "reaches": members(t, channel.Id)}},
 		{Name: "read_post", Arguments: map[string]any{"post_id": liveURL + "/_redirect/pl/" + post.Id}},

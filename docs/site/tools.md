@@ -106,14 +106,14 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 
     ---
 
-    A draft in your message box to send yourself, reminders, saved posts and
+    A post proposed as your draft, to send yourself, reminders, saved posts and
     followed threads. Nobody else sees them; deleting a draft, which loses your
     words, is checked.
 
     “Draft a reply I can send myself, and remind me at nine tomorrow.”
     { .mm-example }
 
-    [`save_draft`](#save_draft){ .mm-chip .mm-chip--yours } [`list_drafts`](#list_drafts){ .mm-chip } [`delete_draft`](#delete_draft){ .mm-chip .mm-chip--checked } [`set_post_reminder`](#set_post_reminder){ .mm-chip .mm-chip--yours } [`save_post`](#save_post){ .mm-chip .mm-chip--yours } [`follow_thread`](#follow_thread){ .mm-chip .mm-chip--yours } [`mark_channel_read`](#mark_channel_read){ .mm-chip .mm-chip--yours } [`typing`](#typing){ .mm-chip .mm-chip--yours }
+    [`propose_post`](#propose_post){ .mm-chip .mm-chip--yours } [`list_drafts`](#list_drafts){ .mm-chip } [`delete_draft`](#delete_draft){ .mm-chip .mm-chip--checked } [`set_post_reminder`](#set_post_reminder){ .mm-chip .mm-chip--yours } [`save_post`](#save_post){ .mm-chip .mm-chip--yours } [`follow_thread`](#follow_thread){ .mm-chip .mm-chip--yours } [`mark_channel_read`](#mark_channel_read){ .mm-chip .mm-chip--yours } [`typing`](#typing){ .mm-chip .mm-chip--yours }
 
 -   :material-stethoscope:{ .lg .middle } **Check the setup**
 
@@ -425,13 +425,19 @@ states before it acts ([below](#how-a-write-is-checked)).
 
 ### Your own things
 
-`save_draft`: Save draft { #save_draft .mm-yours }
-:   Puts a message in your message box in Mattermost as a draft, in a channel or
-    a thread, for you to change and send yourself. The message is checked as a
-    post's is, and its notes say what its mentions will do. A different draft
-    already there is never replaced, and a draft is refused when your drafts do
-    not sync, since you would never see it. Whatever your app approves, it is a
-    way to post only what you send yourself.
+`propose_post`: Propose post { #propose_post .mm-yours }
+:   Proposes a post for you to send yourself. The message waits as your draft,
+    in a channel, a thread, or a direct or group message you already have, in
+    your message box in every Mattermost app, and the answer links where it
+    waits. Nothing is sent. The message is checked as a post's is, and its notes
+    say what its mentions will do. Proposing again replaces mm-mcp's own
+    proposal while you have not changed it; a draft you wrote or typed in is
+    never replaced ([below](#what-a-write-takes-away)). A conversation that
+    does not exist yet is not started, since starting one shows it to the other
+    people at once, and a proposal is refused when your drafts do not sync,
+    since you would never see it. What you send from Mattermost goes out as
+    yours, without the mark of a post written with AI. Whatever your app
+    approves, it is a way to post only what you send yourself.
 
 `list_drafts`: List drafts { #list_drafts }
 :   Your drafts, in channels and threads, with where each is, by link and
@@ -727,6 +733,21 @@ For example, deleting a post that started a thread of 12 replies, without
 A thirteenth reply arriving before the model calls again with `deletes: 13`
 gets the same refusal, with 14.
 
+`propose_post` takes nothing away. A draft of yours where the proposal would go,
+one you wrote or typed in, is left as it is, and the call is refused with what
+it holds. For example, proposing a reply in ~Town Square, where you started one
+of your own:
+
+!!! warning "Refused"
+
+    propose_post did not run: the person has a draft there, which was left as it
+    is: “Sounds good, but can we move it to”. If they asked you to change it,
+    delete it with delete_draft, stating discards: 34, and propose again. If
+    not, they can finish or clear it in Mattermost, or post with create_post
+
+When you asked for your draft to be changed, the model deletes it with
+`delete_draft`, whose call states its length, and proposes again.
+
 #### Where a write goes
 
 A write others see names its channel, post or team by its address
@@ -760,7 +781,8 @@ Where mm-mcp asks, what a write acts on is what you were asked about: a reply
 posted, a file rewritten or a draft typed on while you read the question stops
 the write.
 Posts and edits are marked as written with AI, as Mattermost shows it, unless
-`MM_MCP_MARK_AI_GENERATED` is false.
+`MM_MCP_MARK_AI_GENERATED` is false. A proposal is not: what you send from
+Mattermost is yours.
 
 ### On your machine
 

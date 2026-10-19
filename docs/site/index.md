@@ -60,8 +60,8 @@ before it is sent.</p>
 
     ---
 
-    Following threads, saved posts, reminders, drafts, the typing indicator and
-    marking a channel read, which change only what is yours.
+    Following threads, saved posts, reminders, proposed posts, the typing
+    indicator and marking a channel read, which change only what is yours.
 
 -   :material-paperclip:{ .lg .middle } **Files and attachments**
 

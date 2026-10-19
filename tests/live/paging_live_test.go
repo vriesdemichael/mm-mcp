@@ -175,7 +175,7 @@ func TestEveryOtherListPagesThroughAllItHolds(t *testing.T) {
 	}
 	writer, _ := writingSession(t, admin, user, accept)
 	for _, channel := range channels {
-		structured(t, saveDraft(t, writer, map[string]any{"channel_id": channel, "message": "draft in " + channel}), &struct{}{})
+		structured(t, proposePost(t, writer, map[string]any{"channel_id": channel, "message": "draft in " + channel}), &struct{}{})
 	}
 	session := sessionFor(t, admin, user)
 

@@ -142,7 +142,7 @@ func TestDeletingADraftStatesTheTextItDiscards(t *testing.T) {
 	team := seedTeam(t, admin, user)
 	channel := seedChannel(t, admin, team, user)
 	writer, _ := writingSession(t, admin, user, accept)
-	saveDraft(t, writer, map[string]any{"channel_id": channel.Id, "message": "half a thought"})
+	proposePost(t, writer, map[string]any{"channel_id": channel.Id, "message": "half a thought"})
 	session := unaskedSession(t, admin, user)
 
 	refusedSaying(t, session, "delete_draft", map[string]any{"channel_id": channel.Id},

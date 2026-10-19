@@ -102,9 +102,11 @@ func (c *Client) Save(ctx context.Context, userID, postID string, saved bool) er
 }
 
 // Draft writes the user's draft in a channel, or in a thread when rootID is
-// set, replacing the one there. UpsertDraft.
-func (c *Client) Draft(ctx context.Context, userID, channelID, rootID, message string) (*model.Draft, error) {
-	return result(c.api.UpsertDraft(ctx, &model.Draft{UserId: userID, ChannelId: channelID, RootId: rootID, Message: message}))
+// set, with its properties, replacing the one there. UpsertDraft.
+func (c *Client) Draft(ctx context.Context, userID, channelID, rootID, message string, props model.StringInterface) (*model.Draft, error) {
+	draft := &model.Draft{UserId: userID, ChannelId: channelID, RootId: rootID, Message: message}
+	draft.SetProps(props)
+	return result(c.api.UpsertDraft(ctx, draft))
 }
 
 // done is result for a call that answers with nothing but whether it worked.

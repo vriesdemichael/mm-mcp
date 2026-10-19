@@ -32,9 +32,9 @@ setting left empty, counts as unset.
     reactions and replies that answer it, how much a deletion takes away, and
     where it goes, by address ([Tools](tools.md#how-a-write-is-checked)). A change
     that is yours alone or gone in seconds, such as following a thread, saving a
-    post or a draft, or showing that you are typing, is a write all the same
-    ([ADR-021](adr/021-read-only-by-default.md)). Accepts `true`, `false`, `1`,
-    `0`, `yes`, `no`, `on` and `off`.
+    post, proposing one as your draft, or showing that you are typing, is a write
+    all the same ([ADR-021](adr/021-read-only-by-default.md)). Accepts `true`,
+    `false`, `1`, `0`, `yes`, `no`, `on` and `off`.
 
     !!! warning "A client that approves on its own writes as you"
         A client that approves tools by itself, such as Claude Code in auto

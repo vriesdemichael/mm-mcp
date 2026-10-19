@@ -181,7 +181,7 @@ the [tools](tools.md) it reaches for:
 | What did I miss? Catch me up on my unread channels. | Finds the channels with something unread, with `get_user_channels`, and reads each from where you stopped, with `read_unread`, without marking anything read |
 | What mentions me since Monday? | `list_mentions` |
 | What did we decide about the release date? | `search_posts`, and `read_post` for the thread around a match |
-| Draft a reply to Sam in ~release-planning that I can send myself. | Puts a draft in your message box in Mattermost, with `save_draft`, once writes are allowed |
+| Draft a reply to Sam in ~release-planning that I can send myself. | Proposes the reply as your draft in Mattermost, with `propose_post`, for you to send, once writes are allowed |
 | Reply in that thread that the notes are ready. | Posts with `create_post`, once writes are allowed and your app approves the call |
 
 Writes are off until you allow them, with `MM_MCP_ALLOW_WRITES` or your app's

@@ -155,7 +155,7 @@ func TestEveryToolTakesEachKindOfLink(t *testing.T) {
 		{Name: "mark_channel_read", Arguments: map[string]any{"channel_id": channelLink}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink}},
 		{Name: "typing", Arguments: map[string]any{"channel_id": channelLink, "stop": true}},
-		{Name: "save_draft", Arguments: map[string]any{"channel_id": channelLink, "message": "a draft found by its link"}},
+		{Name: "propose_post", Arguments: map[string]any{"channel_id": channelLink, "message": "a draft found by its link"}},
 		{Name: "delete_draft", Arguments: map[string]any{"channel_id": p.channel.Id, "discards": chars("a draft found by its link")}},
 		{Name: "add_channel_members", Arguments: map[string]any{"channel_id": p.channel.Id, "usernames": []string{p.third.Username}}},
 		{Name: "join_channel", Arguments: map[string]any{"channel_id": joinable.Id}},
@@ -297,7 +297,7 @@ func TestAGroupMessageIsNamedAfterTheOthersInIt(t *testing.T) {
 		{Name: "remove_reaction", Arguments: map[string]any{"post_id": theirs.Id, "emoji": "eyes"}},
 		{Name: "pin_post", Arguments: map[string]any{"post_id": theirs.Id}},
 		{Name: "save_post", Arguments: map[string]any{"post_id": theirs.Id}},
-		{Name: "save_draft", Arguments: map[string]any{"channel_id": group.Id, "message": "a draft for the group"}},
+		{Name: "propose_post", Arguments: map[string]any{"channel_id": group.Id, "message": "a draft for the group"}},
 		{Name: "follow_thread", Arguments: map[string]any{"post_id": theirs.Id}},
 	} {
 		if result := callTool(t, session, call); result.IsError {

@@ -11,7 +11,7 @@ supported by Mattermost, Inc.; Mattermost is a trademark of Mattermost, Inc.
 
 The tools read channels, threads, unread posts, mentions and files, search
 posts, files, people and channels, and, once you allow writes, post, reply,
-edit, react, pin, keep drafts, join, leave and create channels, and set your
+edit, react, pin, propose posts, join, leave and create channels, and set your
 status. A link pasted from Mattermost works wherever a tool that reads wants an
 id, every answer links each post, channel and team it names and gives the
 address a write others see takes, and attached files, their previews, profile

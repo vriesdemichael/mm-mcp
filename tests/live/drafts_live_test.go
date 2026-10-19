@@ -3,6 +3,7 @@
 package live
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -12,8 +13,9 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/server"
 )
 
-// save_draft, list_drafts and delete_draft: what the model writes into the
-// person's own message box, read back as the person (#11).
+// propose_post, list_drafts and delete_draft: the post the model proposes as
+// the person's draft, in their own message box, read back as the person (#11,
+// #35).
 
 // draftsOf is the user's drafts in a team, read as the user, by where they are.
 func draftsOf(t *testing.T, user *model.User, teamID string) map[string]string {
@@ -27,12 +29,26 @@ func draftsOf(t *testing.T, user *model.User, teamID string) map[string]string {
 	return byPlace
 }
 
-func saveDraft(t *testing.T, session *mcp.ClientSession, arguments map[string]any) *mcp.CallToolResult {
+// draftIn is the user's draft in a channel or thread, read as the user.
+func draftIn(t *testing.T, user *model.User, teamID, channelID, rootID string) *model.Draft {
 	t.Helper()
-	return callTool(t, session, &mcp.CallToolParams{Name: "save_draft", Arguments: arguments})
+	drafts, _, err := clientAs(t, user).GetDrafts(t.Context(), user.Id, teamID)
+	check(t, err)
+	for _, draft := range drafts {
+		if draft.ChannelId == channelID && draft.RootId == rootID {
+			return draft
+		}
+	}
+	t.Fatalf("the user has no draft in %s/%s", channelID, rootID)
+	return nil
 }
 
-func TestSaveDraftLeavesDraftsWhereTheyGoAndNeverReplacesAnother(t *testing.T) {
+func proposePost(t *testing.T, session *mcp.ClientSession, arguments map[string]any) *mcp.CallToolResult {
+	t.Helper()
+	return callTool(t, session, &mcp.CallToolParams{Name: "propose_post", Arguments: arguments})
+}
+
+func TestProposePostLeavesTheProposalWhereThePostWouldGo(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user, other := seedUser(t, admin), seedUser(t, admin)
@@ -44,24 +60,23 @@ func TestSaveDraftLeavesDraftsWhereTheyGoAndNeverReplacesAnother(t *testing.T) {
 	session, questions := writingSession(t, admin, user, accept)
 
 	var drafted server.Draft
-	structured(t, saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "@here status: all green, thanks @" + other.Username}), &drafted)
+	structured(t, proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "@here status: all green, thanks @" + other.Username}), &drafted)
 	if drafted.Channel != channel.DisplayName || drafted.Team != team.DisplayName || len(drafted.Notes) != 1 || !strings.Contains(drafted.Notes[0], "@here") {
 		t.Errorf("the channel's draft reads %+v", drafted)
 	}
-	structured(t, saveDraft(t, session, map[string]any{"root_id": root.Id, "message": "I can take it"}), &drafted)
-	if drafted.RootID != root.Id {
-		t.Fatalf("the reply was drafted %+v", drafted)
+	if drafted.URL == "" || drafted.URL != drafted.ChannelURL {
+		t.Errorf("the channel's draft links %q; want its channel, %q", drafted.URL, drafted.ChannelURL)
 	}
-	structured(t, saveDraft(t, session, map[string]any{"channel_id": direct.Id, "message": "see you at standup"}), &drafted)
-	if drafted.Channel != other.Username {
-		t.Errorf("the direct message's draft is named %q", drafted.Channel)
+	structured(t, proposePost(t, session, map[string]any{"root_id": root.Id, "message": "I can take it"}), &drafted)
+	if drafted.RootID != root.Id || !strings.HasSuffix(drafted.URL, "/pl/"+root.Id) {
+		t.Fatalf("the reply was drafted %+v; want it linking its thread", drafted)
 	}
-	if result := saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "something else"}); !result.IsError ||
-		!strings.Contains(errorText(result), "status: all green") {
-		t.Errorf("a different draft got %s; want it refused, quoting the one there", errorText(result))
+	structured(t, proposePost(t, session, map[string]any{"channel_id": direct.Id, "message": "see you at standup"}), &drafted)
+	if drafted.Channel != other.Username || !strings.HasSuffix(drafted.URL, "/messages/@"+other.Username) {
+		t.Errorf("the direct message's draft is %+v", drafted)
 	}
-	if result := saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "hi @" + slipOf(other.Username)}); !result.IsError {
-		t.Error("a draft mentioning someone nobody is was saved")
+	if result := proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "hi @" + slipOf(other.Username)}); !result.IsError {
+		t.Error("a proposal mentioning someone nobody is was saved")
 	}
 
 	byPlace := draftsOf(t, user, team.Id)
@@ -76,10 +91,66 @@ func TestSaveDraftLeavesDraftsWhereTheyGoAndNeverReplacesAnother(t *testing.T) {
 	if byPlace[direct.Id+"/"] != "see you at standup" {
 		t.Errorf("the direct message's draft reads %q; the user's drafts are %v", byPlace[direct.Id+"/"], byPlace)
 	}
+	// Marked as mm-mcp's proposal, and not as written with AI, though the
+	// server marks what the model posts: what the person sends from Mattermost
+	// is theirs.
+	if props := draftIn(t, user, team.Id, channel.Id, ""); len(props.GetProps()) != 1 || props.GetProps()["mm_mcp_proposal"] == nil {
+		t.Errorf("the channel's draft carries %v", props.GetProps())
+	}
 	if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 {
-		t.Errorf("drafting posted something: the channel holds %d posts", len(posts))
+		t.Errorf("proposing posted something: the channel holds %d posts", len(posts))
 	}
 	noQuestions(t, questions)
+}
+
+func TestProposePostReplacesItsOwnProposalButNeverThePersonsDraft(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other := seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other)
+	channel := seedChannel(t, admin, team, user, other)
+	root := postAs(t, clientAs(t, other), channel.Id, "", "Lunch on Friday?")
+	own := clientAs(t, user)
+	// Through a server that leaves asking to the client, which approves
+	// delete_draft as the person asked.
+	session := unaskedSession(t, admin, user)
+
+	// mm-mcp's own proposal, unchanged, is replaced, and the same text left.
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "first try"})
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "second try"})
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "second try"})
+	proposal := draftIn(t, user, team.Id, channel.Id, "")
+	if proposal.Message != "second try" {
+		t.Fatalf("the proposal reads %q", proposal.Message)
+	}
+
+	// The person types on in Mattermost, whose client keeps the draft's
+	// properties: the draft is theirs now.
+	proposal.Message = "second try, and more"
+	_, _, err := own.UpsertDraft(t.Context(), proposal)
+	check(t, err)
+	refusedSaying(t, session, "propose_post", map[string]any{"channel_id": channel.Id, "message": "third try"},
+		"“second try, and more”", "delete_draft", fmt.Sprintf("discards: %d", chars("second try, and more")), "create_post")
+	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "second try, and more" {
+		t.Fatalf("a refused proposal changed the person's draft: %q", got)
+	}
+	// The way on, when the person asked for it: delete theirs, stating what
+	// goes, and propose again.
+	callTool(t, session, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"channel_id": channel.Id, "discards": chars("second try, and more")}})
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "third try"})
+	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "third try" {
+		t.Fatalf("the proposal after the deletion reads %q", got)
+	}
+
+	// A draft the person wrote is theirs from the start; the same text is
+	// left as it is, unmarked.
+	_, _, err = own.UpsertDraft(t.Context(), &model.Draft{UserId: user.Id, ChannelId: channel.Id, RootId: root.Id, Message: "Friday works"})
+	check(t, err)
+	refusedSaying(t, session, "propose_post", map[string]any{"root_id": root.Id, "message": "Friday works for me!"}, "“Friday works”", "discards: 12")
+	proposePost(t, session, map[string]any{"root_id": root.Id, "message": "Friday works"})
+	if theirs := draftIn(t, user, team.Id, channel.Id, root.Id); theirs.Message != "Friday works" || len(theirs.GetProps()) != 0 {
+		t.Fatalf("the person's draft reads %q, carrying %v", theirs.Message, theirs.GetProps())
+	}
 }
 
 func TestListDraftsListsEachOnceWithWhereItIs(t *testing.T) {
@@ -92,8 +163,8 @@ func TestListDraftsListsEachOnceWithWhereItIs(t *testing.T) {
 	direct, _, err := clientAs(t, user).CreateDirectChannel(t.Context(), user.Id, other.Id)
 	check(t, err)
 	session, _ := writingSession(t, admin, user, accept)
-	saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "in the channel"})
-	saveDraft(t, session, map[string]any{"channel_id": direct.Id, "message": "in the direct message"})
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "in the channel"})
+	proposePost(t, session, map[string]any{"channel_id": direct.Id, "message": "in the direct message"})
 
 	var listed server.Drafts
 	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "list_drafts", Arguments: map[string]any{}}), &listed)
@@ -119,9 +190,9 @@ func TestDeleteDraftAsksAndDeletesOnlyThatDraft(t *testing.T) {
 	direct, _, err := clientAs(t, user).CreateDirectChannel(t.Context(), user.Id, other.Id)
 	check(t, err)
 	writer, _ := writingSession(t, admin, user, accept)
-	saveDraft(t, writer, map[string]any{"channel_id": channel.Id, "message": "the channel's draft"})
-	saveDraft(t, writer, map[string]any{"root_id": root.Id, "message": "the thread's draft"})
-	saveDraft(t, writer, map[string]any{"channel_id": direct.Id, "message": "the direct draft"})
+	proposePost(t, writer, map[string]any{"channel_id": channel.Id, "message": "the channel's draft"})
+	proposePost(t, writer, map[string]any{"root_id": root.Id, "message": "the thread's draft"})
+	proposePost(t, writer, map[string]any{"channel_id": direct.Id, "message": "the direct draft"})
 
 	declining, _ := writingSession(t, admin, user, decline)
 	if result := callTool(t, declining, &mcp.CallToolParams{Name: "delete_draft", Arguments: map[string]any{"root_id": root.Id, "discards": chars("the thread's draft")}}); !result.IsError {
@@ -146,7 +217,7 @@ func TestDeleteDraftAsksAndDeletesOnlyThatDraft(t *testing.T) {
 	}
 }
 
-func TestSaveDraftRefusesWhenThePersonTurnedOffSyncingDrafts(t *testing.T) {
+func TestProposePostRefusesWhenThePersonTurnedOffSyncingDrafts(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
 	user := seedUser(t, admin)
@@ -158,8 +229,5 @@ func TestSaveDraftRefusesWhenThePersonTurnedOffSyncingDrafts(t *testing.T) {
 	check(t, err)
 	session, _ := writingSession(t, admin, user, accept)
 
-	result := saveDraft(t, session, map[string]any{"channel_id": channel.Id, "message": "unseen"})
-	if !result.IsError || !strings.Contains(errorText(result), "turned off syncing") {
-		t.Fatalf("got %s", errorText(result))
-	}
+	refusedSaying(t, session, "propose_post", map[string]any{"channel_id": channel.Id, "message": "unseen"}, "turned off syncing", "create_post")
 }

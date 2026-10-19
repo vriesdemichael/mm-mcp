@@ -13,7 +13,7 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/server"
 )
 
-// typing, follow_thread, save_post, set_post_reminder and save_draft: changes only the user
+// typing, follow_thread, save_post, set_post_reminder and propose_post: changes only the user
 // sees, or that last seconds, which do not ask (ADR-021).
 
 // noQuestions fails the test when a tool that does not ask asked.
