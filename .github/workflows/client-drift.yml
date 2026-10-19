@@ -1,0 +1,129 @@
+name: Client Drift
+
+# The client tests against each client's newest release (ADR-036), daily, so a
+# client that changes what the views rely on shows here rather than on a pull
+# request. Dependabot does not follow these clients: when the newest releases
+# pass, this proposes moving the pins to them; when they fail, it says which
+# client changed in an issue.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Client Drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      # A pull request this workflow opens triggers no workflow of its own, so
+      # it starts CI on the pull request's branch by hand.
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+      BRANCH: chore/client-pins
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: next
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Move the pins to the newest releases
+        id: bump
+        run: |
+          moved=$(go run ./tools/clients bump)
+          echo "$moved"
+          {
+            echo "moved<<EOF"
+            echo "$moved"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Resolve the pinned tool versions
+        if: steps.bump.outputs.moved != ''
+        run: grep -E "^[A-Za-z_][A-Za-z0-9_]*=" .github/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        if: steps.bump.outputs.moved != ''
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Task
+        if: steps.bump.outputs.moved != ''
+        uses: ./.github/actions/setup-task
+        with:
+          version: ${{ env.GO_TASK_VERSION }}
+
+      - name: Start Mattermost and bootstrap it
+        if: steps.bump.outputs.moved != ''
+        run: task stack:up STACK=latest
+
+      - name: Run the client tests on the newest releases
+        id: test
+        if: steps.bump.outputs.moved != ''
+        run: task test:clients STACK=latest
+
+      - name: Keep what the clients showed
+        if: failure() && steps.test.outcome == 'failure'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: client-drift
+          path: .tmp/clients-artifacts
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # One branch and one pull request, moved along as the clients release.
+      - name: Propose the new pins
+        if: steps.test.outcome == 'success'
+        env:
+          MOVED: ${{ steps.bump.outputs.moved }}
+        run: |
+          summary=$(echo "$MOVED" | awk '{ printf "%s%s %s", sep, $1, $3; sep=", " }')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git commit -am "chore(deps): the client tests run $summary"
+          git push --force origin "$BRANCH"
+          body=$(printf 'The client tests pass on the newest releases of the clients they drive (ADR-036):\n\n%s\n\nThis moves their pins in `.github/tool-versions.env`. Opened by the Client Drift workflow, which started CI on this branch itself.\n' "$(echo "$MOVED" | awk '{ printf "- %s: %s to %s\n", $1, $2, $3 }')")
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --title "chore(deps): the client tests run $summary" --body "$body"
+          else
+            gh pr create --base next --head "$BRANCH" --title "chore(deps): the client tests run $summary" --body "$body"
+          fi
+          gh workflow run ci.yml --ref "$BRANCH"
+
+      # One issue, commented on again while the newest releases fail, naming
+      # which versions were tried; the run's log names the test that failed.
+      - name: Say that the newest clients fail
+        if: failure() && steps.test.outcome == 'failure'
+        env:
+          MOVED: ${{ steps.bump.outputs.moved }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Client drift: the client tests fail on the clients' newest releases"
+          tried=$(echo "$MOVED" | awk '{ printf "- %s %s, pinned at %s\n", $1, $3, $2 }')
+          body=$(printf 'The client tests (ADR-036) fail on these releases, which the pins in .github/tool-versions.env do not run yet:\n\n%s\n\nA client changed something the views rely on, or the tests need to follow it. The run, with the test that failed, a screenshot and the logs: %s\n' "$tried" "$RUN")
+          number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$(printf 'Still failing on:\n\n%s\n\n%s\n' "$tried" "$RUN")"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

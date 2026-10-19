@@ -13,12 +13,13 @@ The views are tested in the clients people use, not only in the official MCP App
 - **Each client set apart.** Goose takes its configuration, data and state from `GOOSE_PATH_ROOT`, and VS Code its settings and `mcp.json` from its own user data directory, both in the test's temporary folder, so a run never touches the person's own. mm-mcp is started through a wrapper that holds its configuration, since Goose's desktop app passes on no environment of its own. VS Code starts with `--password-store=basic`, since without a keyring it shows a native dialog no debugging client can see, and its MCP server waits on it.
 - **Where it runs.** CI runs the tests on Linux under Xvfb, and `task test:clients` starts a virtual display there itself when none is set. Elsewhere the clients draw on the screen of whoever runs the task.
 
-A client that changes what the views rely on fails a pull request only once its pin moves, in a change of its own.
+A client that changes what the views rely on fails a pull request only once its pin moves, in a change of its own. Dependabot does not follow these clients, so the Client Drift workflow does, daily: `go run ./tools/clients bump` moves the pins to each client's newest release, and the client tests run on them. When they pass, it opens or updates one pull request that moves the pins, and starts CI on its branch, since a pull request a workflow opens triggers none of its own. When they fail, it opens one issue naming the releases tried, or comments on the one already open, with the run that holds the screenshot and the logs.
 
 ## Not chosen
 
 - **Inference from a real model**: It costs money on every pull request, needs an account and a secret that a pull request from a fork cannot have, and answers differently from one run to the next. What the model decides is measured on its own, on a schedule (mm-mcp#40).
 - **The newest client on every pull request**: A client's release would fail every pull request open on the day it ships, for a reason none of them caused.
+- **An issue per client that moved**: When both clients moved and the tests fail, the issue would blame both; one issue names the releases tried, and the run names the test that failed.
 - **Launching the client through Playwright's Electron support**: Launching the packaged apps that way timed out in the spike; a debugging port works for both.
 - **Driving the clients from Go over CDP**: A view lives in frames inside other frames, in other processes, which Playwright follows and a hand-written client would have to.
 - **A stand-in client of mm-mcp's own**: It would share mm-mcp's reading of the specification, as a fake Mattermost would share its reading of the API (ADR-005); the official bridge is the reference, and real clients are what people run.

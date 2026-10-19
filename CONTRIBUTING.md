@@ -155,7 +155,9 @@ git add --renormalize .
 | CI Complete | passes only when every job above did; the one status branch protection requires |
 
 A weekly workflow also runs the live suite against every Mattermost release
-between the two ends. Live tests run on pull requests from forks; if they fail
+between the two ends, and a daily one runs the client tests on each client's
+newest release: it proposes moving their pins when those pass, and opens an
+issue when they fail. Live tests run on pull requests from forks; if they fail
 on yours, the failure is real.
 
 ## The views in real clients
