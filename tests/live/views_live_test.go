@@ -188,3 +188,43 @@ func TestAPostThatIsNotThereIsRefusedAloneAndWithItsThread(t *testing.T) {
 		}
 	}
 }
+
+// Every tool that posts shows the post as posted (ADR-022): it links the page,
+// and answers with the post, under where it went, which the view draws.
+func TestEveryToolThatPostsShowsThePostAsPosted(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, first, second := seedUser(t, admin), seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, first, second)
+	channel := seedChannel(t, admin, team, user, first)
+	session := writingViewsSession(t, personalAccessToken(t, admin, user.Id).Token)
+
+	listed, err := session.ListTools(t.Context(), nil)
+	check(t, err)
+	linked := map[string]bool{}
+	for _, tool := range listed.Tools {
+		ui, _ := tool.Meta["ui"].(map[string]any)
+		linked[tool.Name] = ui["resourceUri"] == views.URI
+	}
+	for _, c := range []struct {
+		tool      string
+		arguments map[string]any
+		channel   string
+	}{
+		{"create_post", map[string]any{"channel_id": channel.Id, "message": "The notes are ready.", "reaches": members(t, channel.Id)}, channel.DisplayName},
+		{"dm", map[string]any{"username": first.Username, "message": "A word in private."}, first.Username},
+		{"group_message", map[string]any{"usernames": []string{first.Username, second.Username}, "message": "Kickoff at ten."}, ""},
+	} {
+		if !linked[c.tool] {
+			t.Errorf("%s does not link the page", c.tool)
+		}
+		var posted server.Post
+		structured(t, callTool(t, session, &mcp.CallToolParams{Name: c.tool, Arguments: c.arguments}), &posted)
+		if posted.ID == "" || posted.AuthorID != user.Id || posted.URL == "" || posted.ChannelURL == "" || posted.Message != c.arguments["message"] {
+			t.Errorf("%s answered %+v; the view draws the post under where it went", c.tool, posted)
+		}
+		if c.channel != "" && !strings.Contains(posted.Channel, c.channel) {
+			t.Errorf("%s names the channel %q; want %q", c.tool, posted.Channel, c.channel)
+		}
+	}
+}

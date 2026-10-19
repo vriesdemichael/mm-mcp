@@ -326,3 +326,6 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .posts.compact { margin-block-start: 4px; }
 .opened { margin-block-start: 6px; padding-inline-start: 10px; border-inline-start: 2px solid var(--mm-border-strong); }
 .new-messages span { color: var(--mm-danger); }
+
+/* A post as posted: the post alone, under where it went. */
+.posted-label { font-size: var(--mm-text-xs); }

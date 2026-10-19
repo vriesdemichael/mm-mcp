@@ -427,3 +427,32 @@ func TestClientsShowWhatIsUnreadAndMarkAChannelReadFromTheView(t *testing.T) {
 		})
 	}
 }
+
+// A post shows itself as posted in every client: create_post's view draws
+// the post it answers with, under where it went. VS Code asks the person
+// before a tool that writes, showing its arguments, the channel's address and
+// its reach among them (ADR-033); Goose, in its default mode, does not.
+func TestClientsShowAPostAsPosted(t *testing.T) {
+	for _, client := range testclients.Clients {
+		t.Run(client, func(t *testing.T) {
+			admin := admin(t)
+			user, other := seedUser(t, admin), seedUser(t, admin)
+			team := seedTeam(t, admin, user, other)
+			channel := seedChannel(t, admin, team, user, other)
+			message := "The " + word(t) + " notes are ready."
+
+			run := startClient(t, client, personalAccessToken(t, admin, user.Id).Token, clientOptions{writes: true})
+			run.drive("ready", nil)
+			run.send(script("create_post", map[string]any{
+				"channel_id": addressOf(liveURL + "/" + team.Name + "/channels/" + channel.Name),
+				"message":    message,
+				"reaches":    members(t, channel.Id),
+			}), map[string]any{"approve": client == testclients.VSCode})
+			shown := run.drive("view", map[string]any{"text": message})
+			mustContain(t, "the post as posted", fmt.Sprint(shown["text"]), "Posted", channel.DisplayName, message)
+			if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 || posts[0].Message != message {
+				t.Errorf("the channel holds %d posts; want the one posted", len(posts))
+			}
+		})
+	}
+}

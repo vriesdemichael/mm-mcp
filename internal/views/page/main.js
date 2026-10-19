@@ -110,10 +110,14 @@ function content() {
   return out;
 }
 
-// renderKind draws the kind of view the call asked for.
+// renderKind draws the kind of view the call asked for: show names it, and a
+// tool that posts answers with the post it posted.
 function renderKind(data) {
-  const kind = view.input && typeof view.input.kind === "string" ? view.input.kind : "thread";
+  const named = view.input && typeof view.input.kind === "string" ? view.input.kind : "";
+  const kind = named || (typeof data.id === "string" && typeof data.author_id === "string" ? "posted" : "thread");
   switch (kind) {
+    case "posted":
+      return renderPosted(data);
     case "thread":
       return renderThread(data);
     case "unreads":

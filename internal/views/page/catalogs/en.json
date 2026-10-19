@@ -24,7 +24,9 @@
   "post.edited_at": "Edited {time}",
   "post.open": "Open the post in Mattermost, written {time}",
   "post.pinned": "Pinned",
+  "post.posted": "Posted",
   "post.read_whole": "Read it in Mattermost",
+  "post.replied": "Replied in a thread",
   "reactions.label": "Reactions",
   "reactions.who": {
     "one": "{who} reacted with {emoji}",

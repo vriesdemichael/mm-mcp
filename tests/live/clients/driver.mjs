@@ -236,8 +236,18 @@ const commands = {
     const before = count(await chatText(page), "Done.");
     await clients[args.client].type(page, args.message);
     if (args.approve) {
-      const allow = page.getByRole("button", { name: /Allow Once/i }).last();
-      await until("the client's approval of the call", async () => allow.isVisible());
+      // Goose asks with Allow Once, VS Code with Allow in this Session.
+      // VS Code's is a link drawn as a button.
+      const allow = page.locator("button, a.monaco-button").filter({ hasText: /Allow Once|Allow in this Session/i }).last();
+      try {
+        await until("the client's approval of the call", async () => allow.isVisible());
+      } catch (error) {
+        const seen = await page.evaluate(() => [...document.querySelectorAll("button, [role=button], a.monaco-button")]
+          .filter((e) => e.getBoundingClientRect().height > 0)
+          .map((e) => `${e.tagName}:${(e.getAttribute("aria-label") || e.innerText || "").trim().slice(0, 60)}`)
+          .filter((label) => label.length > 4));
+        throw new Error(`${error.message}; the buttons: ${seen.join(" | ")}`);
+      }
       await allow.click();
     }
     await until("the model's Done after the tool answered", async () => count(await chatText(page), "Done.") > before);

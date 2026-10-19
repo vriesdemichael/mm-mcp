@@ -482,6 +482,7 @@ func createPostSpec() Spec {
 				"user group as Mattermost asks about first, notifies; each is checked against mm-mcp's own count, and a wrong " +
 				"one is refused with the real one, for you to weigh before you call again." + postingDescription,
 			Annotations: writes("Create post", false),
+			Meta:        viewToolMeta(),
 		},
 		append([]Use{
 			{Operation: "GetChannel", Params: map[string]Coverage{"channel_id": SetBy("channel_id")}},
@@ -562,6 +563,7 @@ func dmSpec() Spec {
 			Description: "Send a direct message to one person under the user's name, or a note to the user themselves by their own username. " +
 				"This is how to message people: \"message Alice and Bob\" is two direct messages, one to each." + postingDescription,
 			Annotations: writes("Send direct message", false),
+			Meta:        viewToolMeta(),
 		},
 		uses(peopleUses("username"), []Use{
 			{Operation: "CreateDirectChannel", Params: map[string]Coverage{}},
@@ -659,6 +661,7 @@ func groupMessageSpec() Spec {
 				"Mattermost keeps for exactly those people. Only when the person asks for a group conversation: to message several people, " +
 				"send each a direct message with dm." + postingDescription,
 			Annotations: writes("Send group message", false),
+			Meta:        viewToolMeta(),
 		},
 		uses(peopleUses("usernames"), []Use{
 			{Operation: "CreateGroupChannel", Params: map[string]Coverage{}},

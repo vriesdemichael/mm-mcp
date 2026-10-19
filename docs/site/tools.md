@@ -298,7 +298,9 @@ states before it acts ([below](#how-a-write-is-checked)).
 :   Posts a message in a channel, or with `root_id` replies in the thread of any
     post in it. Where mm-mcp asks, its question shows the message as it will be
     sent, the channel and, for a reply, the start of the thread. Posting takes
-    down the typing indicator `typing` put up there. Returns the post.
+    down the typing indicator `typing` put up there. Returns the post, which an
+    app that shows MCP Apps views shows in the chat as posted, under where it
+    went, as `dm` and `group_message` do ([Views](#views)).
 
     Every call states how far the message goes
     ([below](#how-far-a-message-goes)): `reaches`, how many members the
@@ -565,7 +567,8 @@ resources: a conversation has no end to read it whole to.
 ### Views
 
 In an AI app that shows MCP Apps views, [`show`](#show) puts a thread, or what
-is unread for you, in the chat as Mattermost lays it out
+is unread for you, in the chat as Mattermost lays it out, and every post your
+agent makes shows itself there as posted
 ([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)). The view is a
 page in mm-mcp itself, which reaches no network: the app reads what it shows
 from mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
