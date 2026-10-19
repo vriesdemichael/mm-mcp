@@ -1,0 +1,13 @@
+{
+  "name": "scripted-model",
+  "displayName": "Scripted model",
+  "description": "Test only: offers the client tests' scripted model as a chat model in VS Code (ADR-036).",
+  "publisher": "mm-mcp-tests",
+  "version": "0.0.1",
+  "engines": { "vscode": "^1.104.0" },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "languageModelChatProviders": [{ "vendor": "scripted", "displayName": "Scripted" }]
+  }
+}
