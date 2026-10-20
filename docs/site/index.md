@@ -13,24 +13,24 @@ hide:
 
 <p class="mm-hero__lead">mm-mcp is an MCP server for Mattermost. It lets an AI
 agent read and search your Mattermost, and, when you allow it, post and reply,
-as you or as a bot. Each post states how far it goes, and mm-mcp checks that
-before it is sent.</p>
+as you or as a bot, or draft a post for you to check and send yourself. Each
+post states how far it goes, and mm-mcp checks that before it is sent.</p>
 
 [Install mm-mcp](installation.md){ .md-button .md-button--primary }
 [Connect your account](login.md){ .md-button }
 
 </div>
 
-<div class="mm-chat" role="img" aria-label="A conversation: you ask your agent what you missed in a channel, it reads the unread posts through mm-mcp and sums them up, and before it replies for you, your AI app asks whether to allow the post, which states where it goes and how many people it reaches.">
+<div class="mm-chat" role="img" aria-label="A conversation: you ask your agent what you missed in a channel, it reads the unread posts through mm-mcp and sums them up, and when you ask it to draft a reply, it shows the reply as it will be posted, waiting as your draft, with Post, Edit and Discard.">
 <div class="mm-chat__bar"><span class="mm-chat__dot"></span>Your agent, with mm-mcp</div>
 <div class="mm-chat__body">
 <div class="mm-msg mm-msg--you">What did I miss in ~release-planning?</div>
 <div class="mm-tool">read_unread ~release-planning</div>
 <div class="mm-msg mm-msg--agent">Two threads since Friday. The release moved to Thursday, and Sam asks whether the 2.4 notes are ready.</div>
-<div class="mm-msg mm-msg--you">Tell Sam they are.</div>
-<div class="mm-tool">create_post …/channels/release-planning, reaches: 14</div>
-<div class="mm-msg mm-msg--agent mm-ask">Allow create_post in ~release-planning, reaching 14 people?<br><em>“The 2.4 notes are ready, Sam.”</em>
-<div class="mm-ask__buttons"><span>Allow</span><span>Deny</span></div>
+<div class="mm-msg mm-msg--you">Draft a reply to Sam for me.</div>
+<div class="mm-tool">propose_post, a reply in ~release-planning</div>
+<div class="mm-msg mm-msg--agent mm-ask"><span class="mm-ask__label">Proposed reply · Release planning</span><br>The 2.4 notes are ready, Sam. The changelog is in the release doc.
+<div class="mm-ask__buttons"><span>Post</span><span>Edit</span><span>Discard</span></div>
 </div>
 </div>
 </div>
@@ -72,10 +72,10 @@ before it is sent.</p>
 
 </div>
 
-**Views in the chat**: in a client that renders MCP Apps, a thread, what is
-unread for you, or a post your agent made appears as Mattermost lays it out,
-and a post it proposes appears as it will be posted, for you to post, change
-or discard. [See them live](views.md).
+**Panels in the chat**: in an AI app that shows them, a thread, what you
+missed, or a post your agent made appears as Mattermost shows it, and a post
+it drafts appears as it will be posted, for you to post, change or discard.
+[See them live](views.md).
 
 ## How it behaves
 

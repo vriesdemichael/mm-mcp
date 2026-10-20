@@ -556,6 +556,11 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 		if strings.Count(page, chip) != 1 {
 			t.Errorf("the overview does not show %s once as %s", name, chip)
 		}
+		// A tool that shows a view links to it, live, from its entry.
+		badge := regexp.MustCompile("(?m)^`" + regexp.QuoteMeta(name) + "`: .*\\[view\\]\\(views\\.md#[a-z-]+\\)\\{ \\.mm-view-badge \\}")
+		if shows := badge.MatchString(page); shows != toolsWithAView[name] {
+			t.Errorf("the entry for %s links its view: %v; it shows one: %v", name, shows, toolsWithAView[name])
+		}
 	}
 	for _, stat := range []struct {
 		label string
@@ -566,6 +571,7 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 		{"checked writes", counts["checked"]},
 		{"yours alone", counts["yours"]},
 		{"saves to your disk", counts["disk"]},
+		{"show you a view", len(toolsWithAView)},
 	} {
 		if want := fmt.Sprintf("<strong>%d</strong> %s", stat.count, stat.label); !strings.Contains(page, want) {
 			t.Errorf("the counts at the top do not say %q", want)

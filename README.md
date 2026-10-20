@@ -22,6 +22,23 @@ proposes can be shown in the chat as Mattermost lays it out; more views are
 planned, and the [issues](https://github.com/vriesdemichael/mm-mcp/issues) are
 the plan.
 
+A reply your agent drafted, waiting for you to post, change or discard, and a
+thread you asked to see, as an AI app that shows views shows them
+([try them live](https://vriesdemichael.github.io/mm-mcp/views/)):
+
+<p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/site/assets/views/pictures/proposal-dark.png">
+  <img alt="A reply in ~release-planning, drafted by the agent, shown as it will be posted, with a link's target spelled out and the buttons Post, Edit and Discard." src="docs/site/assets/views/pictures/proposal-light.png" width="560">
+</picture>
+</p>
+<p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/site/assets/views/pictures/thread-dark.png">
+  <img alt="A thread in ~release-planning: a pinned post with reactions, a custom emoji among them, a reply with a chart, a reply that mentions you, and a button for two more replies." src="docs/site/assets/views/pictures/thread-light.png" width="560">
+</picture>
+</p>
+
 ## Why it works the way it does
 
 - **Read-only unless you say otherwise.** The tools that post or change anything
