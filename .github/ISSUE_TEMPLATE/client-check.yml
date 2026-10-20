@@ -1,0 +1,184 @@
+name: Client check
+description: The views checked by hand in an AI app no machine can drive, such as Claude desktop or Claude on the web, before a release that changes them.
+title: "Client check for vX.Y.Z: <app and version>"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Goose and VS Code run mm-mcp's views on every pull request, driven by a
+        machine with a scripted model. Apps whose source is closed, such as
+        Claude desktop and Claude on the web, cannot be driven that way: they
+        have no automation interface, take no model of ours, and need a
+        signed-in, paid account. So before a release that changes the views,
+        someone checks them by hand with this form. The questions are those of
+        [mm-mcp#37](https://github.com/vriesdemichael/mm-mcp/issues/37), as the
+        views stand now.
+
+        **How to run it.** Start a Mattermost of your own to throw away
+        (`task stack:up`), with mm-mcp at the release you are checking and
+        `MM_MCP_ALLOW_WRITES=true`. For Claude on the web, mm-mcp must sit on a
+        public address over HTTP, which authenticates no one: do that only
+        against the throwaway stack, and only for the length of the check.
+        Claude desktop's MCP log files are the record of what was sent and
+        received: on macOS `~/Library/Logs/Claude/mcp*.log`, on Windows
+        `%APPDATA%\Claude\logs\mcp*.log`.
+
+        **Remove every token and session cookie** from anything you paste.
+
+  - type: input
+    id: app
+    attributes:
+      label: The app, its version, and any flag it needed
+      placeholder: Claude desktop 1.12.3 on macOS 26, with its MCP Apps flag on
+    validations:
+      required: true
+
+  - type: input
+    id: mm-mcp-version
+    attributes:
+      label: mm-mcp version
+      description: Output of `mm-mcp version`.
+      placeholder: mm-mcp 0.3.0
+    validations:
+      required: true
+
+  - type: input
+    id: transport
+    attributes:
+      label: How the app reached mm-mcp
+      placeholder: stdio, started by the app; or HTTP at a public address
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnose
+    attributes:
+      label: What diagnose says about views
+      description: Ask the app to run the `diagnose` tool, and paste its views check.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: drawn
+    attributes:
+      label: 1. Are the views drawn, and how much room do they take?
+      description: >
+        Ask for a thread to be shown (`show` with kind `thread`), for what is
+        unread (`show` with kind `unreads`), for a post (`create_post`), and
+        for a proposal (`propose_post`). Is each drawn, at what height, and
+        does a plain read such as `read_post` leave any band or frame behind?
+        Attach screenshots.
+    validations:
+      required: true
+
+  - type: textarea
+    id: declared
+    attributes:
+      label: 2. What does the app declare?
+      description: >
+        Does it declare `io.modelcontextprotocol/ui` with
+        `text/html;profile=mcp-app`, in `initialize` or on each request, and
+        on the request that lists the tools? The logs show it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: model-sees
+    attributes:
+      label: 3. What does the model see of a result?
+      description: >
+        After `show`, ask the model what it received. Does it get the text
+        content, the structured content, or both?
+    validations:
+      required: true
+
+  - type: textarea
+    id: app-only
+    attributes:
+      label: 4. Are the tools only views call kept from the model?
+      description: >
+        Are `view_action` and `view_change` missing from the tools the model
+        is offered, and do their results stay out of the conversation?
+    validations:
+      required: true
+
+  - type: textarea
+    id: presses
+    attributes:
+      label: 5. Do the presses work, and is anyone asked?
+      description: >
+        Press "more replies" in a thread, Mark read in the unread view, and
+        Post, Edit and Discard in a proposal. Does each work, read back in
+        Mattermost? Does the app ask before any of them? A message with
+        `@channel` in a channel of more than five people should show
+        Mattermost's own confirmation first.
+    validations:
+      required: true
+
+  - type: textarea
+    id: told
+    attributes:
+      label: 6. Does the model learn what was pressed?
+      description: >
+        After Post or Discard in a proposal, ask the model what happened,
+        without letting it read Mattermost. Does the view's update of its
+        context reach it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reopened
+    attributes:
+      label: 7. What happens in a reopened conversation?
+      description: >
+        Reopen a conversation with views in it. Are they drawn again, and does
+        nothing get pressed or sent by itself?
+    validations:
+      required: true
+
+  - type: textarea
+    id: pictures
+    attributes:
+      label: 8. Are the pictures drawn?
+      description: >
+        Profile pictures, custom emoji, and an image's preview and whole image,
+        which the view reads as resources through the app.
+    validations:
+      required: true
+
+  - type: textarea
+    id: looks
+    attributes:
+      label: 9. Does the view follow the app's theme and language?
+      description: Light and dark, and the app's language where mm-mcp has words for it.
+    validations:
+      required: false
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 10. Is mm-mcp's question shown?
+      description: >
+        With `MM_MCP_ELICITATION_OPT_IN=true`, does mm-mcp's question appear
+        before a `create_post`, and does the answer the app sends match what
+        you chose ([mm-mcp#20](https://github.com/vriesdemichael/mm-mcp/issues/20))?
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Log excerpts and anything else
+      description: The lines of the MCP logs that answer a question above, with tokens and cookies removed.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: clean
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed every token and session cookie from what I pasted.
+          required: true

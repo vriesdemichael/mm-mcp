@@ -231,9 +231,18 @@ const commands = {
   },
 
   // send types a message, and waits for the model's answer to the tool's
-  // result, the scripted model's Done.
+  // result, the scripted model's Done: one more than the chat showed, or one
+  // after the message sent. VS Code drops a turn scrolled out of sight from
+  // the page, and the Done before it with it.
   async send(page) {
-    const before = count(await chatText(page), "Done.");
+    const shown = await chatText(page);
+    const before = count(shown, "Done.");
+    const tail = args.message.slice(-24);
+    const answered = (text) => {
+      const at = text.lastIndexOf(tail);
+      return at >= 0 && text.indexOf("Done.", at) > at;
+    };
+    const answeredBefore = answered(shown);
     await clients[args.client].type(page, args.message);
     if (args.approve) {
       // Goose asks with Allow Once, VS Code with Allow in this Session.
@@ -250,7 +259,10 @@ const commands = {
       }
       await allow.click();
     }
-    await until("the model's Done after the tool answered", async () => count(await chatText(page), "Done.") > before);
+    await until("the model's Done after the tool answered", async () => {
+      const text = await chatText(page);
+      return count(text, "Done.") > before || (!answeredBefore && answered(text));
+    });
     return {};
   },
 

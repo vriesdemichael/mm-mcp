@@ -174,6 +174,12 @@ at `http://127.0.0.1:18080/v1` with the model `scripted-model`, add mm-mcp as
 a server named `mattermost`, and send, for example,
 `SCRIPT show {"kind":"thread","post_id":"<id>"}`.
 
+Apps no machine can drive, Claude desktop and Claude on the web among them,
+are checked by hand before a release that changes the views, with the
+[Client check](https://github.com/vriesdemichael/mm-mcp/issues/new?template=client-check.yml)
+issue form: it asks what the client tests ask, with the app's MCP logs as the
+record.
+
 ## Translating the views
 
 The MCP Apps views show their own words from a catalog per language,

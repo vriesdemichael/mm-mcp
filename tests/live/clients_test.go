@@ -459,7 +459,42 @@ func TestClientsProposeAPostAndThePersonPostsItFromTheView(t *testing.T) {
 			if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "" {
 				t.Errorf("the posted draft is still there: %q", got)
 			}
+
+			// Discard in the view deletes the next proposal, and posts nothing.
+			second := "Never mind the " + word(t) + " notes."
+			// VS Code was told to allow propose_post for the session, so it asks no more.
+			run.send(script("propose_post", map[string]any{"channel_id": channel.Id, "message": second}), nil)
+			run.drive("press", map[string]any{"text": second, "button": "^Discard$", "until": "Discarded"})
+			if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "" {
+				t.Errorf("the discarded draft is still there: %q", got)
+			}
+			if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 {
+				t.Errorf("Discard left %d posts in the channel; want the one posted before", len(posts))
+			}
 		})
+	}
+}
+
+// In Goose's approve mode a proposal's Post is refused like every call a view
+// makes, so the view says it cannot change the draft here and offers it in
+// Mattermost, where it still waits.
+func TestClientsGooseInApproveModeRefusesAProposalsPress(t *testing.T) {
+	admin := admin(t)
+	user := seedUser(t, admin)
+	team := seedTeam(t, admin, user)
+	channel := seedChannel(t, admin, team, user)
+	message := "The " + word(t) + " review is at noon."
+
+	run := startClient(t, testclients.Goose, personalAccessToken(t, admin, user.Id).Token, clientOptions{approve: true, writes: true})
+	run.drive("ready", nil)
+	run.send(script("propose_post", map[string]any{"channel_id": channel.Id, "message": message}), map[string]any{"approve": true})
+	refused := run.drive("press", map[string]any{"text": message, "button": "^Post$", "until": "This app does not let the view change the draft here."})
+	mustContain(t, "the refused press", fmt.Sprint(refused["text"]), "Open in Mattermost")
+	if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
+		t.Errorf("a refused press posted %d messages", len(posts))
+	}
+	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != message {
+		t.Errorf("after a refused press the draft reads %q", got)
 	}
 }
 
