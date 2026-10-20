@@ -1,0 +1,213 @@
+{
+  "input": {
+    "kind": "thread",
+    "limit": 3,
+    "post_id": "bp6tuzfr3tf1xpjjihcbm47m3r"
+  },
+  "result": {
+    "content": [
+      {
+        "text": "Shown to the person, as Mattermost lays it out: the thread in Release planning, 3 of its 5 posts. They see it; do not repeat it unless they ask.",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "next_cursor": "eyJ0IjoicmVhZF9wb3N0IiwicSI6IjE2ZGM1ZWJlZTBkNzdkMDAiLCJhIjoiaDQzZmtvYXg2dGY5bWt0Y3N5cHdiemh5c3IiLCJjIjoxNzkyNTMzMDkyODgzfQ",
+      "post": {
+        "address": "mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r",
+        "author": "sam",
+        "author_id": "hphrq4ud4trj5qbod1bra87pec",
+        "author_name": "Sam Okafor",
+        "channel": "Release planning",
+        "channel_address": "mattermost://chat.example.com/acme/channels/release-planning",
+        "channel_id": "ui4n6t936igybr76ofq1i9anho",
+        "channel_url": "https://chat.example.com/acme/channels/release-planning",
+        "created_at": "2026-10-20T21:51:32Z",
+        "id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+        "message": "The **2.4 release** moves to Thursday :tada: The notes are in [the release doc](https://docs.example.com/release-2.4). Anything blocking, say so here.",
+        "pinned": true,
+        "reactions": {
+          "eyes": [
+            "sam"
+          ],
+          "shipit": [
+            "priya"
+          ],
+          "tada": [
+            "alex",
+            "jordan"
+          ]
+        },
+        "reply_count": 4,
+        "responses": 8,
+        "team": "Acme",
+        "url": "https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r"
+      },
+      "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+      "thread": [
+        {
+          "address": "mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r",
+          "author": "sam",
+          "author_id": "hphrq4ud4trj5qbod1bra87pec",
+          "author_name": "Sam Okafor",
+          "created_at": "2026-10-20T21:51:32Z",
+          "id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+          "message": "The **2.4 release** moves to Thursday :tada: The notes are in [the release doc](https://docs.example.com/release-2.4). Anything blocking, say so here.",
+          "pinned": true,
+          "reactions": {
+            "eyes": [
+              "sam"
+            ],
+            "shipit": [
+              "priya"
+            ],
+            "tada": [
+              "alex",
+              "jordan"
+            ]
+          },
+          "reply_count": 4,
+          "responses": 8,
+          "url": "https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r"
+        },
+        {
+          "address": "mattermost://chat.example.com/acme/channels/release-planning/mg567kjkibd8f8z4rbhseinnhe",
+          "author": "alex",
+          "author_id": "oixgyc71w78fdfwiig61511a9e",
+          "author_name": "Alex Rivera",
+          "created_at": "2026-10-20T21:51:32Z",
+          "files": [
+            {
+              "height": 320,
+              "id": "si9bd96msbdpprtkn8sfom4fcy",
+              "mime_type": "image/png",
+              "name": "load-test.png",
+              "preview_uri": "mattermost://chat.example.com/files/si9bd96msbdpprtkn8sfom4fcy/preview",
+              "size": 4103,
+              "uri": "mattermost://chat.example.com/files/si9bd96msbdpprtkn8sfom4fcy",
+              "width": 640
+            }
+          ],
+          "id": "mg567kjkibd8f8z4rbhseinnhe",
+          "message": "Last night's load test: p95 stayed under 200 ms :chart_with_upwards_trend:",
+          "reply_count": 4,
+          "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+          "url": "https://chat.example.com/acme/pl/mg567kjkibd8f8z4rbhseinnhe"
+        },
+        {
+          "address": "mattermost://chat.example.com/acme/channels/release-planning/h43fkoax6tf9mktcsypwbzhysr",
+          "author": "jordan",
+          "author_id": "rfcqamre1fftidtcu8n48baksh",
+          "author_name": "Jordan Lee",
+          "created_at": "2026-10-20T21:51:32Z",
+          "id": "h43fkoax6tf9mktcsypwbzhysr",
+          "message": "Looks good to me. @riley, is the migration done?",
+          "reply_count": 4,
+          "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+          "url": "https://chat.example.com/acme/pl/h43fkoax6tf9mktcsypwbzhysr"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "mattermost://chat.example.com/emoji/shipit": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABrElEQVR4nOyay01EMQxFyRV7KAJKhCKgRCgCKgAJFGn09D75+PqTxNkE0Ng+Z+5jwYC7yWt6Aff5olFfb08/+X5Wj6+fKd/ZlTwAWwpJXqG1ZKQo4CwRKRq4tAhEhpfYIVkM9ZQGjALfuhvYA7xLAKtxFAmQbhhNAqQaRZVQlADmeXj5yFeTQq9BCXimhCsGtL5QCv7oay0JpwnQgr/6PrNQa4wFX/pz6RSoJqAUjiWhSADr3a+FYkjYY1NJQCsMQ4K6gF4ItgRcRcTD8pIStoy0BEguzehHFcBaltEXEZZk9sfRs+FhOdacW1Z4WcpqHjwtYzEXHpawnA/L4R4kwGKoJwnQHOZRAjSGeJZQ/Q8S3+/P+UpdrGcWNQGjHfR8sBj13LKuBOQELAGTC/gTMMPvgS3jSsBtAiYX8C9g5Mdgj20lYJuAUVNwxLQSsJeA0VJwxoLWF44AfylghpNq/44+0rtfnICSRhHhqx6BSBJqdgWrcQT4agHeJbTslqQ+ZIwG3pwAqcEe4LsTYJkGKfliArRESIHTBDBkSEOrCWgVwgRetSkI9AhdvwMAFXvKijOkOrEAAAAASUVORK5CYII=",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/files/si9bd96msbdpprtkn8sfom4fcy": {
+      "blob": "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CMRQAB0xd0DA/U8GglugRhJEw5SStwo5TTZ5+f2iAAYwgAEMYAADGMAABjCAswDurgO5DuQ6kOtArgO5DvSF60ASsAQsAUvAErAELAFLwK8nYB2wDlgHrAPWAeuAdcA6YB2wDlgHrAPWAeuAdcA6YB1wSgesM9OZ3XVmErAELAFLwBKwBCwBS8ASsAQcSsAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAAD+BngPj5m//bjHJ8lf9Xfb17zmte85o3Pu63L+KwDcOTRreX/mWLvN695zWte8/5jXitoK2graCtoK2graCvoUitoAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDOBZAF/s2KENgEAQBMAX9ICA/isDQReok6hLgP0M6uVtQrKZJWACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJmACJuAHAS/1ePs7zquekV/6/fLKK6+88vbz7ttaz5wC7hw9xvc/U+9+eeWVV15558hrgjZBm6BN0CZoE7QJOmqCVsAKWAErYAWsgBWwAlbAClgBK+CfFvDNfh0MAAAAIBDzt+4Rxg1jBEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABEzABBwX8AU8duzYBEAgCKLoBfZgoP1XpoFdGG0FC8rcPaML94PwYAAMYAADGMAABjCAFwF4q8fX33U/9Yz80u/Xq1evXr393vPY65kDcOfoMf7/mXr369WrV6/eOXpN0CZoE7QJ2gRtgjZBR03QAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYABPA/DLnh2bAAzDUBQk+wZSZwLXBu8rV2pdCgtOlTY4Hl8BK2AFrIAVsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIAVsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIC7FvATEfmX3vv9+TrnnHMtb82RrwJWwApYAStgBayAFfChgG3ANmAbsA3YBmwDtgHbgG3ANmAbsA3YBmwDLt2AAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAAMYwAAGMIABDGAAAxjAAAYwgAEMYAADGMAABjCAAQxgAF8BsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIAVsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIAVsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIAVsAJWwApYAStgBayAFbACVsAKWAErYAWsgBWwAlbAClgBK2AFrIAV8DUFvAcADMKaok4MKZcAAAAASUVORK5CYII=",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/files/si9bd96msbdpprtkn8sfom4fcy/preview": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAoAAAAFACAIAAACjr1pdAAAFJElEQVR42uzdQUrkQBSA4fRQd8giucIMcxDBiwi69QRuFbyI4EFEr5AscoryAL0QUnZev+T79kPqVQd+KnZnSq21AwC29ccWAIAAA4AAAwACDAACDAAIMAAIMAAgwAAgwACAAAOAAAOAAAMAAgwAAgwACDAACDAAIMAAIMAAgAADgAADgAADAAIMAAIMAAgwAAgwACDAACDAAIAAA4AAA4AAAwACDAACDAAIMAAIMAAgwAAgwACAAAOAAAOAAAMAl1eiLjzNi90HILVx6Ff/21Ot1Q4CwMY8ggYAAQYAAQYABBgABBgAEGAAEGAAQIABQIABAAEGAAEGAAEGAAQYAAQYABBgABBgAECAAUCAAQABBgABBgABBgAEGAAEGAAQYAAQYABAgAFAgAEAAQYAAQYAAQYABBgABBgAEGAAEGAAQIABQIABAAEGAAEGgOMpURf+urm1+wCk9vf9zQkYADI51VrtAgBszAkYAAQYAAQYABBgABBgAECAAUCAAQABBgABBgAEGAAEGAAEGAAQYAAQYABAgAFAgAGAnxVbAGzp/8Nn+Bo+nv/5IHACBgABBgAEGAAEGAAQYAAQYABAgAFAgAGAM17EkYAXFwA4AQMAAgwAAgwACDAACDAAIMAAEMvPkCCYn5mBEzAAIMAAIMAAgAADQG5hX8Ka5sXuJ+Lz8vmaF86NQ58vwC2LPp4l9U2Gz9f9DOc8ggYAAQaAY/AiDgB+jRfLOAEDgAADAAIMAAIMAAIMAGwi5begfcsOACdgAECAAUCAAQABBgABBgABBgAEGAB2zv+GBHBB3luAEzAACDAACDAAsDF/A+bq+JsZ4AQMAAgwAAgwACDAACDAAIAAA4AAAwACDAACDAACDAAIMAAIMAAgwAAgwACAAAOAAAMAAgwAQUrUhad5Sb1x2ddvXvOa17zmbTcOfb4Atyy66+Jvprb1m9e85jWvefcx73oeQQOAAAOAAAMAAgwAAgwACDAACDAAIMAAIMAAgAADgAADgAADAAIMAAIMAAgwAAgwACDAACDAAIAAA4AAA4AAAwACDAACDAAIMAAIMAAgwAAgwACAAAOAAAOAAAMAAgwAAgwACDAACDAAIMAAIMAAgAADgAADwPGUqAtP85J647Kv37zmNa95zdtuHPp8AW5ZdNfF30xt6zevec1rXvPuY971PIIGAAEGAAEGAAQYAAQYABBgABBgAECAAUCAAQABBgABBgABBgAEGAAEGAAQYAAQYABAgAFAgAEAAQYAAQYAAQYABBgABBgAEGAAEGAAQIABQIABAAEGAAEGAAEGAAQYAAQYABBgABBgAECAAUCAAQABBgABBoDjKVEXnuYl9cZlX795zWte85q33Tj0+QLcsuiui7+Z2tZvXvOa17zm3ce863kEDQACDAACDAAIMAAIMAAgwAAgwACAAAOAAAMAAgwAAgwAAgwACDAACDAAIMAAIMAAgAADgAADAAIMAAIMAAIMAAgwAAgwACDAACDAAIAAA4AAAwACDAACDAACDAAIMAAIMAAgwAAgwACAAAOAAAMAAgwAAgwAx3OqtYZc+O7+0e4DkNrry5MTMAA4AQMATsAAIMAAgAADgAADgAADAAIMAAIMAAgwAAgwACDAACDAAIAAA4AAA4AAAwACDAACDAAIMAAIMAAgwAAgwACAAAOAAAOAAAMAAgwAAgwACDAACDAAIMAAIMAAgAADgAADgAADAAIMAAIMAAgwAAgwACDAAHDNvgMAAP//DMKaopfZ7GsAAAAASUVORK5CYII=",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/hphrq4ud4trj5qbod1bra87pec/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACB0lEQVR42uzc0W0cMRCD4WSQavKYClJBOkh1bsRwAa7JgCswYJ1InT5WsOI/w5FuV/fr7d/vH5TTsAAAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAiAT/15eT36+X+e9Xn6F+1+//8XgIoy7yfRDmBJwjRjmBvyvXlOzCXTtZZBYwQ91Ky2OJrbtpVtreAgBsD28qxqgrnzTNvDYK79RaGEgRkAQK4YG5pABwAAwJ35U5JCOkAEAUAAAEB3Amg4CmWfIQyg4fVI9hlEkBkAAAEAAF0LILsJiW/DdIAIAuDaFGo4BuoAAELFWPKRaFEH7HSk5xPdrgja40vVB9JmAAB7y7PtfkDvHbHl70k6b4r1RtBav2rv6VXPgFWuNd+SdE8YgAeQcFN+K5KD7H5CAM4BBAAABAAABAAABAAABAAABAAABAAAG+S/o6td9kqyq64LeXQB2JYnPSRaAESivAFDHkB8imYxJAFUbWBSGDIAaveO+zHsBnDEtn0nhuF+9jmH+9mn3RFBR/9a8Og4Gu5nn3+4n13FcD+7luF+dkXD/ey6vBELa5R/dnXD/ewah/vZlZoBzzID7in/tesd7mdXLYLOj6A7y3/V2nXA0x3EaCuAm/NniQM64OQOUP7f90EHGMIA0JEADIAlbugAEQQABfURAAD//1zMtwmJojq0AAAAAElFTkSuQmCC",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/mkzhwxnu8ir88qwnswcbo3hjyw/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACGUlEQVR42uzc3W0bMRDE8WDBt1SRPtSR+kgH6SUFpA+1EsAC/GADhgERt3O3v3n0F8j5c2dJn3jr7++fP6hPxQIAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAA3nS7P049/nUBuz9/8d+fXwB0LvP3n88nsa6dMM9fT8ZQE/I9uU/UkO4ay2DN2dhkxlFN21amlYKDGACHL8+oIqiZZ9ocBjX2PwohDPQAAPoWY0IRqAAAAJiZPyEppAJEEAAEAAA0E0DCUah3DM0AEh6P9I5BBOkBABAAANBYAL2bkPZtmAoQQQCMTaGEY6AKAKBpMYZ8SDSoAo50JOcjulkRdIwvUR+Q1gMAOHZ5pt0PSLyg8fRo+3OSzJtiuRG016/Ye3rRPWCXa8m3JNOvqb4YR+4Jby6Fb5JwU/64ULrdHyey+4LngFO77yAGAAAsAAAAAgAAAgAAAgAAAgAAAgCAs8i7o/td/uK7Hkk2r+sPfyeQxxqVJ4Ev9V4zozznLbprchdNwLBsYHoxLHvHXgyL9b0Yivu94yzu9452sb43jor7veMv7vfOorjfO5fifu+Mivu98/JErFll+ffOrrjfO8fifu9M9YCr9IA5y3/vfIv7vbMWQeePoJnLf9fcVcDlDmJ0KIDJ+bPFARVw5gqw/F/3QQVowgDQKQFoAFvcUAEiCABq1P8AAAD//yinumpUvMN4AAAAAElFTkSuQmCC",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/oixgyc71w78fdfwiig61511a9e/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACBklEQVR42uzc0XEbMRCD4WQn9aSAFJSHVKH3dOCCXJdnXIFnTBGg+KGCI/5dLKk76tfv//9+UE7DAgAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAAAIAA+9f73cfTz/zzr8/Qv2v3n7QFARZn3k2gHsCRhmjHMDfnePCfmkulay6Axgp5qVlsczW3byrZWcBADYHt5VjXB3Hmm7WEw1/6iUMLADAAgV4wNTaADAADgzvwpSSEdIIIAIAAAoDsBNByFss8QBtDweiT7DCLIDACAAACArgWQ3YTEt2E6QAQBcG0KNRwDdQAAoWIs+Ui0qAN2OtLziW5XBO3xpeoDaTMAgL3l2XY/oPeO2PL3JJ03xXojaK1ftff0qmfAKteab0m6JwzAE0i4Kb8VyUF2vyAA5wACAAACAAACAAACAAACAAACAAACAIAN8t/R1S57JdlV14U8ugBsy5MeEi0AIlHegCEPID5FsxiSAKo2MCkMGQC1e8f9GHYDOGLbvhPDcD/7nMP97NPuiKCjfy14dhwN97PPP9zPrmK4n13LcD+7ouF+dl3eiIU1yj+7uuF+do3D/exKzYBXmQH3lP/a9Q73s6sWQedH0J3lv2rtOuDlDmK0FcDN+bPEAR1wcgco/+/7oAMMYQDoSAAGwBI3dIAIAoCC+ggAAP//NJq4Yoo0E/UAAAAASUVORK5CYII=",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/rfcqamre1fftidtcu8n48baksh/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACF0lEQVR42uzc3WkkMRDE8aNRIhvRZXCBbAAXyGZzUVwqBi/4wQZjWDFdM/2rR38h1V9dLXlWs+6///2iPhULAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAHjX/XE79fjXBez++sW/f/4D0LnMP34+n8S6dsI8fz0ZQ03I9+Q+UUO6ayyDNWdjkxlHNW1bmVYKDmIAHL48o4qgZp5pcxjU2P8ohDDQAwDoW4wJRaACAABgZv6EpJAKEEEAEAAA0EwACUeh3jE0A0h4PNI7BhGkBwBAAABAYwH0bkLat2EqQAQBMDaFEo6BKgCApsUY8iHRoAo40pGcj+hmRdAxvkR9QFoPAODY5Zl2PyDxgsbTo+3PSTJviuVG0F6/Yu/pRfeAXa4l35JMv6b6Yhy5J7y5FH5Iwk3540Lp/ridyO4LngNO7b6DGAAAsAAAAAgAAAgAAAgAAAgAAAgAAM4i747ud/mb73ok2byuP/2dQB5rVJ4EvtR7zYzynLforsldNAHDsoHpxbDsHXsxLNb3Yiju946zuN872sX63jgq7veOv7jfO4vifu9civu9Myru987LE7FmleXfO7vifu8ci/u9M9UDrtID5iz/vfMt7vfOWgSdP4JmLv9dc1cBlzuI0aEAJufPFgdUwJkrwPJ/3QcVoAkDQKcEoAFscUMFiCAAqFFvAQAA///k3q651KWe0gAAAABJRU5ErkJggg==",
+      "mimeType": "image/png"
+    }
+  },
+  "answers": {
+    "view_action:more": [
+      {
+        "content": [
+          {
+            "text": "{\"post\":{\"address\":\"mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r\",\"author\":\"sam\",\"author_id\":\"hphrq4ud4trj5qbod1bra87pec\",\"author_name\":\"Sam Okafor\",\"channel\":\"Release planning\",\"channel_address\":\"mattermost://chat.example.com/acme/channels/release-planning\",\"channel_id\":\"ui4n6t936igybr76ofq1i9anho\",\"channel_url\":\"https://chat.example.com/acme/channels/release-planning\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"bp6tuzfr3tf1xpjjihcbm47m3r\",\"message\":\"The **2.4 release** moves to Thursday :tada: The notes are in [the release doc](https://docs.example.com/release-2.4). Anything blocking, say so here.\",\"pinned\":true,\"reactions\":{\"eyes\":[\"sam\"],\"shipit\":[\"priya\"],\"tada\":[\"alex\",\"jordan\"]},\"reply_count\":4,\"responses\":8,\"team\":\"Acme\",\"url\":\"https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r\"},\"root_id\":\"bp6tuzfr3tf1xpjjihcbm47m3r\",\"thread\":[{\"address\":\"mattermost://chat.example.com/acme/channels/release-planning/zqsxn8b5nt8e7kuj4kwe953suw\",\"author\":\"priya\",\"author_id\":\"mkzhwxnu8ir88qwnswcbo3hjyw\",\"author_name\":\"Priya Natarajan\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"zqsxn8b5nt8e7kuj4kwe953suw\",\"message\":\"Docs for 2.4 are merged, and ~design has the new screenshots.\",\"reply_count\":4,\"root_id\":\"bp6tuzfr3tf1xpjjihcbm47m3r\",\"url\":\"https://chat.example.com/acme/pl/zqsxn8b5nt8e7kuj4kwe953suw\"},{\"address\":\"mattermost://chat.example.com/acme/channels/release-planning/9it51auehbnqbxyo4o4wuo8gmr\",\"author\":\"sam\",\"author_id\":\"hphrq4ud4trj5qbod1bra87pec\",\"author_name\":\"Sam Okafor\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"9it51auehbnqbxyo4o4wuo8gmr\",\"message\":\"Thanks all, I'll cut the release candidate tomorrow morning.\",\"reply_count\":4,\"root_id\":\"bp6tuzfr3tf1xpjjihcbm47m3r\",\"url\":\"https://chat.example.com/acme/pl/9it51auehbnqbxyo4o4wuo8gmr\"}]}",
+            "type": "text"
+          }
+        ],
+        "structuredContent": {
+          "post": {
+            "address": "mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r",
+            "author": "sam",
+            "author_id": "hphrq4ud4trj5qbod1bra87pec",
+            "author_name": "Sam Okafor",
+            "channel": "Release planning",
+            "channel_address": "mattermost://chat.example.com/acme/channels/release-planning",
+            "channel_id": "ui4n6t936igybr76ofq1i9anho",
+            "channel_url": "https://chat.example.com/acme/channels/release-planning",
+            "created_at": "2026-10-20T21:51:32Z",
+            "id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+            "message": "The **2.4 release** moves to Thursday :tada: The notes are in [the release doc](https://docs.example.com/release-2.4). Anything blocking, say so here.",
+            "pinned": true,
+            "reactions": {
+              "eyes": [
+                "sam"
+              ],
+              "shipit": [
+                "priya"
+              ],
+              "tada": [
+                "alex",
+                "jordan"
+              ]
+            },
+            "reply_count": 4,
+            "responses": 8,
+            "team": "Acme",
+            "url": "https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r"
+          },
+          "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+          "thread": [
+            {
+              "address": "mattermost://chat.example.com/acme/channels/release-planning/zqsxn8b5nt8e7kuj4kwe953suw",
+              "author": "priya",
+              "author_id": "mkzhwxnu8ir88qwnswcbo3hjyw",
+              "author_name": "Priya Natarajan",
+              "created_at": "2026-10-20T21:51:32Z",
+              "id": "zqsxn8b5nt8e7kuj4kwe953suw",
+              "message": "Docs for 2.4 are merged, and ~design has the new screenshots.",
+              "reply_count": 4,
+              "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+              "url": "https://chat.example.com/acme/pl/zqsxn8b5nt8e7kuj4kwe953suw"
+            },
+            {
+              "address": "mattermost://chat.example.com/acme/channels/release-planning/9it51auehbnqbxyo4o4wuo8gmr",
+              "author": "sam",
+              "author_id": "hphrq4ud4trj5qbod1bra87pec",
+              "author_name": "Sam Okafor",
+              "created_at": "2026-10-20T21:51:32Z",
+              "id": "9it51auehbnqbxyo4o4wuo8gmr",
+              "message": "Thanks all, I'll cut the release candidate tomorrow morning.",
+              "reply_count": 4,
+              "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+              "url": "https://chat.example.com/acme/pl/9it51auehbnqbxyo4o4wuo8gmr"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

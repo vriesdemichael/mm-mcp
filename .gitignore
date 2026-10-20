@@ -3,9 +3,12 @@
 .env.*
 *.exe
 
-# The docs site's build output and its Python environment.
+# The docs site's build output and its Python environment, and the view page
+# and its host, which task docs:views puts in the site before it is built.
 /site/
 /docs/.venv/
+/docs/site/assets/views/page.html
+/docs/site/assets/views/host.js
 __pycache__/
 
 # Release build output.

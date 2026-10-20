@@ -446,6 +446,24 @@ func mustJSON(t *testing.T, value any) string {
 	return string(data)
 }
 
+// Isolated as a client isolates it, scripts alone and under the policy MCP
+// Apps sets for a view that declares no domains, the page draws, reads its
+// pictures as data, and reports its size; the documentation runs it so.
+func TestThePageRunsIsolatedAsAClientRunsIt(t *testing.T) {
+	h := openHost(t)
+	page, _ := json.Marshal(views.Page(base, views.Settings{Changes: true, Posts: true}))
+	settings, _ := json.Marshal(showThread(map[string]any{"isolated": true}))
+	var i int
+	h.eval("mmHost.mount("+string(page)+", "+string(settings)+")", &i)
+	frame := fmt.Sprintf("mmHost.frames[%d]", i)
+	h.until(frame + ".ready && " + frame + ".reads.length >= 3 && " + frame + ".sizes.some((s) => s.height > 200)")
+	var sandbox string
+	h.eval(frame+".iframe.getAttribute('sandbox')", &sandbox)
+	if sandbox != "allow-scripts" {
+		t.Errorf("the frame is sandboxed %q", sandbox)
+	}
+}
+
 func TestAPostAloneIsShownWithoutItsThread(t *testing.T) {
 	h := openHost(t)
 	root := thread()["post"]

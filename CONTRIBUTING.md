@@ -177,6 +177,14 @@ and measuring it across models is for whoever deploys mm-mcp with theirs.
 `task test:views` bundles the bridge with Node and runs the page in
 Playwright's Chromium, which it installs.
 
+The documentation's Views page runs the same page in the same bridge, played
+recordings of what each view drew on a real Mattermost.
+`task docs:record-views` makes them again from a scene it seeds on this
+checkout's instance, with its people and places renamed, and a unit test
+fails when a recording no longer decodes into what its tool answers.
+`task docs:serve` and `task docs:validate` put the page and the bridge into the
+site first, which needs Node.
+
 `task test:clients` installs Goose's desktop app and VS Code at the versions
 `.github/tool-versions.env` pins, starts Mattermost, and runs the client tests
 (ADR-036). Each client draws on your screen while it runs; on Linux without a

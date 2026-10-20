@@ -75,8 +75,7 @@ before it is sent.</p>
 **Views in the chat**: in a client that renders MCP Apps, a thread, what is
 unread for you, or a post your agent made appears as Mattermost lays it out,
 and a post it proposes appears as it will be posted, for you to post, change
-or discard
-([ADR-022](adr/022-mcp-apps-views-on-show-and-on-every-post.md)).
+or discard. [See them live](views.md).
 
 ## How it behaves
 

@@ -55,6 +55,10 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+# The views, live on the page that shows them; elsewhere it does nothing.
+extra_javascript:
+  - assets/views/demo.js
+
 plugins:
   - search
 
@@ -103,6 +107,7 @@ nav:
       - For administrators: administrators.md
   - Reference:
       - Tools: tools.md
+      - Views: views.md
       - Supported Mattermost releases: mattermost-releases.md
   - Project:
       - Decision records: adr/index.md

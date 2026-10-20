@@ -1,9 +1,10 @@
 {
   "name": "mm-mcp-views-test-host",
   "private": true,
-  "description": "Test only, never shipped: runs mm-mcp's view page inside the official MCP Apps app-bridge, for the views browser tests (ADR-022).",
+  "description": "Never shipped with mm-mcp: runs its view page inside the official MCP Apps app-bridge, for the views browser tests (ADR-022) and for the documentation, which shows the views live.",
   "scripts": {
-    "bundle": "esbuild host.js --bundle --format=iife --target=es2022 --outfile=../../../.tmp/views/host.js"
+    "bundle": "esbuild host.js --bundle --format=iife --target=es2022 --outfile=../../../.tmp/views/host.js",
+    "bundle:docs": "esbuild host.js --bundle --minify --format=iife --target=es2022 --outfile=../../../docs/site/assets/views/host.js"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1",
