@@ -350,7 +350,7 @@ function placeName(draft) {
 // direction, which a message could hide what it says behind: soft hyphens,
 // zero-width spaces and joiners, direction marks and overrides, invisible
 // operators, fillers and tag characters.
-const HIDDEN = /[­͏؜ᅟᅠ឴឵᠎​-‏‪-‮⁠-⁤⁦-⁯ㅤ﻿ﾠ\u{E0000}-\u{E007F}]/u;
+const HIDDEN = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\u3164\uFEFF\uFFA0\u{E0000}-\u{E007F}]/u;
 const PICTOGRAPH = /\p{Extended_Pictographic}/u;
 
 // hiddenAt reports whether the character at i of chars is hidden. A
@@ -358,8 +358,8 @@ const PICTOGRAPH = /\p{Extended_Pictographic}/u;
 // and is what it looks like.
 function hiddenAt(chars, i) {
   if (!HIDDEN.test(chars[i])) return false;
-  if (chars[i] !== "‍") return true;
-  const before = chars[i - 1] === "️" ? chars[i - 2] : chars[i - 1];
+  if (chars[i] !== "\u200D") return true;
+  const before = chars[i - 1] === "\uFE0F" ? chars[i - 2] : chars[i - 1];
   return !(before && PICTOGRAPH.test(before) && chars[i + 1] && PICTOGRAPH.test(chars[i + 1]));
 }
 

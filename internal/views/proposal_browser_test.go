@@ -78,7 +78,7 @@ func has(list []string, want string) bool {
 
 func TestAProposalIsShownAsItWillBePostedHidingNothing(t *testing.T) {
 	h := openHost(t)
-	message := "The plan is [here](https://files.example.net/plan) and at https://chat.example.com/team/pl/p1 ‮evil‬"
+	message := "The plan is [here](https://files.example.net/plan) and at https://chat.example.com/team/pl/p1 \u202Eevil\u202C"
 	i := h.mount(showProposal(proposal(message, map[string]any{"notes": []string{"@here notifies everyone in the channel who is online: 12 people in ~Town Square."}}), nil))
 	var drawn struct {
 		Label, Title, Team, Status, Warning string
