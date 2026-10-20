@@ -187,6 +187,7 @@ tasks:
     cmds:
       - go test -tags=live -c -o .tmp/live.test ./tests/live
       - go test -tags=live,clients -c -o .tmp/live.test ./tests/live
+      - go test -tags=live,record -c -o .tmp/live.test ./tests/live
 
   # ------------------------------------------------------------------ local stack
 
@@ -226,15 +227,32 @@ tasks:
 
   # ------------------------------------------------------------------ docs
 
+  docs:views:
+    desc: Put the view page and the host it runs in into the documentation site, which shows the views live. Needs Node
+    cmds:
+      - npm ci --prefix internal/views/testhost --no-audit --no-fund
+      - npm run --prefix internal/views/testhost bundle:docs
+      - go run ./tools/viewsdocs
+
+  docs:record-views:
+    desc: Record what each view draws, from a scene seeded on this checkout's instance, which it starts first, for the documentation, which plays the recordings to the real view page
+    deps: [stack:up]
+    env:
+      MM_LIVE_STACK: '{{.STACK}}'
+      MM_LIVE_RELEASE: '{{.RELEASE}}'
+    cmd: go test -tags=live,record -count=1 -run TestRecordTheViewsForTheDocs ./tests/live/
+
   docs:validate:
-    desc: Build the documentation site strictly, as CI does
+    desc: Build the documentation site strictly, as CI does. Needs Node
+    deps: [docs:views]
     dir: docs
     # MkDocs resolves --site-dir against the directory of mkdocs.yml, the
     # repository's root, not against the task's dir.
     cmd: uv run --frozen mkdocs build --strict --config-file ../mkdocs.yml --site-dir .tmp/site
 
   docs:serve:
-    desc: Serve the documentation site with live reload
+    desc: Serve the documentation site with live reload. Needs Node
+    deps: [docs:views]
     dir: docs
     cmd: uv run --frozen mkdocs serve --config-file ../mkdocs.yml
 
@@ -249,6 +267,7 @@ tasks:
     desc: Publish a release's docs to GitHub Pages under its line (ADR-016). Release workflow only
     requires:
       vars: [VERSION]
+    deps: [docs:views]
     dir: docs
     # A release deploys to its line: its major from 1.0, its minor before. The
     # full version is an alias, and latest follows the newest line.

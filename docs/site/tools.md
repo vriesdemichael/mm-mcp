@@ -599,7 +599,8 @@ credential. Where the app reads no pictures, people are their initials and a
 custom emoji its name. The page takes the app's light or dark theme and its
 language, where mm-mcp has words for it, and English otherwise. Goose's desktop
 app shows views, and so does VS Code with its `chat.mcp.apps.enabled` setting
-on; `diagnose` says whether yours does.
+on; `diagnose` says whether yours does. [Views](views.md) shows each of them,
+live.
 
 ### Page sizes
 

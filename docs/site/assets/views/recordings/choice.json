@@ -1,0 +1,94 @@
+{
+  "input": {
+    "channel_id": "d7hrc8a1ztdjjkjcnkek77nktw",
+    "message": "Can we move the retro to Friday at 15:00? Thursday is the release."
+  },
+  "result": {
+    "content": [
+      {
+        "text": "Not saved: the person has a draft of their own in alex. The view shows it beside your proposal, and asks them which to keep. Learn what they chose from Mattermost, with list_drafts, rather than proposing it again.",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "address": "mattermost://chat.example.com/acme/messages/@alex",
+      "channel": "alex",
+      "channel_id": "d7hrc8a1ztdjjkjcnkek77nktw",
+      "channel_url": "https://chat.example.com/acme/messages/@alex",
+      "length": 66,
+      "message": "Can we move the retro to Friday at 15:00? Thursday is the release.",
+      "saved": false,
+      "theirs": {
+        "address": "mattermost://chat.example.com/acme/messages/@alex",
+        "channel": "alex",
+        "channel_id": "d7hrc8a1ztdjjkjcnkek77nktw",
+        "channel_url": "https://chat.example.com/acme/messages/@alex",
+        "length": 22,
+        "message": "Can we move the retro?",
+        "updated_at": "2026-10-20T21:51:33Z",
+        "url": "https://chat.example.com/acme/messages/@alex"
+      },
+      "url": "https://chat.example.com/acme/messages/@alex"
+    }
+  },
+  "resources": {
+    "mattermost://chat.example.com/users/n7ejzsmsc7r13g67k4ccg4z8bo/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACCElEQVR42uzcUXEcMRCE4WQqJIIiAAIqDPJgbgZgFKbhKiNwlXXq1ulrBKv+Z3qk29X9+vPv7QflNCwAAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAAC4FOvL7+Pfv6fZ32e/kW7//5/B6CizPtJtANYkjDNGOaGfG+eE3PJdK1l0BhBDzWrLY7mtm1lWys4iAGwvTyrmmDuPNP2MJhrf1EoYWAGAJArxoYm0AEAAHBn/pSkkA4QQQAQAADQnQAajkLZZwgDaHg9kn0GEWQGAEAAAEDXAshuQuLbMB0gggC4NoUajoE6AIBQMZZ8JFrUATsd6flEtyuC9vhS9YG0GQDA3vJsux/Qe0ds+XuSzptivRG01q/ae3rVM2CVa823JN0TBuABJNyU34rkILufEIBzAAEAAAEAAAEAAAEAAAEAAAEAAAEAwAb57+hql72S7KrrQh5dALblSQ+JFgCRKG/AkAcQn6JZDEkAVRuYFIYMgNq9434MuwEcsW3fiWG4n33O4X72aXdE0NG/Fjw6job72ecf7mdXMdzPrmW4n13RcD+7Lm/Ewhrln13dcD+7xuF+dqVmwLPMgHvKf+16h/vZVYug8yPozvJftXYd8HQHMdoK4Ob8WeKADji5A5T/933QAYYwAHQkAANgiRs6QAQBQEF9BAAA//8rRbPuY3xqDwAAAABJRU5ErkJggg==",
+      "mimeType": "image/png"
+    }
+  },
+  "answers": {
+    "view_change:post": [
+      {
+        "content": [
+          {
+            "text": "{\"post\":{\"address\":\"mattermost://chat.example.com/acme/messages/@alex/6w9t38ii5br9mc9sex4k4a3wxa\",\"ai_generated\":true,\"author\":\"riley\",\"author_id\":\"n7ejzsmsc7r13g67k4ccg4z8bo\",\"author_name\":\"Riley Chen\",\"channel\":\"alex\",\"channel_address\":\"mattermost://chat.example.com/acme/messages/@alex\",\"channel_id\":\"d7hrc8a1ztdjjkjcnkek77nktw\",\"channel_url\":\"https://chat.example.com/acme/messages/@alex\",\"created_at\":\"2026-10-20T21:51:33Z\",\"id\":\"6w9t38ii5br9mc9sex4k4a3wxa\",\"message\":\"Can we move the retro to Friday at 15:00? Thursday is the release.\",\"reply_count\":0,\"url\":\"https://chat.example.com/acme/pl/6w9t38ii5br9mc9sex4k4a3wxa\"},\"status\":\"posted\"}",
+            "type": "text"
+          }
+        ],
+        "structuredContent": {
+          "post": {
+            "address": "mattermost://chat.example.com/acme/messages/@alex/6w9t38ii5br9mc9sex4k4a3wxa",
+            "ai_generated": true,
+            "author": "riley",
+            "author_id": "n7ejzsmsc7r13g67k4ccg4z8bo",
+            "author_name": "Riley Chen",
+            "channel": "alex",
+            "channel_address": "mattermost://chat.example.com/acme/messages/@alex",
+            "channel_id": "d7hrc8a1ztdjjkjcnkek77nktw",
+            "channel_url": "https://chat.example.com/acme/messages/@alex",
+            "created_at": "2026-10-20T21:51:33Z",
+            "id": "6w9t38ii5br9mc9sex4k4a3wxa",
+            "message": "Can we move the retro to Friday at 15:00? Thursday is the release.",
+            "reply_count": 0,
+            "url": "https://chat.example.com/acme/pl/6w9t38ii5br9mc9sex4k4a3wxa"
+          },
+          "status": "posted"
+        }
+      }
+    ],
+    "view_change:replace": [
+      {
+        "content": [
+          {
+            "text": "{\"draft\":{\"address\":\"mattermost://chat.example.com/acme/messages/@alex\",\"channel\":\"alex\",\"channel_id\":\"d7hrc8a1ztdjjkjcnkek77nktw\",\"channel_url\":\"https://chat.example.com/acme/messages/@alex\",\"length\":66,\"message\":\"Can we move the retro to Friday at 15:00? Thursday is the release.\",\"updated_at\":\"2026-10-20T21:51:33Z\",\"url\":\"https://chat.example.com/acme/messages/@alex\"},\"status\":\"saved\"}",
+            "type": "text"
+          }
+        ],
+        "structuredContent": {
+          "draft": {
+            "address": "mattermost://chat.example.com/acme/messages/@alex",
+            "channel": "alex",
+            "channel_id": "d7hrc8a1ztdjjkjcnkek77nktw",
+            "channel_url": "https://chat.example.com/acme/messages/@alex",
+            "length": 66,
+            "message": "Can we move the retro to Friday at 15:00? Thursday is the release.",
+            "updated_at": "2026-10-20T21:51:33Z",
+            "url": "https://chat.example.com/acme/messages/@alex"
+          },
+          "status": "saved"
+        }
+      }
+    ]
+  }
+}
