@@ -29,7 +29,7 @@ post states how far it goes, and mm-mcp checks that before it is sent.</p>
 <div class="mm-msg mm-msg--agent">Two threads since Friday. The release moved to Thursday, and Sam asks whether the 2.4 notes are ready.</div>
 <div class="mm-msg mm-msg--you">Draft a reply to Sam for me.</div>
 <div class="mm-tool">propose_post, a reply in ~release-planning</div>
-<div class="mm-msg mm-msg--agent mm-ask"><span class="mm-ask__label">Proposed reply · Release planning</span><br>The 2.4 notes are ready, Sam. The changelog is in the release doc.
+<div class="mm-msg mm-msg--agent mm-ask"><span class="mm-ask__label">Reply drafted by your agent · Release planning</span><br>The 2.4 notes are ready, Sam. The changelog is in the release doc.
 <div class="mm-ask__buttons"><span>Post</span><span>Edit</span><span>Discard</span></div>
 </div>
 </div>
