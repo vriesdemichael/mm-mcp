@@ -160,7 +160,22 @@ newest release: it proposes moving their pins when those pass, and opens an
 issue when they fail. Live tests run on pull requests from forks; if they fail
 on yours, the failure is real.
 
-## The views in real clients
+## How the views are tested
+
+The MCP Apps views are tested at three levels
+([ADR-037](docs/site/adr/037-the-views-are-tested-in-the-bridge-in-real-clients-and-by-hand.md)):
+
+| Level | Where it runs | Locally |
+|---|---|---|
+| The page, in the official MCP Apps bridge | View Tests, every pull request | `task test:views` |
+| Goose and VS Code, with a scripted model | Client Tests, every pull request; Client Drift, daily, on each client's newest release | `task test:clients` |
+| Apps no machine can drive, such as Claude desktop | by hand, before a release that changes the views | the Client check issue form |
+
+What a model does with the tools is not measured: that depends on the model,
+and measuring it across models is for whoever deploys mm-mcp with theirs.
+
+`task test:views` bundles the bridge with Node and runs the page in
+Playwright's Chromium, which it installs.
 
 `task test:clients` installs Goose's desktop app and VS Code at the versions
 `.github/tool-versions.env` pins, starts Mattermost, and runs the client tests
