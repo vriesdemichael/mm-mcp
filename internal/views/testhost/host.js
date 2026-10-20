@@ -48,6 +48,7 @@ const ISOLATED_POLICY = "default-src 'none'; script-src 'unsafe-inline'; style-s
 //   theme      "light" or "dark"; themes overrides the variables of each
 //   locale     the host's language
 //   refuseLinks  refuse to open links
+//   openLink   a function told each link the view opens
 function mount(page, options) {
   const settings = options || {};
   const iframe = document.createElement("iframe");
@@ -102,6 +103,7 @@ function mount(page, options) {
   };
   bridge.onopenlink = async (params) => {
     frame.links.push(params.url);
+    if (typeof settings.openLink === "function") settings.openLink(params.url);
     return settings.refuseLinks ? { isError: true } : {};
   };
   bridge.onupdatemodelcontext = async (params) => {

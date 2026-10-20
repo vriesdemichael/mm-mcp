@@ -170,6 +170,23 @@ a login for each address, and `mm-mcp logout --url` names the one to end.
 With Go installed, `go install github.com/vriesdemichael/mm-mcp/cmd/mm-mcp@latest`
 builds it from source instead; such a build reports its version as `dev`.
 
+## Views in the chat
+
+Some AI apps show mm-mcp's answers as views: small, interactive panels in the
+chat that show a thread or what you missed as Mattermost shows it, and a post
+your agent drafts with Post, Edit and Discard ([Views](views.md)). There is
+nothing to set up in mm-mcp; whether you see them depends on your app:
+
+- **Goose's desktop app** shows them as it is.
+- **VS Code** shows them once `chat.mcp.apps.enabled` is on: open the
+  settings, search for "mcp apps", and tick it.
+- **Claude Code** in a terminal shows text.
+- **In another app,** ask your agent to run `diagnose`: it says whether
+  your app shows views.
+
+An app that shows none still does everything: your agent answers in words,
+and a post it drafts waits in Mattermost for you to send.
+
 ## First steps
 
 Once your AI app is connected, ask it in your own words. Some to start with, and
@@ -180,6 +197,7 @@ the [tools](tools.md) it reaches for:
 | Who am I in Mattermost? | Checks the connection, with `get_me` |
 | What did I miss? Catch me up on my unread channels. | Finds the channels with something unread, with `get_user_channels`, and reads each from where you stopped, with `read_unread`, without marking anything read |
 | What mentions me since Monday? | `list_mentions` |
+| Show me what I missed. | Shows it in the chat as Mattermost shows it, with `show`, in an app that shows [views](views.md) |
 | What did we decide about the release date? | `search_posts`, and `read_post` for the thread around a match |
 | Draft a reply to Sam in ~release-planning that I can send myself. | Proposes the reply as your draft in Mattermost, with `propose_post`, for you to send, once writes are allowed |
 | Reply in that thread that the notes are ready. | Posts with `create_post`, once writes are allowed and your app approves the call |
