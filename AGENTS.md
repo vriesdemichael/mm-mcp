@@ -50,6 +50,8 @@ task quality:verify
 task quality:format
 task docs:validate
 task docs:adr-index
+task docs:record-views
+task docs:view-pictures
 task openapi:refresh
 ```
 
@@ -162,6 +164,10 @@ Then break each new test by reverting its fix and watch it fail.
   the compose files label their containers to opt out.
 - **Line endings are LF.** `git add --renormalize .` fixes a file a tool wrote
   with CRLF.
+- **A change to the view page or to a recording** leaves the README's pictures
+  of the views stale, which a unit test says: `task docs:view-pictures` takes
+  them again, and `task docs:record-views` makes the recordings again when a
+  view draws something new.
 
 ## Governance tests
 

@@ -14,6 +14,7 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
 <span class="mm-stat mm-stat--checked"><strong>14</strong> checked writes</span>
 <span class="mm-stat mm-stat--yours"><strong>7</strong> yours alone</span>
 <span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
+<a class="mm-stat mm-stat--view" href="../views/"><strong>5</strong> show you a view</a>
 </div>
 
 <div class="grid cards mm-jobs" markdown>
@@ -137,6 +138,9 @@ or words of yours it deletes, which the call states and mm-mcp checks
 ([below](#how-a-write-is-checked));
 <span class="mm-badge mm-badge--yours">yours alone</span> for what only you see
 or is gone in seconds; and <span class="mm-badge mm-badge--disk">your disk</span>.
+A tool marked <span class="mm-badge mm-badge--view">view</span> also shows you
+what it did in the chat, in an AI app that shows views; the badge opens it,
+live, on [Views](views.md).
 The tools that write are offered only once you allow writes, with
 `MM_MCP_ALLOW_WRITES` ([Configuration](configuration.md)).
 
@@ -229,7 +233,7 @@ The tools that write are offered only once you allow writes, with
 
 ### See it as Mattermost shows it
 
-`show`: Show { #show }
+`show`: Show [view](views.md#see-a-thread){ .mm-view-badge } { #show }
 :   Puts what you asked to see in front of you in the chat, laid out as
     Mattermost lays it out.
 
@@ -295,7 +299,7 @@ The tools that write are offered only once you allow writes, with
 Your MCP client's approval of each call decides, and mm-mcp checks what each
 states before it acts ([below](#how-a-write-is-checked)).
 
-`create_post`: Create post { #create_post .mm-checked }
+`create_post`: Create post [view](views.md#see-what-your-agent-posted){ .mm-view-badge } { #create_post .mm-checked }
 :   Posts a message in a channel, or with `root_id` replies in the thread of any
     post in it. Where mm-mcp asks, its question shows the message as it will be
     sent, the channel and, for a reply, the start of the thread. Posting takes
@@ -318,13 +322,13 @@ states before it acts ([below](#how-a-write-is-checked)).
     ([Security](security.md#credentials)); attach such a file in Mattermost
     yourself if you mean to. `dm` and `group_message` take `files` too.
 
-`dm`: Send direct message { #dm .mm-checked }
+`dm`: Send direct message [view](views.md#see-what-your-agent-posted){ .mm-view-badge } { #dm .mm-checked }
 :   Sends a direct message to one person, by username or email address, or a
     note to yourself by your own username. The username is required, so
     whatever approves the call sees who it goes to. This is how to message
     people: "message Alice and Bob" is two direct messages.
 
-`group_message`: Send group message { #group_message .mm-checked }
+`group_message`: Send group message [view](views.md#see-what-your-agent-posted){ .mm-view-badge } { #group_message .mm-checked }
 :   Sends one message to two to seven people together, in the group conversation
     Mattermost keeps for exactly them. Only when you ask for a group
     conversation.
@@ -426,7 +430,7 @@ states before it acts ([below](#how-a-write-is-checked)).
 
 ### Your own things
 
-`propose_post`: Propose post { #propose_post .mm-yours }
+`propose_post`: Propose post [view](views.md#check-and-send-a-post-your-agent-drafts){ .mm-view-badge } { #propose_post .mm-yours }
 :   Proposes a post for you to send yourself. The message waits as your draft,
     in a channel, a thread, or a direct or group message you already have, in
     your message box in every Mattermost app, and the answer links where it
@@ -626,6 +630,13 @@ replaces and the reactions and replies that answer it, and what a deletion
 takes away, each stated in the call and read again just before the write;
 where it goes, by address; and the message itself. A refusal says what mm-mcp
 found and tells the model to weigh whether that is what you meant.
+
+A post can also go ahead on your own press. In an app that shows views, a post
+your agent proposes with [`propose_post`](#propose_post) shows with Post, which
+sends it only while your draft holds what the view shows, after Mattermost's
+own question where it would ask one
+([Views](views.md#questions-people-ask)).
+`MM_MCP_POST_FROM_VIEWS=false` takes Post out of the view.
 
 With `MM_MCP_ELICITATION_OPT_IN=true`, mm-mcp asks you as well
 ([Configuration](configuration.md)): it shows what will change, where, and under

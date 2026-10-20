@@ -183,7 +183,10 @@ recordings of what each view drew on a real Mattermost.
 checkout's instance, with its people and places renamed, and a unit test
 fails when a recording no longer decodes into what its tool answers.
 `task docs:serve` and `task docs:validate` put the page and the bridge into the
-site first, which needs Node.
+site first, which needs Node. The README shows pictures of two views instead,
+since GitHub runs no script: `task docs:view-pictures` takes them in GitHub's
+light and dark colours, and a unit test fails when the page or a recording
+changed since.
 
 `task test:clients` installs Goose's desktop app and VS Code at the versions
 `.github/tool-versions.env` pins, starts Mattermost, and runs the client tests

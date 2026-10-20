@@ -296,6 +296,11 @@
   padding: 0.55rem 0.75rem;
 }
 
+.mm-ask__label {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.6rem;
+}
+
 .mm-ask__buttons {
   display: flex;
   gap: 0.4rem;
@@ -353,6 +358,7 @@
   --mm-kind-checked: #b26a00;
   --mm-kind-yours: #138a65;
   --mm-kind-disk: #7a4fc4;
+  --mm-kind-view: #0f7c8c;
 }
 
 [data-md-color-scheme="slate"] {
@@ -360,6 +366,7 @@
   --mm-kind-checked: #f2b552;
   --mm-kind-yours: #5fd0a5;
   --mm-kind-disk: #b89bf0;
+  --mm-kind-view: #5cc8d8;
 }
 
 .md-typeset .mm-lead {
@@ -454,6 +461,27 @@
 .md-typeset .mm-badge--checked { color: var(--mm-kind-checked); }
 .md-typeset .mm-badge--yours { color: var(--mm-kind-yours); }
 .md-typeset .mm-badge--disk { color: var(--mm-kind-disk); }
+.md-typeset .mm-badge--view { color: var(--mm-kind-view); }
+
+/* A tool that shows a view links to it, live. */
+.md-typeset a.mm-view-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.05em 0.6em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--mm-kind-view);
+  font-size: 0.58rem;
+  font-weight: 600;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}
+
+.md-typeset a.mm-view-badge:hover {
+  background: var(--md-accent-fg-color--transparent);
+}
+
+.mm-stat--view strong { color: var(--mm-kind-view); }
 
 /* A linked tool lands below the sticky header, not under it. */
 .md-typeset dt[id] {
@@ -552,4 +580,11 @@
   padding: 0.35rem 0.8rem 0.6rem;
   color: var(--md-default-fg-color--light);
   font-size: 0.6rem;
+}
+
+/* What to try in a live view. */
+.md-typeset .mm-try {
+  margin-top: -0.4em;
+  color: var(--md-default-fg-color--light);
+  font-size: 0.7rem;
 }

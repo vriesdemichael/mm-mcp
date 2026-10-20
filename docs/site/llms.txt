@@ -35,11 +35,21 @@ mm-mcp also ships, for the person to install themselves:
 
 The other settings, such as allowing writes, are environment variables too: https://vriesdemichael.github.io/mm-mcp/configuration/
 
+## Views in the chat
+
+In a client that renders MCP Apps views, mm-mcp shows the person what they asked to see as Mattermost shows it, as a panel in the conversation. A client that renders none still gets every answer as text.
+
+- `show` with kind `thread` shows a thread, and with kind `unreads` what is unread for the person. Call it when they ask to see something, once you have found it, never to read for yourself. In a client without views it says nothing was shown: then answer in words.
+- `create_post`, `dm` and `group_message` show the post as posted.
+- `propose_post` saves a post as the person's draft, for them to send themselves: use it when they should have the last word. In a client with views they post, change or discard it in the panel; in one without, it waits in their Mattermost message box, and the answer links it. Learn what they did from Mattermost, with `list_drafts` or by reading the channel, rather than proposing it again.
+- `MM_MCP_POST_FROM_VIEWS=false` takes Post out of the panel, for a client that cannot be trusted to keep the panel's own tool from its model.
+
 ## Docs
 
 - [Installation](https://vriesdemichael.github.io/mm-mcp/installation/): installing, a credential, each client, first steps
 - [Logging in](https://vriesdemichael.github.io/mm-mcp/login/): `mm-mcp login`, every way it logs in, and what each failure means
 - [Configuration](https://vriesdemichael.github.io/mm-mcp/configuration/): every environment variable and command
 - [Tools](https://vriesdemichael.github.io/mm-mcp/tools/): every tool, and what each write states for mm-mcp to check
+- [Views](https://vriesdemichael.github.io/mm-mcp/views/): what each panel shows the person, live, and why pressing Post in one is safe
 - [Security](https://vriesdemichael.github.io/mm-mcp/security/): what leaves the machine, credentials, and what an agent can do
 - [For administrators](https://vriesdemichael.github.io/mm-mcp/administrators/): letting mm-mcp in, and recognising it

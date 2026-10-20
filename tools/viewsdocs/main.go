@@ -17,17 +17,13 @@ import (
 	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
-// recordedServer is the Mattermost the documentation's recordings name.
-const recordedServer = "mattermost://chat.example.com"
-
 func main() {
 	out := flag.String("out", filepath.Join("docs", "site", "assets", "views", "page.html"), "where the page is written")
 	flag.Parse()
 	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
 		fail(err)
 	}
-	page := views.Page(recordedServer, views.Settings{Changes: true, Posts: true})
-	if err := os.WriteFile(*out, []byte(page), 0o644); err != nil {
+	if err := os.WriteFile(*out, []byte(views.DocsPage()), 0o644); err != nil {
 		fail(err)
 	}
 }

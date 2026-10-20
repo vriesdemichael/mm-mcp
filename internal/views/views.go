@@ -23,6 +23,17 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
+// DocsServer is the Mattermost the documentation's recordings name: the
+// documentation runs its views in the page for it, and the README's
+// pictures of them are taken there.
+const DocsServer = "mattermost://chat.example.com"
+
+// DocsPage is the page the documentation runs its views in: a server's whose
+// writes are allowed, for DocsServer.
+func DocsPage() string {
+	return Page(DocsServer, Settings{Changes: true, Posts: true})
+}
+
 // The MCP Apps names mm-mcp speaks.
 const (
 	// Extension is the capability a client declares when it renders views.

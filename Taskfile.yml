@@ -234,6 +234,13 @@ tasks:
       - npm run --prefix internal/views/testhost bundle:docs
       - go run ./tools/viewsdocs
 
+  docs:view-pictures:
+    desc: Picture the views for the README, in GitHub's light and dark colours, from the recordings, in Playwright's Chromium, which it installs. Needs Node
+    deps: [docs:views]
+    cmds:
+      - npx --yes "playwright@${PLAYWRIGHT_VERSION}" install chromium
+      - node internal/views/testhost/pictures.mjs .
+
   docs:record-views:
     desc: Record what each view draws, from a scene seeded on this checkout's instance, which it starts first, for the documentation, which plays the recordings to the real view page
     deps: [stack:up]
