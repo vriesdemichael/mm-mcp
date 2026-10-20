@@ -79,6 +79,20 @@
     };
   }
 
+  // note shows a line under a view for a few seconds.
+  function note(holder, text) {
+    let line = holder.querySelector(".mm-view__note");
+    if (!line) {
+      line = document.createElement("p");
+      line.className = "mm-view__note";
+      line.setAttribute("role", "status");
+      holder.querySelector(".mm-view__frame").after(line);
+    }
+    line.textContent = text;
+    clearTimeout(line.timer);
+    line.timer = setTimeout(() => line.remove(), 4000);
+  }
+
   async function mountIn(holder, page) {
     const name = holder.getAttribute("data-view");
     const response = await fetch(new URL("recordings/" + name + ".json", here));
@@ -98,6 +112,9 @@
       resources: recording.resources,
       answer: player(recording),
       without: holder.hasAttribute("data-no-presses") ? ["serverTools"] : [],
+      // The recording's Mattermost is made up, so a link goes nowhere here:
+      // the docs say what it would do.
+      openLink: () => note(holder, "In your AI app, this opens it in Mattermost."),
       theme,
       themes: { [theme]: themeOf() },
       locale: "en-US",

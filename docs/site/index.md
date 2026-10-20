@@ -72,7 +72,7 @@ post states how far it goes, and mm-mcp checks that before it is sent.</p>
 
 </div>
 
-**Panels in the chat**: in an AI app that shows them, a thread, what you
+**Views in the chat**: in an AI app that shows them, a thread, what you
 missed, or a post your agent made appears as Mattermost shows it, and a post
 it drafts appears as it will be posted, for you to post, change or discard.
 [See them live](views.md).

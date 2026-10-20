@@ -84,8 +84,10 @@ logged in to Mattermost approves it.
 ## Recognising mm-mcp
 
 - **Its posts** are marked as written with AI by default, as Mattermost's web
-  app shows beside the post's time. Each person can turn the mark off; the
-  server cannot require it.
+  app shows beside the post's time, a post a person sends with Post in one of
+  mm-mcp's views included. A draft mm-mcp proposed that the person sends from
+  Mattermost themselves goes out as theirs, unmarked. Each person can turn the
+  mark off; the server cannot require it.
 - **Its requests** carry `User-Agent: mm-mcp/<version>`, visible in a proxy's or
   load balancer's logs, including those of its login. The header is declared by
   mm-mcp itself: it identifies mm-mcp, but cannot enforce anything. A login
@@ -132,7 +134,10 @@ settings live in their AI application's configuration
 - **In the AI application**, where it supports managed settings: Claude Code's
   [managed settings](https://code.claude.com/docs/en/settings) can set the
   environment and the permission rules for everyone, for example keeping writes
-  off, or requiring a person to approve every post.
+  off, or requiring a person to approve every post. Where an application shows
+  mm-mcp's views, `MM_MCP_POST_FROM_VIEWS=false` keeps Post out of them, and a
+  proposal waits in Mattermost for its person to send
+  ([Views](views.md#questions-people-ask)).
 
 ## What is tested
 

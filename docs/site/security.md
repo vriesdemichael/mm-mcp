@@ -63,7 +63,8 @@ disclosure only to what the agent asks to read.
   channel read. The press goes through a tool only views call, which the
   application keeps from its model; mm-mcp cannot tell a click from a script,
   so `MM_MCP_POST_FROM_VIEWS=false` takes Post out of the view for an
-  application that cannot be trusted with that
+  application that cannot be trusted with that. [Views](views.md#questions-people-ask)
+  answers what a reviewer asks of a press, live
   ([ADR-035](adr/035-a-proposed-post-waits-as-the-persons-draft.md)).
 - **Save attachments to the local disk**, when it runs on the person's machine:
   to their download directory, never over an existing file, and marked as

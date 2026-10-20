@@ -588,3 +588,9 @@
   color: var(--md-default-fg-color--light);
   font-size: 0.7rem;
 }
+
+.md-typeset .mm-view__note {
+  margin: 0.3rem 0 0;
+  color: var(--md-accent-fg-color);
+  font-size: 0.65rem;
+}
