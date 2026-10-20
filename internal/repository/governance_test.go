@@ -408,3 +408,51 @@ func TestTheOldestSupportedReleaseIsTheESRStacks(t *testing.T) {
 		t.Fatalf("mattermost.OldestSupported is %s; the ESR stack runs %s (ADR-025)", mattermost.OldestSupported, match[1])
 	}
 }
+
+// hiddenCharacter is a character the eye cannot see, or that turns the
+// text's direction: soft hyphens, zero-width spaces and joiners, direction
+// marks, embeddings, overrides and isolates, invisible operators, fillers,
+// variation selectors and tag characters. In a source file one makes the
+// code a reviewer reads differ from the code that runs.
+func hiddenCharacter(r rune) bool {
+	switch {
+	case r == 0x00ad, r == 0x034f, r == 0x061c, r == 0x115f, r == 0x1160, r == 0x17b4, r == 0x17b5, r == 0x180e, r == 0x3164, r == 0xffa0, r == 0xfeff:
+		return true
+	case r >= 0x200b && r <= 0x200f, r >= 0x202a && r <= 0x202e, r >= 0x2060 && r <= 0x206f:
+		return true
+	case r >= 0xfe00 && r <= 0xfe0f, r >= 0xe0000 && r <= 0xe007f:
+		return true
+	}
+	return false
+}
+
+// textFile is a file the repository holds as text, by its name.
+var textFile = regexp.MustCompile(`\.(go|js|mjs|md|json|ya?ml|css|html|txt|toml|sh|ps1|env)$|(^|/)(Taskfile\.yml|Dockerfile|\.gitignore)$`)
+
+// TestNoFileHidesACharacter refuses a character the eye cannot see, or that
+// turns the text's direction, in any file of the repository: a page or a test
+// that needs one writes it as an escape. Third-party packages a test installs,
+// and what a task generates into the docs, are not the repository's.
+func TestNoFileHidesACharacter(t *testing.T) {
+	t.Parallel()
+	generated := []string{filepath.Join("docs", "site", "assets", "views", "page.html"), filepath.Join("docs", "site", "assets", "views", "host.js")}
+	checked := 0
+	walk(t, func(path string) {
+		rel, _ := filepath.Rel(root, path)
+		if !textFile.MatchString(filepath.ToSlash(rel)) || strings.Contains(rel, "node_modules") || slices.Contains(generated, rel) {
+			return
+		}
+		checked++
+		for line, text := range strings.Split(read(t, path), "\n") {
+			for _, r := range text {
+				if hiddenCharacter(r) {
+					t.Errorf("%s:%d holds U+%04X; write it as an escape", rel, line+1, r)
+					break
+				}
+			}
+		}
+	})
+	if checked < 100 {
+		t.Fatalf("only %d files were checked; the walk has stopped matching", checked)
+	}
+}

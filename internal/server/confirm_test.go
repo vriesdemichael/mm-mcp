@@ -279,7 +279,7 @@ func TestAnEmojiIsNamedWithoutItsColonsOrByItsCharacter(t *testing.T) {
 	t.Parallel()
 	for in, want := range map[string]string{
 		":thumbsup:": "thumbsup", " eyes ": "eyes", "+1": "+1", "Tada": "tada",
-		"👍": "+1", "✅": "white_check_mark", "❤️": "heart", "\u2764": "heart", "\u2714": "heavy_check_mark",
+		"👍": "+1", "✅": "white_check_mark", "❤\uFE0F": "heart", "\u2764": "heart", "\u2714": "heavy_check_mark",
 	} {
 		if got, err := emojiName(in); err != nil || got != want {
 			t.Errorf("%q: got %q, %v; want %q", in, got, err, want)
