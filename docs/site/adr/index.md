@@ -43,3 +43,4 @@ holds and why, and the alternatives it turned down.
 - [ADR-034: Agents are let in visibly, not kept out](034-agents-are-let-in-visibly-not-kept-out.md)
 - [ADR-035: A proposed post waits as the person's draft, for them to send](035-a-proposed-post-waits-as-the-persons-draft.md)
 - [ADR-036: Real clients run the views at pinned versions, with a scripted model](036-real-clients-run-the-views-at-pinned-versions-with-a-scripted-model.md)
+- [ADR-037: The views are tested in the bridge, in real clients, and by hand](037-the-views-are-tested-in-the-bridge-in-real-clients-and-by-hand.md)

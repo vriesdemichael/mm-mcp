@@ -17,7 +17,7 @@ A client that changes what the views rely on fails a pull request only once its 
 
 ## Not chosen
 
-- **Inference from a real model**: It costs money on every pull request, needs an account and a secret that a pull request from a fork cannot have, and answers differently from one run to the next. What the model decides is measured on its own, on a schedule (mm-mcp#40).
+- **Inference from a real model**: It costs money on every pull request, needs an account and a secret that a pull request from a fork cannot have, and answers differently from one run to the next. What a model decides with the tools is not measured here (ADR-037).
 - **The newest client on every pull request**: A client's release would fail every pull request open on the day it ships, for a reason none of them caused.
 - **An issue per client that moved**: When both clients moved and the tests fail, the issue would blame both; one issue names the releases tried, and the run names the test that failed.
 - **Launching the client through Playwright's Electron support**: Launching the packaged apps that way timed out in the spike; a debugging port works for both.
