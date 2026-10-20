@@ -91,7 +91,7 @@ func TestAProposalIsShownAsItWillBePostedHidingNothing(t *testing.T) {
 			Warning: text('.proposal-warning'), Notes: d.querySelectorAll('.proposal-notes li').length,
 			Targets: [...d.querySelectorAll('.md-link-target')].map((e) => e.textContent),
 		};`, &drawn)
-	if drawn.Label != "Proposed post" || drawn.Title != "Town Square" || drawn.Team != "Team" || drawn.Notes != 1 ||
+	if drawn.Label != "Drafted by your agent" || drawn.Title != "Town Square" || drawn.Team != "Team" || drawn.Notes != 1 ||
 		!strings.Contains(drawn.Status, "Nothing is sent until you post it") {
 		t.Errorf("the proposal is drawn as %+v", drawn)
 	}
@@ -124,7 +124,7 @@ func TestAProposalIsShownAsItWillBePostedHidingNothing(t *testing.T) {
 	}
 
 	reply := h.mount(showProposal(proposal("I can take it", map[string]any{"root_id": "p1", "url": "https://chat.example.com/team/pl/p1"}), nil))
-	if got := h.text(reply, ".posted-label"); got != "Proposed reply in a thread" {
+	if got := h.text(reply, ".posted-label"); got != "Reply drafted by your agent" {
 		t.Errorf("a reply is labelled %q", got)
 	}
 }
@@ -254,7 +254,7 @@ func TestThePersonsOwnDraftIsKeptOrReplacedOnTheirPress(t *testing.T) {
 	i := h.mount(showProposal(choosing, nil))
 	var headings []string
 	h.in(i, "return [...d.querySelectorAll('.proposal-heading')].map((e) => e.textContent);", &headings)
-	if strings.Join(headings, " | ") != "Your draft | Proposal" {
+	if strings.Join(headings, " | ") != "Your draft | Your agent's draft" {
 		t.Errorf("the choice shows %v", headings)
 	}
 	if got := h.buttons(i); !has(got, "Replace mine") || !has(got, "Keep mine") || has(got, "Post") {
@@ -296,7 +296,7 @@ func TestARefusedPressSaysSoAndOffersTheDraftInMattermost(t *testing.T) {
 	i := h.mount(showProposal(proposal("Lunch", nil), map[string]any{"tools": map[string]any{"view_change": []any{map[string]any{"error": "Invalid params"}}}}))
 	h.press(i, "Post")
 	h.untilIn(i, "d.querySelector('.notice')")
-	if got := h.text(i, ".notice"); !strings.Contains(got, "This app does not let the view change the draft here.") || !strings.Contains(got, "Open in Mattermost") {
+	if got := h.text(i, ".notice"); !strings.Contains(got, "This app does not let you post or change the draft from here.") || !strings.Contains(got, "Open in Mattermost") {
 		t.Errorf("a refused press says %q", got)
 	}
 	// A press mm-mcp refuses says why.

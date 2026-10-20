@@ -446,7 +446,7 @@ func TestClientsProposeAPostAndThePersonPostsItFromTheView(t *testing.T) {
 			run.drive("ready", nil)
 			run.send(script("propose_post", map[string]any{"channel_id": channel.Id, "message": message}), map[string]any{"approve": client == testclients.VSCode})
 			shown := run.drive("view", map[string]any{"text": message})
-			mustContain(t, "the proposal", fmt.Sprint(shown["text"]), "Proposed post", channel.DisplayName, "Nothing is sent until you post it")
+			mustContain(t, "the proposal", fmt.Sprint(shown["text"]), "Drafted by your agent", channel.DisplayName, "Nothing is sent until you post it")
 			if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
 				t.Fatalf("proposing posted %d messages", len(posts))
 			}
@@ -476,7 +476,7 @@ func TestClientsProposeAPostAndThePersonPostsItFromTheView(t *testing.T) {
 }
 
 // In Goose's approve mode a proposal's Post is refused like every call a view
-// makes, so the view says it cannot change the draft here and offers it in
+// makes, so the view says it cannot post or change the draft from there and offers it in
 // Mattermost, where it still waits.
 func TestClientsGooseInApproveModeRefusesAProposalsPress(t *testing.T) {
 	admin := admin(t)
@@ -488,7 +488,7 @@ func TestClientsGooseInApproveModeRefusesAProposalsPress(t *testing.T) {
 	run := startClient(t, testclients.Goose, personalAccessToken(t, admin, user.Id).Token, clientOptions{approve: true, writes: true})
 	run.drive("ready", nil)
 	run.send(script("propose_post", map[string]any{"channel_id": channel.Id, "message": message}), map[string]any{"approve": true})
-	refused := run.drive("press", map[string]any{"text": message, "button": "^Post$", "until": "This app does not let the view change the draft here."})
+	refused := run.drive("press", map[string]any{"text": message, "button": "^Post$", "until": "This app does not let you post or change the draft from here."})
 	mustContain(t, "the refused press", fmt.Sprint(refused["text"]), "Open in Mattermost")
 	if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
 		t.Errorf("a refused press posted %d messages", len(posts))
