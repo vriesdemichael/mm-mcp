@@ -220,7 +220,10 @@ func TestAProposalIsEditedAndDiscardedThroughTheToolOnlyViewsCall(t *testing.T) 
 	}
 }
 
-func TestADraftChangedInMattermostIsDrawnAsItIsNow(t *testing.T) {
+// A draft that changed since the view showed it is drawn again as it is now,
+// where it is a newer proposal, and left to Mattermost where the person
+// changed it there.
+func TestADraftChangedSinceTheViewShowedItIsDrawnAgainOrLeftToMattermost(t *testing.T) {
 	h := openHost(t)
 	i := h.mount(showProposal(proposal("Lunch at noon", nil), map[string]any{"tools": map[string]any{"view_change": []any{
 		answered(map[string]any{"status": "changed", "draft": proposal("Lunch at noon, and dessert", nil)}),
@@ -228,7 +231,7 @@ func TestADraftChangedInMattermostIsDrawnAsItIsNow(t *testing.T) {
 	}}}))
 	h.press(i, "Post")
 	h.untilIn(i, "d.querySelector('.proposal-text').textContent.includes('and dessert')")
-	if got := h.text(i, ".notice"); !strings.Contains(got, "The draft changed in Mattermost") {
+	if got := h.text(i, ".notice"); !strings.Contains(got, "The draft changed since this view showed it") {
 		t.Errorf("a changed draft says %q", got)
 	}
 	// What the person sees now is what the next press names.
@@ -244,7 +247,7 @@ func TestADraftChangedInMattermostIsDrawnAsItIsNow(t *testing.T) {
 		answered(map[string]any{"status": "elsewhere", "draft": proposal("see the plan", nil)}),
 	}}}))
 	h.press(elsewhere, "Discard")
-	h.untilIn(elsewhere, "d.querySelector('.proposal-status').textContent.includes('which this view cannot show')")
+	h.untilIn(elsewhere, "d.querySelector('.proposal-status').textContent.includes('yours to send from there')")
 }
 
 func TestThePersonsOwnDraftIsKeptOrReplacedOnTheirPress(t *testing.T) {
@@ -311,6 +314,25 @@ func TestARefusedPressSaysSoAndOffersTheDraftInMattermost(t *testing.T) {
 	}
 }
 
+// A Post the host never answers may have gone through: the view says so,
+// offers the draft in Mattermost, and does not offer Post again.
+func TestAPostThatGetsNoAnswerIsNotOfferedAgain(t *testing.T) {
+	h := openHost(t)
+	i := h.mount(showProposal(proposal("Lunch at noon", nil), map[string]any{"tools": map[string]any{"view_change": []any{map[string]any{"hold": true}}}}))
+	// The half minute the view waits for an answer passes at once.
+	h.in(i, "const wait = w.setTimeout; w.setTimeout = (run, ms, ...rest) => wait(run, ms >= 30000 ? 10 : ms, ...rest); return true;", nil)
+	h.press(i, "Post")
+	h.untilIn(i, "d.querySelector('.notice')")
+	if got := h.text(i, ".notice"); !strings.Contains(got, "it may have been posted") || !strings.Contains(got, "Open in Mattermost") {
+		t.Errorf("a Post that got no answer says %q", got)
+	}
+	var offered bool
+	h.in(i, "const b = [...d.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Post'); return Boolean(b && !b.disabled);", &offered)
+	if offered {
+		t.Error("Post is offered again after a Post that got no answer")
+	}
+}
+
 func TestAServerThatDoesNotPostFromViewsOffersNoPost(t *testing.T) {
 	h := openHost(t)
 	i := h.mount(showProposal(proposal("Lunch", nil), map[string]any{"postsOff": true}))
@@ -324,5 +346,98 @@ func TestAServerThatDoesNotPostFromViewsOffersNoPost(t *testing.T) {
 	none := h.mount(showProposal(proposal("Lunch", nil), map[string]any{"without": []string{"serverTools"}}))
 	if got := h.buttons(none); has(got, "Post") || has(got, "Edit") || !has(got, "Open the draft in Mattermost") {
 		t.Errorf("a host that calls no tools is offered %v", got)
+	}
+}
+
+// A proposal's preview says where each link leads in Mattermost, though the
+// view opens only web pages: an address without a scheme is a web page's, as
+// Mattermost makes it, and one to an app or a phone is named. A definition a
+// link names is shown, though Mattermost draws none, and a line that reads
+// like one inside a paragraph is the paragraph's text, as in Mattermost.
+func TestAProposalShowsWhereEachLinkLeadsAndWhatItDefines(t *testing.T) {
+	h := openHost(t)
+	message := "Sign in at [the portal](portal.example.net/login), [call us](tel:+31201234567), [the mirror](//mirror.example.net/x)\n" +
+		"and [the notes][notes].\n" +
+		"[not a definition]: https://inline.example.net\n" +
+		"\n" +
+		"[notes]: https://notes.example.net \"The notes\""
+	type drawing struct {
+		Targets, Definitions []string
+		Text                 string
+	}
+	read := `return {
+		Targets: [...d.querySelectorAll('.md-link-target')].map((e) => e.textContent),
+		Definitions: [...d.querySelectorAll('.md-definition')].map((e) => e.textContent),
+		Text: d.querySelector('.markdown').textContent,
+	};`
+	var proposed drawing
+	h.in(h.mount(showProposal(proposal(message, nil), nil)), read, &proposed)
+	want := "http://portal.example.net/login | tel:+31201234567 | https://mirror.example.net/x | https://notes.example.net/"
+	if got := strings.Join(proposed.Targets, " | "); got != want {
+		t.Errorf("the preview shows the links leading to %s; want %s", got, want)
+	}
+	if got := strings.Join(proposed.Definitions, " | "); got != `[notes]: https://notes.example.net "The notes"` {
+		t.Errorf("the preview shows the definitions %q", got)
+	}
+	if !strings.Contains(proposed.Text, "[not a definition]: https://inline.example.net") {
+		t.Errorf("a line inside a paragraph was taken for a definition: %q", proposed.Text)
+	}
+
+	// In a thread the message is drawn as Mattermost draws it.
+	root := post("p1", "alice", "", "u1", "2026-10-09T09:30:00+02:00", message, nil)
+	var posted drawing
+	h.in(h.mount(showThread(map[string]any{"result": map[string]any{"content": []any{}, "structuredContent": map[string]any{"post": root, "root_id": "p1", "thread": []any{root}}}})), read, &posted)
+	if len(posted.Targets) != 0 || len(posted.Definitions) != 0 || strings.Contains(posted.Text, "[notes]:") {
+		t.Errorf("a thread draws what Mattermost does not: %+v", posted)
+	}
+}
+
+// A proposal's preview counts each character no reader sees, written out or
+// written as its number, which Markdown draws as the character, and what
+// hides text in an emoji or after it; an emoji, a flag or an ideograph's
+// variant is what it looks like.
+func TestAProposalCountsWhatNoReaderSeesButNotWhatAnEmojiIsDrawnWith(t *testing.T) {
+	h := openHost(t)
+	runes := func(codes ...rune) string { return string(codes) }
+	tags := func(text string) string {
+		out := ""
+		for _, letter := range text {
+			out += runes(0xe0000 + letter)
+		}
+		return out
+	}
+	drawnWith := strings.Join([]string{
+		runes(0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467), // a family
+		runes(0x1f469, 0x1f3fd, 0x200d, 0x1f4bb),         // a coder, with a skin tone
+		runes(0x1f3f3, 0xfe0f, 0x200d, 0x1f308),          // the rainbow flag
+		"1" + runes(0xfe0f, 0x20e3),                      // a keycap
+		runes(0x1f3f4) + tags("gbsct") + runes(0xe007f),  // Scotland's flag
+		runes(0x845b, 0xe0100),                           // an ideograph's variant
+	}, " ")
+	hiding := strings.Join([]string{
+		"turned &#x202E;around&#8236;",                      // 2, written as numbers
+		"smiling" + runes(0x1f600, 0xfe01, 0xfe02, 0xe0110), // 2 selectors after the first
+		"quietly" + tags("say yes") + runes(0xe007f),        // 8 tags after no flag
+	}, " ")
+	var drawn struct {
+		Warning string
+		Marked  []string
+	}
+	read := `const warning = d.querySelector('.proposal-warning');
+		return { Warning: warning ? warning.textContent : '', Marked: [...d.querySelectorAll('.hidden-char')].map((e) => e.textContent) };`
+	plain := h.mount(showProposal(proposal("Looks good "+drawnWith, nil), nil))
+	h.in(plain, read, &drawn)
+	if drawn.Warning != "" {
+		t.Errorf("emoji are flagged: %q", drawn.Warning)
+	}
+	hidden := h.mount(showProposal(proposal(hiding, nil), nil))
+	h.in(hidden, read, &drawn)
+	if !strings.Contains(drawn.Warning, "12 characters you cannot see") {
+		t.Errorf("the hidden characters are flagged as %q", drawn.Warning)
+	}
+	h.press(hidden, "Show the text as written")
+	h.in(hidden, read, &drawn)
+	if len(drawn.Marked) != 12 || drawn.Marked[0] != "&#x202E;" || drawn.Marked[1] != "&#8236;" || drawn.Marked[2] != "U+FE02" {
+		t.Errorf("as written, the hidden characters are marked %q", drawn.Marked)
 	}
 }

@@ -57,7 +57,8 @@ then press <strong>Post</strong>.</p>
 - A link shows where it really goes, next to the words it is written as.
 
 If you change the draft in Mattermost while the view is open, the view
-notices. Your next press shows you the new text instead of sending the old one.
+notices, and leaves the draft to you there instead of sending the old text. If
+your agent proposes again, your next press shows you the new text first.
 
 ### A message to the whole channel
 
@@ -167,10 +168,13 @@ Goose and VS Code are tested with every change to mm-mcp.
 
 **Can it send something different from what I see?**
 : No. Post sends the text the view shows, and only while your draft still
-  holds exactly that. If the draft changed, or you attached a file to it in
-  Mattermost, the view shows you what it holds now instead of sending. The
-  preview hides nothing: a link shows where it leads, and a character you
-  cannot see, or one that turns the text's direction, is flagged. Here, the
+  holds exactly that, as the view put it there. If you typed in the draft, or
+  attached a file to it, in Mattermost, the view leaves it to you to send from
+  there; if your agent proposed again, the view shows you the new text instead
+  of sending. The preview hides nothing: a link shows where it leads, a link
+  definition Mattermost does not show is shown, and a character you cannot
+  see, or one that turns the text's direction, is flagged, even when it is
+  written as its number. Here, the
   name `invoice_fdp.exe` is made to read as `invoice_exe.pdf`:
 
 <div class="mm-view" data-view="preview" data-no-presses data-title="A draft whose text hides an executable"></div>

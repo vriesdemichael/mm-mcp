@@ -18,8 +18,12 @@ const MD_MAX_DEPTH = 8;
 // description built to be slow, such as thousands of unclosed marks, fast.
 const MD_MAX_SCAN = 2000;
 
+// MD_MAX_WORK is how many characters, for each character of a run of text,
+// its marks look through together for their closes. A message built to be
+// slow draws its last marks as text rather than freezing the view.
+const MD_MAX_WORK = 32;
+
 const MD_FENCE = /^( {0,3})(`{3,}(?=[^`]*$)|~{3,})(.*)$/;
-const MD_HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
 const MD_SETEXT = /^ {0,3}(=+|-+)[ \t]*$/;
 const MD_RULE = /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/;
 const MD_QUOTE = /^ {0,3}>/;
@@ -40,21 +44,38 @@ const MD_ENTITIES = {
 // options.targets shows beside each link where it leads, when its text says
 // otherwise, as a proposal's preview does.
 function renderMarkdown(source, options) {
+  // A line ends wherever a browser breaks one, so no pattern below meets a
+  // line break it cannot match across.
   const lines = String(source || "")
-    .replace(/\r\n?/g, "\n")
-    .split("\n")
+    .split(/\r\n?|\n|\u2028|\u2029/)
     .map((line) => line.replace(/^\t+/, (tabs) => "    ".repeat(tabs.length)));
-  const context = { base: options.base, team: options.team, targets: Boolean(options.targets), references: markdownReferences(lines) };
-  return el("div", { class: "markdown" }, markdownBlocks(lines, context, 0));
+  const { references, definitions } = markdownReferences(lines);
+  const context = { base: options.base, team: options.team, targets: Boolean(options.targets), references };
+  // Mattermost draws no definition. A proposal's preview shows each where it
+  // stands, since the post carries it all the same.
+  const blocks = [];
+  let from = 0;
+  for (const at of definitions) {
+    blocks.push(...markdownBlocks(lines.slice(from, at), context, 0));
+    if (context.targets) blocks.push(el("p", { class: "md-definition" }, lines[at].trim()));
+    from = at + 1;
+  }
+  blocks.push(...markdownBlocks(lines.slice(from), context, 0));
+  return el("div", { class: "markdown" }, blocks);
 }
 
-// markdownReferences takes the link definitions out of the lines, outside
-// code, so a link can name one defined further down.
+// markdownReferences finds the link definitions outside code, so a link can
+// name one defined further down: references, by label, and definitions, the
+// lines they stand on. As in CommonMark, a definition does not interrupt a
+// paragraph; a line in one that reads like a definition is its text.
 function markdownReferences(lines) {
   const references = new Map();
+  const definitions = [];
   let fence = null;
+  let paragraph = false;
   for (let i = 0; i < lines.length; i++) {
-    const opening = MD_FENCE.exec(lines[i]);
+    const line = lines[i];
+    const opening = MD_FENCE.exec(line);
     if (fence) {
       if (opening && opening[2][0] === fence[0] && opening[2].length >= fence.length && opening[3].trim() === "") fence = null;
       continue;
@@ -63,16 +84,18 @@ function markdownReferences(lines) {
       fence = opening[2];
       continue;
     }
-    const definition = MD_REFERENCE.exec(lines[i]);
+    const definition = paragraph ? null : MD_REFERENCE.exec(line);
     if (definition) {
       const label = normalizeLabel(definition[1]);
       if (!references.has(label)) {
         references.set(label, { url: definition[2], title: definition[3] || definition[4] || definition[5] || "" });
       }
-      lines[i] = "";
+      definitions.push(i);
+      continue;
     }
+    paragraph = !isBlank(line) && !atxHeading(line) && !MD_RULE.test(line);
   }
-  return references;
+  return { references, definitions };
 }
 
 function normalizeLabel(label) {
@@ -97,8 +120,8 @@ function markdownBlocks(lines, context, depth) {
     let match;
     if ((match = MD_FENCE.exec(line))) {
       [block, i] = fencedCode(lines, i, match);
-    } else if ((match = MD_HEADING.exec(line))) {
-      block = markdownHeading(match[1].length, match[2] || "", context);
+    } else if ((match = atxHeading(line))) {
+      block = markdownHeading(match.level, match.text, context);
       i++;
     } else if (MD_RULE.test(line)) {
       block = el("hr", { class: "md-rule" });
@@ -117,6 +140,29 @@ function markdownBlocks(lines, context, depth) {
     blocks.push(block);
   }
   return blocks;
+}
+
+// atxHeading reads a heading written with one to six #, or nothing when the
+// line is not one. It reads by hand: as a pattern, its optional parts take
+// time that grows with the cube of a run of spaces.
+function atxHeading(line) {
+  const blank = (k) => line[k] === " " || line[k] === "\t";
+  let i = 0;
+  while (i < 3 && line[i] === " ") i++;
+  let level = 0;
+  while (line[i + level] === "#") level++;
+  if (level < 1 || level > 6) return null;
+  i += level;
+  if (i < line.length && !blank(i)) return null;
+  let end = line.length;
+  while (end > i && blank(end - 1)) end--;
+  // A closing run of #, after a space or as all there is, is not text.
+  let close = end;
+  while (close > i && line[close - 1] === "#") close--;
+  if (close < end && (close === i || blank(close - 1))) end = close;
+  while (i < end && blank(i)) i++;
+  while (end > i && blank(end - 1)) end--;
+  return { level, text: line.slice(i, end) };
 }
 
 function markdownHeading(level, text, context) {
@@ -156,7 +202,7 @@ function indentedCode(lines, start) {
 // interrupts reports whether a line starts a block that ends a paragraph.
 function interrupts(lines, i) {
   const line = lines[i];
-  if (MD_FENCE.test(line) || MD_HEADING.test(line) || MD_RULE.test(line) || MD_QUOTE.test(line) || startsTable(lines, i)) return true;
+  if (MD_FENCE.test(line) || atxHeading(line) || MD_RULE.test(line) || MD_QUOTE.test(line) || startsTable(lines, i)) return true;
   const item = MD_ITEM.exec(line);
   // A list interrupts a paragraph when it has content, and an ordered one
   // only when it starts at one.
@@ -299,6 +345,7 @@ function markdownTable(lines, start, context) {
 // breaks and escapes. Inside a link's text, links are text.
 function markdownInline(text, context, depth, inLink) {
   const out = [];
+  const marks = inlineMarks(text);
   let buffer = "";
   const flush = () => {
     if (buffer) out.push(buffer);
@@ -326,17 +373,17 @@ function markdownInline(text, context, depth, inLink) {
         continue;
       }
     } else if (ch === "`") {
-      found = codeSpan(text, i);
+      found = codeSpan(text, i, marks);
     } else if (ch === "<") {
       found = inLink ? null : autolink(text, i, context);
     } else if (ch === "!" && next === "[") {
-      found = inLink ? null : linkOrImage(text, i + 1, context, depth, true);
+      found = inLink ? null : linkOrImage(text, i + 1, context, depth, true, marks);
     } else if (ch === "[") {
-      found = inLink ? null : linkOrImage(text, i, context, depth, false);
+      found = inLink ? null : linkOrImage(text, i, context, depth, false, marks);
     } else if (ch === "*" || ch === "_" || (ch === "~" && next === "~")) {
-      found = emphasis(text, i, context, depth, inLink);
+      found = emphasis(text, i, context, depth, inLink, marks);
     } else if ((ch === "h" || ch === "H") && !inLink && (i === 0 || /[\s(]/.test(text[i - 1])) && startsWebAddress(text, i)) {
-      found = bareLink(text, i, context);
+      found = bareLink(text, i, context, marks);
     } else if (ch === "@" && (i === 0 || !MD_NAME_CHAR.test(text[i - 1]))) {
       found = mention(text, i);
     } else if (ch === "~" && next !== "~" && !inLink && (i === 0 || !MD_NAME_CHAR.test(text[i - 1]))) {
@@ -366,27 +413,60 @@ function decodeEntity(name) {
   return Object.prototype.hasOwnProperty.call(MD_ENTITIES, name) ? MD_ENTITIES[name] : null;
 }
 
+// inlineMarks is what the marks in a run of text share as they look for
+// their closes: where its runs of backticks are, by length, the brackets
+// paired so far, and the work left, which keeps the time a message takes in
+// step with its length, however it is built.
+function inlineMarks(text) {
+  const runs = new Map();
+  const lengths = new Map();
+  for (let k = text.indexOf("`"); k >= 0; k = text.indexOf("`", k)) {
+    let run = 1;
+    while (text[k + run] === "`") run++;
+    if (!runs.has(run)) runs.set(run, []);
+    runs.get(run).push(k);
+    lengths.set(k, run);
+    k += run;
+  }
+  return { runs, lengths, brackets: new Map(), work: MD_MAX_WORK * text.length + MD_MAX_SCAN * 4 };
+}
+
+// codeClose finds what closes the run of backticks at text[start]: the next
+// run as long, whose start is close, or nothing, when close is -1.
+function codeClose(text, start, marks) {
+  let run = marks.lengths.get(start);
+  if (run === undefined) {
+    // A run whose first backtick was escaped.
+    run = 0;
+    while (text[start + run] === "`") run++;
+    marks.work -= run;
+  }
+  const starts = marks.runs.get(run) || [];
+  let low = 0;
+  let high = starts.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (starts[middle] < start + run) low = middle + 1;
+    else high = middle;
+  }
+  return { run, close: low < starts.length ? starts[low] : -1 };
+}
+
+// codeEnd is where the code span opening at text[start] ends, or where its
+// backticks end when nothing closes them.
+function codeEnd(text, start, marks) {
+  const { run, close } = codeClose(text, start, marks);
+  return close < 0 ? start + run : close + run;
+}
+
 // codeSpan is the code between a run of backticks and the next run as long,
 // or the backticks themselves when nothing closes them.
-function codeSpan(text, start) {
-  let run = 0;
-  while (text[start + run] === "`") run++;
-  const limit = Math.min(text.length, start + run + MD_MAX_SCAN * 4);
-  for (let k = start + run; k < limit;) {
-    if (text[k] !== "`") {
-      k++;
-      continue;
-    }
-    let close = 0;
-    while (text[k + close] === "`") close++;
-    if (close === run) {
-      let code = text.slice(start + run, k).replace(/\n/g, " ");
-      if (code.length > 2 && code.startsWith(" ") && code.endsWith(" ") && code.trim() !== "") code = code.slice(1, -1);
-      return { node: el("code", { class: "md-code-span" }, code), end: k + close };
-    }
-    k += close;
-  }
-  return { node: "`".repeat(run), end: start + run };
+function codeSpan(text, start, marks) {
+  const { run, close } = codeClose(text, start, marks);
+  if (close < 0) return { node: "`".repeat(run), end: start + run };
+  let code = text.slice(start + run, close).replace(/\n/g, " ");
+  if (code.length > 2 && code.startsWith(" ") && code.endsWith(" ") && code.trim() !== "") code = code.slice(1, -1);
+  return { node: el("code", { class: "md-code-span" }, code), end: close + run };
 }
 
 function autolink(text, start, context) {
@@ -444,9 +524,11 @@ function startsWebAddress(text, i) {
 
 // bareLink is a web address written out in the text, as GitHub and Bitbucket
 // link one, less the punctuation that ends the sentence around it.
-function bareLink(text, start, context) {
+function bareLink(text, start, context, marks) {
+  if (marks.work <= 0) return null;
   let end = start;
   while (end < text.length && end - start < 2048 && !/[\s<]/.test(text[end])) end++;
+  marks.work -= end - start;
   while (end > start && /[.,:;!?"'*_~]/.test(text[end - 1])) end--;
   const url = text.slice(start, end);
   if (url.endsWith(")") && (url.match(/\)/g) || []).length > (url.match(/\(/g) || []).length) end--;
@@ -457,15 +539,15 @@ function bareLink(text, start, context) {
 
 // linkOrImage reads a link or an image whose text opens at text[open]: an
 // inline one, [text](url "title"), or one that names a definition.
-function linkOrImage(text, open, context, depth, image) {
-  const close = closingBracket(text, open);
+function linkOrImage(text, open, context, depth, image, marks) {
+  const close = closingBracket(text, open, marks);
   if (close < 0) return null;
   const label = text.slice(open + 1, close);
   let url;
   let title = "";
   let end;
   if (text[close + 1] === "(") {
-    const destination = linkDestination(text, close + 2);
+    const destination = linkDestination(text, close + 2, marks);
     if (!destination) return null;
     ({ url, title, end } = destination);
   } else {
@@ -488,32 +570,40 @@ function linkOrImage(text, open, context, depth, image) {
   return { node, end };
 }
 
-function closingBracket(text, open) {
-  let level = 0;
-  const limit = Math.min(text.length, open + MD_MAX_SCAN);
-  for (let k = open; k < limit; k++) {
+// closingBracket is where the [ at text[open] closes, or -1 when nothing
+// does. One pass pairs it and every [ inside it, so a later [ that pass met
+// is answered without another.
+function closingBracket(text, open, marks) {
+  if (marks.brackets.has(open)) return marks.brackets.get(open);
+  const opened = [];
+  for (let k = open; k < text.length; k++) {
+    if (--marks.work < 0) return -1;
     const ch = text[k];
     if (ch === "\\") {
       k++;
     } else if (ch === "`") {
-      const span = codeSpan(text, k);
-      if (typeof span.node !== "string") k = span.end - 1;
+      // A run of backticks is passed whole, whether or not it closes.
+      k = codeEnd(text, k, marks) - 1;
     } else if (ch === "[") {
-      level++;
+      opened.push(k);
     } else if (ch === "]") {
-      level--;
-      if (level === 0) return k;
+      const at = opened.pop();
+      marks.brackets.set(at, k);
+      if (opened.length === 0) return k;
     }
   }
+  for (const at of opened) marks.brackets.set(at, -1);
   return -1;
 }
 
-function linkDestination(text, start) {
+function linkDestination(text, start, marks) {
+  if (marks.work <= 0) return null;
   let i = start;
   while (text[i] === " " || text[i] === "\n") i++;
   let url = "";
   if (text[i] === "<") {
     const close = text.indexOf(">", i + 1);
+    marks.work -= (close < 0 ? text.length : close) - start;
     if (close < 0 || text.slice(i + 1, close).includes("\n")) return null;
     url = text.slice(i + 1, close);
     i = close + 1;
@@ -533,6 +623,7 @@ function linkDestination(text, start) {
         level--;
       }
     }
+    marks.work -= i - start;
     url = text.slice(from, i).replace(/\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g, "$1");
   }
   while (text[i] === " " || text[i] === "\n") i++;
@@ -541,7 +632,8 @@ function linkDestination(text, start) {
   if (quote === "\"" || quote === "'" || quote === "(") {
     const closer = quote === "(" ? ")" : quote;
     const close = text.indexOf(closer, i + 1);
-    if (close < 0) return null;
+    marks.work -= (close < 0 ? text.length : close) - i;
+    if (close < 0 || marks.work < 0) return null;
     title = text.slice(i + 1, close);
     i = close + 1;
     while (text[i] === " " || text[i] === "\n") i++;
@@ -551,11 +643,16 @@ function linkDestination(text, start) {
 }
 
 // webAddress is where a link leads, when that is a web page: an absolute
-// http or https address, or a path on the Mattermost the message is on.
+// http or https address, a path on the Mattermost the message is on, or, as
+// Mattermost reads them, an address with no scheme, which is a web page's,
+// and one starting with //, which is on the Mattermost's own scheme.
 function webAddress(url, base) {
-  const target = String(url || "").trim();
+  let target = String(url || "").trim();
+  const web = /^https?:/i.test(base || "") ? base : "https://localhost";
+  if (target && !target.startsWith("/") && !/^[a-z0-9+.-]+:/i.test(target)) target = "http://" + target;
   try {
-    const parsed = target.startsWith("/") && !target.startsWith("//") && base ? new URL(target, base) : new URL(target);
+    const parsed = target.startsWith("//") ? new URL(target, web)
+      : target.startsWith("/") && base ? new URL(target, base) : new URL(target);
     return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : "";
   } catch {
     return "";
@@ -564,7 +661,13 @@ function webAddress(url, base) {
 
 function markdownLink(children, url, title, context) {
   const target = webAddress(url, context.base);
-  if (!target) return el("span", { class: "md-link-text" }, children);
+  if (!target) {
+    const text = el("span", { class: "md-link-text" }, children);
+    // Mattermost may still make it a link, to an app or a mail address, so a
+    // proposal's preview says where, though the view opens only web pages.
+    const written = String(url || "").trim();
+    return context.targets && written ? el("span", { class: "md-link-shown" }, text, linkTarget(text.textContent, written)) : text;
+  }
   const link = el("button", {
     type: "button",
     class: "md-link",
@@ -584,36 +687,42 @@ function linkTarget(text, target) {
 function markdownImage(alt, url, context) {
   const target = webAddress(url, context.base);
   const label = [icon("image"), alt || t("markdown.image")];
-  if (!target) return el("span", { class: "md-image", title: t("markdown.image_unseen") }, label);
+  if (!target) {
+    const image = el("span", { class: "md-image", title: t("markdown.image_unseen") }, label);
+    const written = String(url || "").trim();
+    return context.targets && written ? el("span", { class: "md-link-shown" }, image, linkTarget("", written)) : image;
+  }
   const image = el("button", { type: "button", class: "md-link md-image", title: t("markdown.image_open", { url: target }), onclick: () => openLink(target) }, label);
   return context.targets ? el("span", { class: "md-link-shown" }, image, linkTarget("", target)) : image;
 }
 
 // emphasis reads emphasis, strong emphasis or strikethrough opening at
-// text[start], or nothing when the marks do not open or nothing closes them.
-// An underscore inside a word, as in snake_case, is a letter.
-function emphasis(text, start, context, depth, inLink) {
+// text[start], or its run of marks as text when it does not open or nothing
+// closes it. An underscore inside a word, as in snake_case, is a letter.
+function emphasis(text, start, context, depth, inLink, marks) {
   if (depth >= MD_MAX_DEPTH) return null;
   const ch = text[start];
   let run = 0;
   while (text[start + run] === ch) run++;
-  if (ch === "~" && run !== 2) return null;
+  // The whole run, so its later marks are not read again one by one.
+  const asText = { node: text.slice(start, start + run), end: start + run };
+  if (ch === "~" && run !== 2) return asText;
   const before = start > 0 ? text[start - 1] : " ";
   const after = text[start + run] || " ";
-  if (/\s/.test(after) || (ch === "_" && MD_WORD.test(before))) return null;
+  if (/\s/.test(after) || (ch === "_" && MD_WORD.test(before))) return asText;
   const size = ch === "~" ? 2 : Math.min(run, 3);
   const open = start + run - size;
 
   const limit = Math.min(text.length, open + size + MD_MAX_SCAN);
   for (let k = open + size; k < limit;) {
+    if (--marks.work < 0) return asText;
     const c = text[k];
     if (c === "\\") {
       k += 2;
       continue;
     }
     if (c === "`") {
-      const span = codeSpan(text, k);
-      k = span.end;
+      k = codeEnd(text, k, marks);
       continue;
     }
     if (c !== ch) {
@@ -622,6 +731,7 @@ function emphasis(text, start, context, depth, inLink) {
     }
     let close = 0;
     while (text[k + close] === ch) close++;
+    marks.work -= close;
     const previous = text[k - 1];
     const following = text[k + close] || " ";
     const canClose = k > open + size && !/\s/.test(previous) && (ch !== "_" || !MD_WORD.test(following));
@@ -639,5 +749,5 @@ function emphasis(text, start, context, depth, inLink) {
     }
     k += close;
   }
-  return { node: text.slice(start, start + run), end: start + run };
+  return asText;
 }

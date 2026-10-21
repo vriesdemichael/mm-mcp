@@ -374,6 +374,18 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   overflow-wrap: anywhere;
 }
 .md-link-target::before { content: "→ "; }
+/* A definition Mattermost does not draw, shown in a proposal's preview. */
+.md-definition {
+  font-family: var(--mm-mono);
+  font-size: var(--mm-text-xs);
+  color: var(--mm-text-muted);
+  overflow-wrap: anywhere;
+}
+/* Text from Mattermost that stands beside the view's own, such as a name or
+   where a link leads, keeps its direction to itself: a character that turns
+   it cannot reorder what follows. */
+.md-link-target, .md-definition, .author, .username, .thread-title, .team, .channel-name, .unread-name,
+.unread-team, .unread-people, .unread-excerpt, .file-name, .md-mention, .md-channel { unicode-bidi: isolate; }
 .proposal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-block-start: 8px; }
 .action {
   padding-block: 4px;

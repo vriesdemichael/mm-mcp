@@ -28,6 +28,8 @@ const proposed = {
   confirm: null,
   post: null,
   busy: false,
+  // A Post that got no answer may have posted: it is not offered again.
+  unsure: false,
 };
 
 // WHOLE_CHANNEL are the mentions that alert everyone in a channel.
@@ -45,6 +47,7 @@ function renderProposal(data) {
       confirm: null,
       post: null,
       busy: false,
+      unsure: false,
     });
   }
   const draft = proposed.draft;
@@ -115,7 +118,7 @@ function waiting(draft) {
       POSTS && changes ? el("button", {
         type: "button",
         class: "action primary",
-        disabled: proposed.busy || proposed.confirm ? true : undefined,
+        disabled: proposed.busy || proposed.confirm || proposed.unsure ? true : undefined,
         onclick: () => press({ action: "post", shown: draft.message }),
       }, t("proposal.post")) : null,
       changes ? el("button", {
@@ -251,7 +254,7 @@ function confirmation(draft, notifies) {
       el("button", {
         type: "button",
         class: "action primary",
-        disabled: proposed.busy ? true : undefined,
+        disabled: proposed.busy || proposed.unsure ? true : undefined,
         onclick: () => press({ action: "post", shown: draft.message, confirmed: true }),
       }, t("confirm.confirm"))));
 }
@@ -269,9 +272,12 @@ async function press(args) {
     const place = { channel_id: draft.channel_id };
     if (draft.root_id) place.root_id = draft.root_id;
     result = await bridge.callTool("view_change", Object.assign(place, args));
-  } catch {
+  } catch (error) {
     proposed.busy = false;
-    notice(t("proposal.refused"), draft.url);
+    // Where the host lost a Post, it may have gone through: the person looks
+    // in Mattermost rather than posting it twice.
+    if (args.action === "post" && error && error.unanswered) proposed.unsure = true;
+    notice(proposed.unsure ? t("proposal.unsure") : t("proposal.refused"), draft.url);
     return;
   }
   proposed.busy = false;
@@ -347,49 +353,95 @@ function placeName(draft) {
 }
 
 // HIDDEN is each character a reader cannot see, or that turns the text's
-// direction, which a message could hide what it says behind: soft hyphens,
-// zero-width spaces and joiners, direction marks and overrides, invisible
-// operators, fillers and tag characters.
-const HIDDEN = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u206F\u3164\uFEFF\uFFA0\u{E0000}-\u{E007F}]/u;
+// direction, which a message could hide what it says behind: what Unicode
+// says a reader's software may draw as nothing, such as soft hyphens,
+// zero-width spaces and joiners, fillers, variation selectors and tag
+// characters, and the marks and overrides that set a text's direction.
+const HIDDEN = /[\p{Default_Ignorable_Code_Point}\p{Bidi_Control}]/u;
 const PICTOGRAPH = /\p{Extended_Pictographic}/u;
+const MODIFIER = /\p{Emoji_Modifier}/u;
+const EMOJI = /\p{Emoji}/u;
+const IDEOGRAPH = /\p{Ideographic}/u;
+const VARIATION = /\p{Variation_Selector}/u;
 
-// hiddenAt reports whether the character at i of chars is hidden. A
-// zero-width joiner between two pictographs joins an emoji, as in a family's,
-// and is what it looks like.
+// NUMERIC_REFERENCE is a character written as its number, which Markdown
+// draws as the character itself.
+const NUMERIC_REFERENCE = /^&#(?:[xX]([0-9a-fA-F]{1,6})|([0-9]{1,7}));/;
+
+// hiddenAt reports whether the character at i of chars is hidden. What an
+// emoji or a name is drawn with is what it looks like: a zero-width joiner
+// between two pictographs, as in a family's emoji; one variation selector,
+// after an emoji or an ideograph, which picks how it is drawn; and the tags
+// after a black flag that make it Scotland's. A second selector in a row, or
+// tags anywhere else, carry what no reader sees.
 function hiddenAt(chars, i) {
-  if (!HIDDEN.test(chars[i])) return false;
-  if (chars[i] !== "\u200D") return true;
-  const before = chars[i - 1] === "\uFE0F" ? chars[i - 2] : chars[i - 1];
-  return !(before && PICTOGRAPH.test(before) && chars[i + 1] && PICTOGRAPH.test(chars[i + 1]));
+  const ch = chars[i];
+  if (!HIDDEN.test(ch)) return false;
+  const code = ch.codePointAt(0);
+  const before = chars[i - 1];
+  if (code === 0x200d) {
+    const joined = before && VARIATION.test(before) ? chars[i - 2] : before;
+    const after = chars[i + 1];
+    return !(joined && (PICTOGRAPH.test(joined) || MODIFIER.test(joined)) && after && PICTOGRAPH.test(after));
+  }
+  if (VARIATION.test(ch)) return !(before && !VARIATION.test(before) && (EMOJI.test(before) || IDEOGRAPH.test(before)));
+  if (code >= 0xe0020 && code <= 0xe007f) return !inSubdivisionFlag(chars, i);
+  return true;
+}
+
+// inSubdivisionFlag reports whether the tag at i of chars is in a flag of a
+// country's part: a black flag, up to six tags, and the tag that ends them.
+function inSubdivisionFlag(chars, i) {
+  const at = (k) => (chars[k] ? chars[k].codePointAt(0) : -1);
+  const tag = (k) => at(k) >= 0xe0020 && at(k) <= 0xe007e;
+  let start = i;
+  while (start > i - 7 && tag(start - 1)) start--;
+  let end = i;
+  while (end < i + 7 && tag(end)) end++;
+  return at(start - 1) === 0x1f3f4 && end - start >= 1 && end - start <= 6 && at(end) === 0xe007f;
+}
+
+// hiddenParts is text as what a reader sees and what they cannot: runs of
+// text, and each hidden character, by its code point, with how it is written
+// when it is written as its number.
+function hiddenParts(text) {
+  const chars = Array.from(String(text || ""));
+  const parts = [];
+  let run = "";
+  const hide = (code, written) => {
+    parts.push(run, { code: "U+" + code.toString(16).toUpperCase().padStart(4, "0"), written });
+    run = "";
+  };
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] === "&") {
+      const reference = NUMERIC_REFERENCE.exec(chars.slice(i, i + 12).join(""));
+      const code = reference ? parseInt(reference[1] || reference[2], reference[1] ? 16 : 10) : 0;
+      if (code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff) && HIDDEN.test(String.fromCodePoint(code))) {
+        hide(code, reference[0]);
+        i += reference[0].length - 1;
+        continue;
+      }
+    }
+    if (hiddenAt(chars, i)) {
+      hide(chars[i].codePointAt(0), "");
+      continue;
+    }
+    run += chars[i];
+  }
+  parts.push(run);
+  return parts.filter((part) => part !== "");
 }
 
 function hiddenCharacters(text) {
-  const chars = Array.from(String(text || ""));
-  let count = 0;
-  for (let i = 0; i < chars.length; i++) {
-    if (hiddenAt(chars, i)) count++;
-  }
-  return count;
+  return hiddenParts(text).filter((part) => typeof part !== "string").length;
 }
 
 // asWritten is the text as it was written, each hidden character shown by its
-// code point.
+// code point, and one written as its number marked where it stands.
 function asWritten(text) {
-  const chars = Array.from(String(text || ""));
-  const out = [];
-  let run = "";
-  for (let i = 0; i < chars.length; i++) {
-    if (!hiddenAt(chars, i)) {
-      run += chars[i];
-      continue;
-    }
-    out.push(run);
-    run = "";
-    const code = "U+" + chars[i].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
-    out.push(el("span", { class: "hidden-char", title: code }, code));
-  }
-  out.push(run);
-  return el("pre", { class: "as-written" }, out);
+  return el("pre", { class: "as-written" }, hiddenParts(text).map((part) => typeof part === "string"
+    ? part
+    : el("span", { class: "hidden-char", title: part.code }, part.written || part.code)));
 }
 
 // MAX_DIFF_CELLS bounds the table a revision's differences are found with; a

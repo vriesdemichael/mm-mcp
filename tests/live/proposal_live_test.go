@@ -5,6 +5,7 @@ package live
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -110,7 +111,7 @@ func TestAPressActsOnlyOnTheDraftTheViewShows(t *testing.T) {
 	admin := admin(t)
 	user := seedUser(t, admin)
 	team := seedTeam(t, admin, user)
-	channel, attached := seedChannel(t, admin, team, user), seedChannel(t, admin, team, user)
+	channel, attached, theirs := seedChannel(t, admin, team, user), seedChannel(t, admin, team, user), seedChannel(t, admin, team, user)
 	own := clientAs(t, user)
 	session := proposingSession(t, admin, user, true)
 	at := func(more map[string]any) map[string]any {
@@ -121,50 +122,87 @@ func TestAPressActsOnlyOnTheDraftTheViewShows(t *testing.T) {
 		return arguments
 	}
 
-	// Typed on in Mattermost while the view showed it: the press is refused,
-	// with the draft as it is now, and nothing is posted.
+	// Typed on in Mattermost while the view showed it, the draft is the
+	// person's: no press reaches it, whatever text it names, and nothing is
+	// posted. It answers with the draft as it is now.
 	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "Lunch at noon"})
 	proposal := draftIn(t, user, team.Id, channel.Id, "")
 	proposal.Message = "Lunch at noon, and dessert"
 	_, _, err := own.UpsertDraft(t.Context(), proposal)
 	check(t, err)
-	changed := pressed(t, session, at(map[string]any{"action": "post", "shown": "Lunch at noon"}))
-	if changed.Status != "changed" || changed.Draft.Message != "Lunch at noon, and dessert" {
-		t.Errorf("a press on a changed draft answered %+v", changed)
+	for _, press := range []map[string]any{
+		{"action": "post", "shown": "Lunch at noon"},
+		{"action": "post", "shown": "Lunch at noon, and dessert"},
+		{"action": "edit", "shown": "Lunch at noon, and dessert", "message": "Lunch at one"},
+		{"action": "discard", "shown": "Lunch at noon, and dessert"},
+	} {
+		if left := pressed(t, session, at(press)); left.Status != "elsewhere" || left.Draft.Message != "Lunch at noon, and dessert" {
+			t.Errorf("%v on a draft typed on in Mattermost answered %+v", press, left)
+		}
 	}
 	if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
-		t.Fatalf("a press on a changed draft posted %d messages", len(posts))
+		t.Fatalf("a press on a draft typed on in Mattermost posted %d messages", len(posts))
+	}
+	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "Lunch at noon, and dessert" {
+		t.Fatalf("the draft typed on in Mattermost reads %q", got)
 	}
 
-	// Edited in the view, the draft is the person's: it carries no mark of a
-	// proposal, and a proposal over it waits for the person's choice.
-	edited := pressed(t, session, at(map[string]any{"action": "edit", "shown": "Lunch at noon, and dessert", "message": "Lunch at one"}))
-	if edited.Status != "saved" || edited.Draft.Message != "Lunch at one" {
+	// A newer proposal than the view showed is drawn again as it is.
+	_, _, err = own.DeleteDraft(t.Context(), user.Id, channel.Id, "")
+	check(t, err)
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "Lunch at noon"})
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "Lunch at one"})
+	if changed := pressed(t, session, at(map[string]any{"action": "post", "shown": "Lunch at noon"})); changed.Status != "changed" || changed.Draft.Message != "Lunch at one" {
+		t.Errorf("a press on a newer proposal answered %+v", changed)
+	}
+
+	// Edited in the view, the draft is the person's, which a proposal over it
+	// leaves for their choice, and still the view's, which its presses reach.
+	edited := pressed(t, session, at(map[string]any{"action": "edit", "shown": "Lunch at one", "message": "Lunch at half past one"}))
+	if edited.Status != "saved" || edited.Draft.Message != "Lunch at half past one" {
 		t.Fatalf("Edit answered %+v", edited)
 	}
-	if props := draftIn(t, user, team.Id, channel.Id, "").GetProps(); len(props) != 0 {
-		t.Errorf("the edited draft carries %v", props)
+	if mark, _ := draftIn(t, user, team.Id, channel.Id, "").GetProps()["mm_mcp_proposal"].(string); !strings.HasPrefix(mark, "edited ") {
+		t.Errorf("the edited draft is marked %q", mark)
 	}
 	var choice server.Proposal
 	structured(t, proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "Lunch at two"}), &choice)
-	if choice.Saved || choice.Theirs == nil || choice.Theirs.Message != "Lunch at one" || choice.Message != "Lunch at two" {
+	if choice.Saved || choice.Theirs == nil || choice.Theirs.Message != "Lunch at half past one" || choice.Message != "Lunch at two" {
 		t.Fatalf("a proposal over the person's draft answered %+v", choice)
 	}
-	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "Lunch at one" {
+	if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; got != "Lunch at half past one" {
 		t.Fatalf("a proposal over the person's draft wrote %q", got)
 	}
 
 	// Replace mine puts the proposal in its place, as mm-mcp's own again.
-	replaced := pressed(t, session, at(map[string]any{"action": "replace", "shown": "Lunch at one", "message": "Lunch at two"}))
+	replaced := pressed(t, session, at(map[string]any{"action": "replace", "shown": "Lunch at half past one", "message": "Lunch at two"}))
 	if replaced.Status != "saved" || replaced.Draft.Message != "Lunch at two" {
 		t.Fatalf("Replace mine answered %+v", replaced)
 	}
-	if props := draftIn(t, user, team.Id, channel.Id, "").GetProps(); props["mm_mcp_proposal"] == nil {
-		t.Errorf("the proposal put in place carries %v", props)
+	if mark, _ := draftIn(t, user, team.Id, channel.Id, "").GetProps()["mm_mcp_proposal"].(string); mark == "" || strings.HasPrefix(mark, "edited ") {
+		t.Errorf("the proposal put in place is marked %q", mark)
 	}
 	// Discard binds to the text too.
 	if stale := pressed(t, session, at(map[string]any{"action": "discard", "shown": "Lunch at one"})); stale.Status != "changed" {
 		t.Errorf("a discard of text the draft no longer holds answered %+v", stale)
+	}
+
+	// A draft the person wrote in Mattermost was never the view's: a press
+	// naming its text leaves it as it is. A proposal of the same text asks
+	// them in the view.
+	_, _, err = own.UpsertDraft(t.Context(), &model.Draft{UserId: user.Id, ChannelId: theirs.Id, Message: "my own words"})
+	check(t, err)
+	for _, action := range []string{"post", "discard"} {
+		if left := pressed(t, session, map[string]any{"action": action, "channel_id": theirs.Id, "shown": "my own words"}); left.Status != "elsewhere" {
+			t.Errorf("%s on the person's own draft answered %+v", action, left)
+		}
+	}
+	structured(t, proposePost(t, session, map[string]any{"channel_id": theirs.Id, "message": "my own words"}), &choice)
+	if choice.Saved || choice.Theirs == nil || choice.Theirs.Message != "my own words" {
+		t.Errorf("a proposal of the person's own words answered %+v", choice)
+	}
+	if posts := messagesIn(t, admin, theirs.Id); len(posts) != 0 || draftsOf(t, user, team.Id)[theirs.Id+"/"] != "my own words" {
+		t.Errorf("a press on the person's own draft posted %d messages, and left %q", len(posts), draftsOf(t, user, team.Id)[theirs.Id+"/"])
 	}
 
 	// A draft given a file in Mattermost is sent from there.
@@ -180,6 +218,14 @@ func TestAPressActsOnlyOnTheDraftTheViewShows(t *testing.T) {
 	}
 	if posts := messagesIn(t, admin, attached.Id); len(posts) != 0 {
 		t.Errorf("a press on a draft with a file posted %d messages", len(posts))
+	}
+	// So is one made another kind of post there, as a plugin makes one.
+	draft = draftIn(t, user, team.Id, attached.Id, "")
+	draft.FileIds, draft.Message, draft.Type = nil, "the plan", "custom_plan"
+	_, _, err = own.UpsertDraft(t.Context(), draft)
+	check(t, err)
+	if elsewhere := pressed(t, session, map[string]any{"action": "post", "channel_id": attached.Id, "shown": "the plan"}); elsewhere.Status != "elsewhere" {
+		t.Errorf("a press on a draft of another kind answered %+v", elsewhere)
 	}
 }
 
@@ -247,6 +293,8 @@ func TestWhatAProposalOrAPressCannotReachIsRefused(t *testing.T) {
 	nowhere := strings.Repeat("q", 26)
 
 	refusedSaying(t, session, "propose_post", map[string]any{"message": "somewhere"}, "give channel_id")
+	// A slash command would run when the person sent it.
+	refusedSaying(t, session, "propose_post", map[string]any{"channel_id": channel.Id, "message": " /leave"}, "slash command", "create_post")
 	if result := proposePost(t, session, map[string]any{"channel_id": nowhere, "message": "nowhere"}); !result.IsError {
 		t.Error("a proposal in a channel that is not there was saved")
 	}
@@ -256,6 +304,7 @@ func TestWhatAProposalOrAPressCannotReachIsRefused(t *testing.T) {
 	}{
 		{map[string]any{"action": "edit", "channel_id": channel.Id, "shown": "x", "message": "  "}, "would be empty"},
 		{map[string]any{"action": "edit", "channel_id": channel.Id, "shown": "x", "message": strings.Repeat("x", 16384)}, "characters"},
+		{map[string]any{"action": "replace", "channel_id": channel.Id, "shown": "x", "message": "/kick @someone"}, "slash command"},
 	} {
 		refusedSaying(t, session, "view_change", c.arguments, c.says)
 	}
@@ -267,11 +316,15 @@ func TestWhatAProposalOrAPressCannotReachIsRefused(t *testing.T) {
 		}
 	}
 
-	// Replace mine where the person's draft went meanwhile saves the proposal.
-	if replaced := pressed(t, session, map[string]any{"action": "replace", "channel_id": channel.Id, "shown": "gone meanwhile", "message": "the proposal"}); replaced.Status != "saved" {
+	// Replace mine where the person's draft went meanwhile writes nothing.
+	if replaced := pressed(t, session, map[string]any{"action": "replace", "channel_id": channel.Id, "shown": "gone meanwhile", "message": "the proposal"}); replaced.Status != "gone" {
 		t.Errorf("Replace mine over no draft answered %+v", replaced)
 	}
+	if _, there := draftsOf(t, user, team.Id)[channel.Id+"/"]; there {
+		t.Error("Replace mine over no draft wrote one")
+	}
 	// @here in a channel of two alerts too few for Mattermost to ask.
+	proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "the proposal"})
 	pressed(t, session, map[string]any{"action": "edit", "channel_id": channel.Id, "shown": "the proposal", "message": "@here the proposal"})
 	if posted := pressed(t, session, map[string]any{"action": "post", "channel_id": channel.Id, "shown": "@here the proposal"}); posted.Status != "posted" {
 		t.Errorf("@here in a channel of %d answered %+v", members(t, channel.Id), posted)
@@ -295,5 +348,48 @@ func TestAPressInAChannelArchivedSincePostsNothing(t *testing.T) {
 	}
 	if posts := messagesIn(t, admin, channel.Id); len(posts) != 0 {
 		t.Errorf("a press in an archived channel posted %d messages", len(posts))
+	}
+}
+
+// Presses on one draft at once, as from two views of the same proposal, post
+// it once: Mattermost answers every post after the first with it.
+func TestPressesOnOneDraftAtOncePostItOnce(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user := seedUser(t, admin)
+	team := seedTeam(t, admin, user)
+	channel := seedChannel(t, admin, team, user)
+	sessions := make([]*mcp.ClientSession, 6)
+	for i := range sessions {
+		sessions[i] = proposingSession(t, admin, user, true)
+	}
+	// Each view shows the proposal: the first saves it, and the rest find it
+	// there already.
+	for _, session := range sessions {
+		proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "once only"})
+	}
+	var wait sync.WaitGroup
+	answers := make([]*mcp.CallToolResult, len(sessions))
+	for i, session := range sessions {
+		wait.Go(func() {
+			// A press that meets another still posting is refused, which posts
+			// nothing; it is read below with the rest.
+			answers[i], _ = tryTool(t, session, &mcp.CallToolParams{Name: "view_change", Arguments: map[string]any{"action": "post", "channel_id": channel.Id, "shown": "once only"}})
+		})
+	}
+	wait.Wait()
+	if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 {
+		t.Fatalf("presses at once on one draft posted %d messages", len(posts))
+	}
+	posted := messagesIn(t, admin, channel.Id)[0].Id
+	for _, answer := range answers {
+		if answer == nil || answer.IsError {
+			continue
+		}
+		var change server.DraftChange
+		structured(t, answer, &change)
+		if change.Status == "posted" && change.Post.ID != posted {
+			t.Errorf("a press answered with post %s, not the one posted, %s", change.Post.ID, posted)
+		}
 	}
 }

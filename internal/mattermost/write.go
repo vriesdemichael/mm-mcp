@@ -20,11 +20,14 @@ type NewPost struct {
 	Message   string
 	FileIDs   []string
 	Props     model.StringInterface
+	// PendingID is the post's pending post id: Mattermost answers a second
+	// post with the same one, within half a minute, with the first.
+	PendingID string
 }
 
 // CreatePost posts a message. CreatePost.
 func (c *Client) CreatePost(ctx context.Context, post NewPost) (*model.Post, error) {
-	created := &model.Post{ChannelId: post.ChannelID, RootId: post.RootID, Message: post.Message, FileIds: post.FileIDs}
+	created := &model.Post{ChannelId: post.ChannelID, RootId: post.RootID, Message: post.Message, FileIds: post.FileIDs, PendingPostId: post.PendingID}
 	if post.Props != nil {
 		created.SetProps(post.Props)
 	}

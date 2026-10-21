@@ -49,6 +49,7 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestEveryTestPackageIsSealed`: every package under cmd/ and internal/ with tests seals its process.
 - `TestTheOldestSupportedReleaseIsTheESRStacks`: the release older than which mm-mcp warns at start is the one the ESR stack runs.
 - `TestNoFileHidesACharacter`: no file of the repository holds a character the eye cannot see or that turns the text's direction; a page or a test that needs one writes it as an escape.
+- `TestEveryTestTheSecurityPageNamesExists`: every test the security page names for a mitigation exists.
 
 Break a governance test before adding it, and before trusting one you did not write: record what breaks it, and that you saw it fail. Add it to the list above in the same change. A guard that scans the tree also fails when it finds too little to scan, so a scan that has stopped matching cannot report perfect compliance. Do not write a test that compares a value to something derived from it.
 
