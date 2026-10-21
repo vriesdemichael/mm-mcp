@@ -1,0 +1,2513 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="An MCP server for Mattermost">
+      
+      
+      
+        <link rel="canonical" href="https://vriesdemichael.github.io/mm-mcp/v0.4/tools/">
+      
+      
+        <link rel="prev" href="../administrators/">
+      
+      
+        <link rel="next" href="../views/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Tools - mm-mcp</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:300,300i,400,400i,700,700i%7CIBM+Plex+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"IBM Plex Sans";--md-code-font:"IBM Plex Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="mm-mcp" class="md-header__button md-logo" aria-label="mm-mcp" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            mm-mcp
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to the system's mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to the system's mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/vriesdemichael/mm-mcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vriesdemichael/mm-mcp
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Get started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../security/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  For organisations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../adr/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Project
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="mm-mcp" class="md-nav__button md-logo" aria-label="mm-mcp" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="logo">
+
+    </a>
+    mm-mcp
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/vriesdemichael/mm-mcp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vriesdemichael/mm-mcp
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Get started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../login/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Logging in
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For organisations
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For organisations
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../administrators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For administrators
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#every-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every tool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Every tool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#catch-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catch up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#find-it-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find it again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-the-whole-story" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read the whole story
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#see-it-as-mattermost-shows-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See it as Mattermost shows it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-the-attachments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open the attachments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-reply-and-react" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post, reply and react
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#channels-and-people" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channels and people
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-own-things" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own things
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#good-to-know" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Good to know
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Good to know">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#works-the-same-everywhere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Works the same everywhere
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-as-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files as resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Views
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#page-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Page sizes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-a-write-is-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a write is checked
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How a write is checked">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-far-a-message-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How far a message goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-an-edit-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an edit changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-a-write-takes-away" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a write takes away
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-a-write-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a write goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-your-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On your machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#not-offered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not offered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-tools-are-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the tools are built
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../views/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Views
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mattermost-releases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Mattermost releases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../adr/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Project
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/vriesdemichael/mm-mcp/blob/main/CONTRIBUTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/vriesdemichael/mm-mcp/releases" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#every-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Every tool
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Every tool">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#catch-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Catch up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#find-it-again" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Find it again
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#read-the-whole-story" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Read the whole story
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#see-it-as-mattermost-shows-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See it as Mattermost shows it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-the-attachments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open the attachments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-reply-and-react" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post, reply and react
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#channels-and-people" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channels and people
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#your-own-things" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Your own things
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-the-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check the setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#good-to-know" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Good to know
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Good to know">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#works-the-same-everywhere" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Works the same everywhere
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-as-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files as resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Views
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#page-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Page sizes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-a-write-is-checked" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a write is checked
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How a write is checked">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-far-a-message-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How far a message goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-an-edit-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What an edit changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-a-write-takes-away" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a write takes away
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#where-a-write-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where a write goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#on-your-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On your machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#not-offered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Not offered
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-the-tools-are-built" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the tools are built
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+
+
+
+  
+  
+
+
+<h1 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h1>
+<p class="mm-lead">Everything your agent can do in Mattermost with mm-mcp. Ask in
+your own words; it picks the tool. Writing is off until you allow it.</p>
+
+<div class="mm-stats">
+<a class="mm-stat" href="#every-tool"><strong>48</strong> tools</a>
+<span class="mm-stat mm-stat--read"><strong>26</strong> only read</span>
+<span class="mm-stat mm-stat--checked"><strong>14</strong> checked writes</span>
+<span class="mm-stat mm-stat--yours"><strong>7</strong> yours alone</span>
+<span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
+<a class="mm-stat mm-stat--view" href="../views/"><strong>5</strong> show you a view</a>
+</div>
+
+<div class="grid cards mm-jobs">
+<ul>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 10h-2V7h-4v3H8l4 4m7 1h-4a3 3 0 0 1-3 3 3 3 0 0 1-3-3H5V5h14m0-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2"/></svg></span> <strong>Catch up</strong></p>
+<hr />
+<p>Pick up where you left off, in every channel, without marking anything read.</p>
+<p class="mm-example">“What did I miss since Friday?”</p>
+<p><a class="mm-chip" href="#read_unread"><code>read_unread</code></a> <a class="mm-chip" href="#get_user_channels"><code>get_user_channels</code></a> <a class="mm-chip" href="#list_mentions"><code>list_mentions</code></a> <a class="mm-chip" href="#list_threads"><code>list_threads</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m19.31 18.9 3.08 3.1L21 23.39l-3.12-3.07c-.69.43-1.51.68-2.38.68-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5 4.5 2 4.5 4.5c0 .88-.25 1.71-.69 2.4m-3.81.1a2.5 2.5 0 0 0 0-5 2.5 2.5 0 0 0 0 5M21 4v2H3V4zM3 16v-2h6v2zm0-5V9h18v2h-2.03c-1.01-.63-2.2-1-3.47-1s-2.46.37-3.47 1z"/></svg></span> <strong>Find it again</strong></p>
+<hr />
+<p>Messages, files, people and channels, searched the way you would say it: by
+words, by who, where and when.</p>
+<p class="mm-example">“What did we decide about the release date?”</p>
+<p><a class="mm-chip" href="#search_posts"><code>search_posts</code></a> <a class="mm-chip" href="#search_files"><code>search_files</code></a> <a class="mm-chip" href="#search_users"><code>search_users</code></a> <a class="mm-chip" href="#search_channels"><code>search_channels</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 4v7H5.17L4 12.17V4zm1-2H3a1 1 0 0 0-1 1v14l4-4h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1m5 4h-2v9H6v2a1 1 0 0 0 1 1h11l4 4V7a1 1 0 0 0-1-1"/></svg></span> <strong>Read the whole story</strong></p>
+<hr />
+<p>A channel page by page, a thread from its first post, and what was pinned or
+saved.</p>
+<p class="mm-example">“Summarise the thread about last night's outage.”</p>
+<p><a class="mm-chip" href="#read_channel"><code>read_channel</code></a> <a class="mm-chip" href="#read_post"><code>read_post</code></a> <a class="mm-chip" href="#list_pinned_posts"><code>list_pinned_posts</code></a> <a class="mm-chip" href="#list_saved"><code>list_saved</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 1 3 3 3 3 0 0 1-3 3 3 3 0 0 1-3-3 3 3 0 0 1 3-3m0-4.5c5 0 9.27 3.11 11 7.5-1.73 4.39-6 7.5-11 7.5S2.73 16.39 1 12c1.73-4.39 6-7.5 11-7.5M3.18 12a9.821 9.821 0 0 0 17.64 0 9.821 9.821 0 0 0-17.64 0"/></svg></span> <strong>See it as Mattermost shows it</strong></p>
+<hr />
+<p>In an AI app that shows MCP Apps views, a thread, or what is waiting for
+you, appears in the chat as Mattermost lays it out: names and pictures,
+Markdown, reactions and images, and what is unread where.</p>
+<p class="mm-example">“Show me the thread about last night's outage.”</p>
+<p><a class="mm-chip" href="#show"><code>show</code></a> <a class="mm-chip" href="#view_action"><code>view_action</code></a> <a class="mm-chip mm-chip--yours" href="#view_change"><code>view_change</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm0 2h7v5h5v11H6zm2 8v2h8v-2zm0 4v2h5v-2z"/></svg></span> <strong>Open the attachments</strong></p>
+<hr />
+<p>Word, Excel and PowerPoint as their text, PDFs, images and archives, read for
+the model, or saved to your disk.</p>
+<p class="mm-example">“What's in the spreadsheet Sam shared?”</p>
+<p><a class="mm-chip" href="#read_file"><code>read_file</code></a> <a class="mm-chip mm-chip--disk" href="#save_file"><code>save_file</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 3v7l15 2-15 2v7l21-9M4 6.03l7.53 3.22-7.53-1m7.53 6.5L4 17.97v-2.22m18-.25L18.5 19l-2-2-1.5 1.5 3.5 3.5 5-5Z"/></svg></span> <strong>Post, reply and react</strong></p>
+<hr />
+<p>Messages, replies, direct and group messages, edits and reactions, each
+approved by your AI app and checked by mm-mcp before it goes out.</p>
+<p class="mm-example">“Tell Sam in the thread that the notes are ready.”</p>
+<p><a class="mm-chip mm-chip--checked" href="#create_post"><code>create_post</code></a> <a class="mm-chip mm-chip--checked" href="#dm"><code>dm</code></a> <a class="mm-chip mm-chip--checked" href="#group_message"><code>group_message</code></a> <a class="mm-chip mm-chip--checked" href="#update_post"><code>update_post</code></a> <a class="mm-chip mm-chip--checked" href="#delete_post"><code>delete_post</code></a> <a class="mm-chip mm-chip--checked" href="#add_reaction"><code>add_reaction</code></a> <a class="mm-chip mm-chip--checked" href="#remove_reaction"><code>remove_reaction</code></a> <a class="mm-chip mm-chip--checked" href="#pin_post"><code>pin_post</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5a3.5 3.5 0 0 0-3.5 3.5A3.5 3.5 0 0 0 12 12a3.5 3.5 0 0 0 3.5-3.5A3.5 3.5 0 0 0 12 5m0 2a1.5 1.5 0 0 1 1.5 1.5A1.5 1.5 0 0 1 12 10a1.5 1.5 0 0 1-1.5-1.5A1.5 1.5 0 0 1 12 7M5.5 8A2.5 2.5 0 0 0 3 10.5c0 .94.53 1.75 1.29 2.18.36.2.77.32 1.21.32s.85-.12 1.21-.32c.37-.21.68-.51.91-.87A5.42 5.42 0 0 1 6.5 8.5v-.28c-.3-.14-.64-.22-1-.22m13 0c-.36 0-.7.08-1 .22v.28c0 1.2-.39 2.36-1.12 3.31.12.19.25.34.4.49a2.482 2.482 0 0 0 1.72.7c.44 0 .85-.12 1.21-.32.76-.43 1.29-1.24 1.29-2.18A2.5 2.5 0 0 0 18.5 8M12 14c-2.34 0-7 1.17-7 3.5V19h14v-1.5c0-2.33-4.66-3.5-7-3.5m-7.29.55C2.78 14.78 0 15.76 0 17.5V19h3v-1.93c0-1.01.69-1.85 1.71-2.52m14.58 0c1.02.67 1.71 1.51 1.71 2.52V19h3v-1.5c0-1.74-2.78-2.72-4.71-2.95M12 16c1.53 0 3.24.5 4.23 1H7.77c.99-.5 2.7-1 4.23-1"/></svg></span> <strong>Channels and people</strong></p>
+<hr />
+<p>Who is who and who is around, which channels exist and who is in them; join,
+leave, create, add people, and set your status.</p>
+<p class="mm-example">“Is Sam online, and who else is in ~release-planning?”</p>
+<p><a class="mm-chip" href="#get_me"><code>get_me</code></a> <a class="mm-chip" href="#get_users"><code>get_users</code></a> <a class="mm-chip" href="#get_status"><code>get_status</code></a> <a class="mm-chip" href="#get_user_teams"><code>get_user_teams</code></a> <a class="mm-chip" href="#get_team_info"><code>get_team_info</code></a> <a class="mm-chip" href="#get_channel_info"><code>get_channel_info</code></a> <a class="mm-chip" href="#list_team_channels"><code>list_team_channels</code></a> <a class="mm-chip" href="#list_archived_channels"><code>list_archived_channels</code></a> <a class="mm-chip" href="#get_channel_stats"><code>get_channel_stats</code></a> <a class="mm-chip mm-chip--checked" href="#join_channel"><code>join_channel</code></a> <a class="mm-chip mm-chip--checked" href="#leave_channel"><code>leave_channel</code></a> <a class="mm-chip mm-chip--checked" href="#add_channel_members"><code>add_channel_members</code></a> <a class="mm-chip mm-chip--checked" href="#create_channel"><code>create_channel</code></a> <a class="mm-chip mm-chip--checked" href="#set_status"><code>set_status</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17 18-5-2.18L7 18V5h10m0-2H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2"/></svg></span> <strong>Your own things</strong></p>
+<hr />
+<p>A post proposed as your draft, to send yourself, reminders, saved posts and
+followed threads. Nobody else sees them; deleting a draft, which loses your
+words, is checked.</p>
+<p class="mm-example">“Draft a reply I can send myself, and remind me at nine tomorrow.”</p>
+<p><a class="mm-chip mm-chip--yours" href="#propose_post"><code>propose_post</code></a> <a class="mm-chip" href="#list_drafts"><code>list_drafts</code></a> <a class="mm-chip mm-chip--checked" href="#delete_draft"><code>delete_draft</code></a> <a class="mm-chip mm-chip--yours" href="#set_post_reminder"><code>set_post_reminder</code></a> <a class="mm-chip mm-chip--yours" href="#save_post"><code>save_post</code></a> <a class="mm-chip mm-chip--yours" href="#follow_thread"><code>follow_thread</code></a> <a class="mm-chip mm-chip--yours" href="#mark_channel_read"><code>mark_channel_read</code></a> <a class="mm-chip mm-chip--yours" href="#typing"><code>typing</code></a></p>
+</li>
+<li>
+<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 8c.56 0 1 .43 1 1a1 1 0 0 1-1 1c-.57 0-1-.45-1-1 0-.57.43-1 1-1M2 2v9c0 2.96 2.19 5.5 5.14 5.91.62 3.01 3.28 5.09 6.36 5.09a6.5 6.5 0 0 0 6.5-6.5v-3.69c1.16-.42 2-1.52 2-2.81a3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 1.29.84 2.4 2 2.81v3.6c0 2.5-2 4.5-4.5 4.5-2 0-3.68-1.21-4.28-3.01C12 16.3 14 13.8 14 11V2h-4v3h2v6a4 4 0 0 1-4 4 4 4 0 0 1-4-4V5h2V2z"/></svg></span> <strong>Check the setup</strong></p>
+<hr />
+<p>When something fails: the connection, the login, and who decides on a
+write.</p>
+<p class="mm-example">“Why can't you post?”</p>
+<p><a class="mm-chip" href="#diagnose"><code>diagnose</code></a></p>
+</li>
+</ul>
+</div>
+<h2 id="every-tool">Every tool<a class="headerlink" href="#every-tool" title="Permanent link">&para;</a></h2>
+<p>Grouped as above. A badge says when a tool does more than read:
+<span class="mm-badge mm-badge--checked">checked</span> for a change others see,
+or words of yours it deletes, which the call states and mm-mcp checks
+(<a href="#how-a-write-is-checked">below</a>);
+<span class="mm-badge mm-badge--yours">yours alone</span> for what only you see
+or is gone in seconds; and <span class="mm-badge mm-badge--disk">your disk</span>.
+A tool marked <span class="mm-badge mm-badge--view">view</span> also shows you
+what it did in the chat, in an AI app that shows views; the badge opens it,
+live, on <a href="../views/">Views</a>.
+The tools that write are offered only once you allow writes, with
+<code>MM_MCP_ALLOW_WRITES</code> (<a href="../configuration/">Configuration</a>).</p>
+<h3 id="catch-up">Catch up<a class="headerlink" href="#catch-up" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="read_unread"><code>read_unread</code>: Read unread posts</dt>
+<dd>Catches up on a channel from where you stopped reading: a few posts you have
+read, then the ones you have not, oldest first, with the first unread one
+named. A channel you never opened is all unread, and reads newest first,
+the pages after going further back. It marks nothing read: what you have
+read is yours to record.</dd>
+<dt id="get_user_channels"><code>get_user_channels</code>: List the user's channels</dt>
+<dd>The channels you belong to, direct and group messages included, most
+recently active first, each with its team and how many messages and
+mentions are unread. <code>team_id</code> keeps one team's, <code>unread_only</code> those with
+something unread.</dd>
+<dt id="list_mentions"><code>list_mentions</code>: List mentions</dt>
+<dd>The posts that mention you, most recent first, as Mattermost's Recent
+Mentions finds them: by <code>@username</code>, and by your first name, the other
+words and <code>@channel</code>, <code>@all</code> and <code>@here</code> when your notification settings
+say those mention you. Only a post that mentions you as Mattermost would
+notify you is kept, and none of your own. The answer names the words it
+looked for. <code>from</code>, <code>in</code>, <code>before</code>, <code>after</code> and <code>on</code> narrow it, and like
+<code>search_posts</code> it reaches the 100 most recent matches at most. The
+database search Team Edition uses skips "all" and "here" as too common to
+index, so <code>@all</code> and <code>@here</code> are found only on a server that searches with
+Elasticsearch, as they are in Mattermost's own Recent Mentions.</dd>
+<dt id="list_threads"><code>list_threads</code>: List threads</dt>
+<dd>The threads you follow, as Mattermost's threads view lists them, most
+recently replied to first: the post that started each, who took part, and
+how many replies and mentions you have not read.</dd>
+</dl>
+<h3 id="find-it-again">Find it again<a class="headerlink" href="#find-it-again" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="search_posts"><code>search_posts</code>: Search posts</dt>
+<dd>Messages you can read, across every team or one, by words, and by who wrote
+them, where and when through <code>from</code>, <code>in</code>, <code>before</code>, <code>after</code> and <code>on</code>, so no
+search syntax is needed. <code>@username</code> finds where someone was mentioned.
+20 posts a page by default, at most 100. Mattermost's search finds the 100
+most recent matches at most, and the answer says <code>capped</code> when it reached
+them: <code>before</code> reaches older ones. <code>in</code> takes a channel you belong to, the
+only ones Mattermost searches, and <code>from</code> a username, refused with the
+closest when nobody has it. The days <code>before</code>, <code>after</code> and <code>on</code> name are
+your own, in the timezone you set in Mattermost, as in its search box.</dd>
+<dt id="search_files"><code>search_files</code>: Search files</dt>
+<dd>Files attached to posts you can read, by name, by type with <code>ext:pdf</code>, and by
+<code>from</code>, <code>in</code>, <code>before</code>, <code>after</code> and <code>on</code>, each with the post and channel it
+is in and their links, and the file's address as a
+<a href="#files-as-resources">resource</a>. Like <code>search_posts</code>, it finds the 100 most
+recent matches at most.</dd>
+<dt id="search_users"><code>search_users</code>: Search users</dt>
+<dd>Users whose username, name, nickname or email address contains a term,
+optionally only within a team or a channel. Deactivated users are left out.
+Mattermost finds at most 1000 for one term.</dd>
+<dt id="search_channels"><code>search_channels</code>: Search channels</dt>
+<dd>Channels by part of their name: your own, and public ones you have not
+joined. Mattermost finds at most 50 public channels in a team for one term.</dd>
+</dl>
+<h3 id="read-the-whole-story">Read the whole story<a class="headerlink" href="#read-the-whole-story" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="read_channel"><code>read_channel</code>: Read channel</dt>
+<dd>
+<p>A channel's messages, 30 a page by default and at most 200, oldest first
+within a page: the newest, and the pages after go further back. <code>before</code>
+starts back from a post; <code>after</code> and <code>since</code>, from a post or a time, read
+forward. <code>since</code> takes a time with an offset, or a time or a day in your
+own timezone. <code>collapse_threads</code> leaves the replies out and shows each
+thread by the post that started it, as Mattermost shows a channel with
+collapsed reply threads.</p>
+<p>A page here or of <code>read_unread</code> can hold a few more posts than its limit:
+posts written in the same millisecond stay on one page, since Mattermost
+reads on from a post by its time alone, and a page split inside a
+millisecond would lose posts.</p>
+</dd>
+<dt id="read_post"><code>read_post</code>: Read post</dt>
+<dd>A post and the thread it is in, oldest first, 100 posts a page by default.
+Give any post in the thread; <code>include_thread</code> false reads the post alone.</dd>
+<dt id="list_pinned_posts"><code>list_pinned_posts</code>: List pinned posts</dt>
+<dd>The posts pinned to a channel.</dd>
+<dt id="list_saved"><code>list_saved</code>: List saved posts</dt>
+<dd>The posts you saved to come back to.</dd>
+</dl>
+<h3 id="see-it-as-mattermost-shows-it">See it as Mattermost shows it<a class="headerlink" href="#see-it-as-mattermost-shows-it" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="show"><code>show</code>: Show <a class="mm-view-badge" href="../views/#see-a-thread">view</a></dt>
+<dd>
+<p>Puts what you asked to see in front of you in the chat, laid out as
+Mattermost lays it out.</p>
+<ul>
+<li>Kind <code>thread</code> shows a thread: who wrote each post, with their profile
+  picture, when, the Markdown drawn, <code>@mentions</code> and <code>~channels</code>,
+  reactions with who reacted, images you can open whole and file cards,
+  and the edited and pinned marks. It shows the first 30 posts, says how
+  many more the thread has, and loads more as you ask.</li>
+<li>Kind <code>unreads</code> shows what is waiting for you: up to 20 channels with
+  something unread, grouped by team, with their unread and mention
+  counts; up to 10 posts that mention you; and up to 10 threads you follow
+  with unread replies. It says when Mattermost has more. A channel's
+  unread messages or a thread open in place, or in Mattermost where your
+  app does not let the view load them, and once you allow writes, a
+  channel can be marked read from the view.</li>
+</ul>
+<p>Links open in Mattermost. Your agent calls it when you ask to see
+something, after it found it, or ask what is waiting for you. It answers
+with what <code>read_post</code>, or <code>get_user_channels</code>, <code>list_mentions</code> and
+<code>list_threads</code>, answer, so the chat holds nothing the view adds. In an app
+that shows no views it shows nothing, and says so, and your agent answers
+in words (<a href="#views">Views</a>).</p>
+</dd>
+<dt id="view_action"><code>view_action</code>: Act in a view</dt>
+<dd>What you do in a view that changes nothing, such as loading more of a
+thread or opening a channel's unread messages in place, goes through this
+tool. Only a view calls it: an app that shows views keeps it from your
+agent, and mm-mcp offers it only to an app that says it shows views.</dd>
+<dt class="mm-yours" id="view_change"><code>view_change</code>: Change in a view</dt>
+<dd>What you do in a view that changes something goes through this tool:
+marking a channel read from the unread view, as <code>mark_channel_read</code> does,
+and posting, changing or discarding a proposal
+(<a href="#propose_post"><code>propose_post</code></a>). Only a view calls it, on your press: an
+app that shows views keeps it from your agent, and mm-mcp offers it only to
+an app that says it shows views, once you allow writes.</dd>
+</dl>
+<h3 id="open-the-attachments">Open the attachments<a class="headerlink" href="#open-the-attachments" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="read_file"><code>read_file</code>: Read file</dt>
+<dd>A file attached to a post, as content the model can read: text in windows of
+numbered lines, chosen with <code>start_line</code> and <code>line_count</code>; Word, PowerPoint
+and Excel files as their text; zip and tar archives as a listing; images as
+images, turned upright and scaled down when large; small audio, video and
+PDF files as themselves, for a client that can read them. Anything else is
+described by its type and size, with the post's link. Files over 64 MiB are
+described without being read.</dd>
+<dt class="mm-disk" id="save_file"><code>save_file</code>: Save file</dt>
+<dd>Saves a file attached to a post into your download directory, set with
+<code>MM_MCP_DOWNLOAD_DIR</code> and your Downloads directory by default, under its own
+name, and answers with the path. An existing file is never overwritten: a
+number is added to the name instead, and saving the same file again
+answers with the copy already saved. The file is marked as downloaded from
+the internet, as a browser marks it: on Windows, SmartScreen checks a
+program and Office opens a document in Protected View; on macOS,
+Gatekeeper checks it. Files up to 100 MiB. Offered only when mm-mcp runs on
+your machine, whether writes are allowed or not
+(<a href="#on-your-machine">below</a>).</dd>
+</dl>
+<h3 id="post-reply-and-react">Post, reply and react<a class="headerlink" href="#post-reply-and-react" title="Permanent link">&para;</a></h3>
+<p>Your MCP client's approval of each call decides, and mm-mcp checks what each
+states before it acts (<a href="#how-a-write-is-checked">below</a>).</p>
+<dl>
+<dt class="mm-checked" id="create_post"><code>create_post</code>: Create post <a class="mm-view-badge" href="../views/#see-what-your-agent-posted">view</a></dt>
+<dd>
+<p>Posts a message in a channel, or with <code>root_id</code> replies in the thread of any
+post in it. Where mm-mcp asks, its question shows the message as it will be
+sent, the channel and, for a reply, the start of the thread. Posting takes
+down the typing indicator <code>typing</code> put up there. Returns the post, which an
+app that shows MCP Apps views shows in the chat as posted, under where it
+went, as <code>dm</code> and <code>group_message</code> do (<a href="#views">Views</a>).</p>
+<p>Every call states how far the message goes
+(<a href="#how-far-a-message-goes">below</a>): <code>reaches</code>, how many members the
+channel has, and <code>notifies</code> where the message alerts a whole channel or
+user group as Mattermost would ask about first.</p>
+<p><code>files</code> attaches up to ten files: text the model writes, given a <code>name</code> and
+<code>content</code>, or, when the server runs on your machine over stdio, a file by
+its full <code>path</code>. Where mm-mcp asks, its question lists each file with its
+size, type and the path it was read from, the box you tick names every file
+read from your disk by its path, the files are uploaded only once you
+accept, and a file changed after you were asked is refused. A file where
+credentials are kept is never attached
+(<a href="../security/#credentials">Security</a>); attach such a file in Mattermost
+yourself if you mean to. <code>dm</code> and <code>group_message</code> take <code>files</code> too.</p>
+</dd>
+<dt class="mm-checked" id="dm"><code>dm</code>: Send direct message <a class="mm-view-badge" href="../views/#see-what-your-agent-posted">view</a></dt>
+<dd>Sends a direct message to one person, by username or email address, or a
+note to yourself by your own username. The username is required, so
+whatever approves the call sees who it goes to. This is how to message
+people: "message Alice and Bob" is two direct messages.</dd>
+<dt class="mm-checked" id="group_message"><code>group_message</code>: Send group message <a class="mm-view-badge" href="../views/#see-what-your-agent-posted">view</a></dt>
+<dd>Sends one message to two to seven people together, in the group conversation
+Mattermost keeps for exactly them. Only when you ask for a group
+conversation.</dd>
+<dt class="mm-checked" id="update_post"><code>update_post</code>: Update post</dt>
+<dd>Replaces the text of one of your own posts. Where mm-mcp asks, its question
+shows the current text and its replacement. An edit notifies nobody, so
+its mentions are not checked, only its length. The call states <code>reaches</code>,
+how many members the post's channel has, since an edit reaches everyone the
+post does; <code>old_message</code>, the post's current text in full; and, for a post
+with reactions or replies, <code>responses</code>, their number
+(<a href="#what-an-edit-changes">below</a>). Another person's post is refused, even
+with an administrator's credential.</dd>
+<dt class="mm-checked" id="delete_post"><code>delete_post</code>: Delete post</dt>
+<dd>Deletes one of your own posts. Deleting the post that starts a thread
+deletes its replies, other people's included. The call states <code>deletes</code>, how
+many posts go: 1 for a reply, or the post and its replies
+(<a href="#what-a-write-takes-away">below</a>).</dd>
+<dt class="mm-checked" id="add_reaction"><code>add_reaction</code>: Add reaction</dt>
+<dd>Reacts to a post with an emoji, by name, such as <code>thumbsup</code>, or as itself,
+such as 👍. An unknown name is refused with the closest ones. A reaction
+joins one others gave under another name of the same emoji, so
+<code>thumbsup</code> beside a <code>+1</code> is the one 👍. Reacting again with the same
+emoji changes nothing.</dd>
+<dt class="mm-checked" id="remove_reaction"><code>remove_reaction</code>: Remove reaction</dt>
+<dd>Takes back one of your reactions.</dd>
+<dt class="mm-checked" id="pin_post"><code>pin_post</code>: Pin post</dt>
+<dd>Pins a post to its channel for everyone, or unpins it with <code>pinned</code> false.</dd>
+</dl>
+<h3 id="channels-and-people">Channels and people<a class="headerlink" href="#channels-and-people" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="get_me"><code>get_me</code>: Who am I</dt>
+<dd>The Mattermost user the server acts as: id, username, name, nickname,
+position, roles, the timezone set in Mattermost, and whether it is a bot.
+Call it to check the connection and whose access the other tools use.</dd>
+<dt id="get_users"><code>get_users</code>: Get users</dt>
+<dd>People by username, user id or email address, any mix of them in one call,
+with whether each is a bot or deactivated. An email address finds someone
+only when the server shows you addresses. A name nobody has is listed
+with the closest usernames beside the people found, and refused only when
+nobody is found.</dd>
+<dt id="get_status"><code>get_status</code>: Get status</dt>
+<dd>Whether people are around: online, away, do not disturb or offline, when
+they were last active, and the status message they set.</dd>
+<dt id="get_user_teams"><code>get_user_teams</code>: List the user's teams</dt>
+<dd>The teams you belong to.</dd>
+<dt id="get_team_info"><code>get_team_info</code>: Get team</dt>
+<dd>A team by id, name or link. An open team you are not in is found by the
+exact name in its link.</dd>
+<dt id="get_channel_info"><code>get_channel_info</code>: Get channel</dt>
+<dd>A channel by id, name or link, among your own channels and the public
+channels of your teams, saying whether you belong to it and whether it is
+archived.</dd>
+<dt id="list_team_channels"><code>list_team_channels</code>: List a team's channels</dt>
+<dd>A team's public channels, by name.</dd>
+<dt id="list_archived_channels"><code>list_archived_channels</code>: List archived channels</dt>
+<dd>A team's archived channels. An archived channel can be read but not posted
+in.</dd>
+<dt id="get_channel_stats"><code>get_channel_stats</code>: Get channel stats</dt>
+<dd>How many people belong to a channel, how many are guests, and how many posts
+are pinned and files shared in it.</dd>
+<dt class="mm-checked" id="join_channel"><code>join_channel</code>: Join channel</dt>
+<dd>Joins a public channel of one of your teams. Everyone in it sees that you
+joined. A private channel is joined only by being added.</dd>
+<dt class="mm-checked" id="leave_channel"><code>leave_channel</code>: Leave channel</dt>
+<dd>Leaves a channel you belong to. Everyone in it sees that you left, and
+only being added brings you back to a private one, which mm-mcp's question
+says where it asks.</dd>
+<dt class="mm-checked" id="add_channel_members"><code>add_channel_members</code>: Add channel members</dt>
+<dd>Adds up to twenty people, by username, user id or email address, to a
+channel you belong to. Each is notified, and where mm-mcp asks, its question
+names each.</dd>
+<dt class="mm-checked" id="create_channel"><code>create_channel</code>: Create channel</dt>
+<dd>Creates a public or private channel in one of your teams, with you in it,
+the name in its link made from its display name as Mattermost's own app
+makes it, and its purpose and header when given.</dd>
+<dt class="mm-checked" id="set_status"><code>set_status</code>: Set status</dt>
+<dd>Sets your status as everyone sees it beside your name: online, away, do not
+disturb until a time, or offline, and a status message with an emoji, until
+a time or until changed; or clears the message. A time without an offset
+is read in your timezone.</dd>
+</dl>
+<h3 id="your-own-things">Your own things<a class="headerlink" href="#your-own-things" title="Permanent link">&para;</a></h3>
+<dl>
+<dt class="mm-yours" id="propose_post"><code>propose_post</code>: Propose post <a class="mm-view-badge" href="../views/#check-and-send-a-post-your-agent-drafts">view</a></dt>
+<dd>
+<p>Proposes a post for you to send yourself. The message waits as your draft,
+in a channel, a thread, or a direct or group message you already have, in
+your message box in every Mattermost app, and the answer links where it
+waits. Nothing is sent. The message is checked as a post's is, and its notes
+say what its mentions will do. One that starts with <code>/</code> is refused, since
+Mattermost runs it as a slash command when you send it. Proposing again replaces mm-mcp's own
+proposal while you have not changed it; a draft you wrote or typed in is
+never replaced (<a href="#what-a-write-takes-away">below</a>). A conversation that
+does not exist yet is not started, since starting one shows it to the other
+people at once, and a proposal is refused when your drafts do not sync,
+since you would never see it. What you send from Mattermost goes out as
+yours, without the mark of a post written with AI. Whatever your app
+approves, it is a way to post only what you send yourself.</p>
+<p>In an app that shows views, the proposal appears in the chat as it will be
+posted, where it waits, and what its mentions do, with Post, Edit and
+Discard (<a href="#views">Views</a>). Each acts on the text the view shows, and only
+while your draft still holds it as the view put it there: a draft you typed
+on in Mattermost is yours to send from there, and a newer proposal is drawn
+again as it is now. Post marks the post as written with AI, and asks
+first, in Mattermost's own words, where Mattermost would ask before an
+<code>@channel</code> or <code>@here</code> reaches more than five people. A link shows where it
+leads, a character you cannot see or that turns the text's direction is
+flagged, and the text as written is a click away. Where a draft of yours is
+in the way, the view shows yours beside the proposal, or the proposal as a
+revision of yours when your agent says so with <code>revises_draft</code>, and nothing
+is written until you press Replace mine, or Apply, or Keep mine.
+<code>MM_MCP_POST_FROM_VIEWS=false</code> takes Post out of the view
+(<a href="../configuration/">Configuration</a>).</p>
+</dd>
+<dt id="list_drafts"><code>list_drafts</code>: List drafts</dt>
+<dd>Your drafts, in channels and threads, with where each is, by link and
+address, and its <code>length</code>, which <code>delete_draft</code> states.</dd>
+<dt class="mm-checked" id="delete_draft"><code>delete_draft</code>: Delete draft</dt>
+<dd>Deletes your draft in a channel or thread. Nobody else sees a draft, but it
+may hold words you have not sent, so the call states <code>discards</code>, how many
+characters the draft holds, as <code>list_drafts</code> gives its length
+(<a href="#what-a-write-takes-away">below</a>), and where mm-mcp asks, its question
+shows the draft and where it is.</dd>
+<dt class="mm-yours" id="set_post_reminder"><code>set_post_reminder</code>: Set post reminder</dt>
+<dd>Has Mattermost remind you of a post at a time, as its "Remind me" does. A
+time without an offset is read in the timezone you set in Mattermost.</dd>
+<dt class="mm-yours" id="save_post"><code>save_post</code>: Save post</dt>
+<dd>Saves a post among your saved posts, or removes it with <code>saved</code> false.</dd>
+<dt class="mm-yours" id="follow_thread"><code>follow_thread</code>: Follow thread</dt>
+<dd>Follows a thread, so its replies notify you and it appears in
+<code>list_threads</code>, or stops following it with <code>following</code> false.</dd>
+<dt class="mm-yours" id="mark_channel_read"><code>mark_channel_read</code>: Mark channel read</dt>
+<dd>Marks a channel read, as opening it in Mattermost does, clearing its unread
+count and mentions, only when you ask for it. Reading a channel for you
+never marks it read.</dd>
+<dt class="mm-yours" id="typing"><code>typing</code>: Show typing</dt>
+<dd>Shows you typing in a channel or thread while a message is written, kept up
+until <code>create_post</code> posts there, <code>stop</code> is sent, or a minute passes. It
+is optional, for a long message that takes a while to write.</dd>
+</dl>
+<h3 id="check-the-setup">Check the setup<a class="headerlink" href="#check-the-setup" title="Permanent link">&para;</a></h3>
+<dl>
+<dt id="diagnose"><code>diagnose</code>: Diagnose mm-mcp</dt>
+<dd>The checks <code>mm-mcp doctor</code> makes, from inside the running server, so with
+the configuration your MCP client actually started it with: the address,
+which credential it acts with, a login <code>mm-mcp login</code> stored and whether
+<code>MM_TOKEN</code> hides it, the proxy, whether the server answers as a supported
+Mattermost, whose credential it is and whether that user belongs to a team.
+It adds what only the client shows: its name and protocol version, who
+decides on a write, and, where mm-mcp is set to ask, whether the client can
+show its question. With <code>ask_test_question</code>, it shows you a
+test question and reports how it was answered: an answer within a few
+seconds came from the client itself, which then answers every question
+before a write without showing it. Each check says what it found, and a
+failed one what to do. It never returns the credential
+(<a href="../configuration/#command-line">Configuration</a>).</dd>
+</dl>
+<h2 id="good-to-know">Good to know<a class="headerlink" href="#good-to-know" title="Permanent link">&para;</a></h2>
+<h3 id="works-the-same-everywhere">Works the same everywhere<a class="headerlink" href="#works-the-same-everywhere" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Names and links work where ids do, for a tool that reads.</strong> Every
+  <code>channel_id</code> and <code>team_id</code> of a tool that reads, or that changes only what is
+  yours, takes a name as well as an id, a channel's with <code>~</code> or <code>#</code> before it or not.
+  Every id argument takes the place's address, and the link Mattermost shows
+  you: a channel's, a direct or group message's, a team's, a post's, Copy
+  Link's or the one a thread opens at, and a file's, or its
+  <a href="#files-as-resources">resource</a> address. A name of a
+  channel, a team or a person matches in any case, whole or in part; an
+  ambiguous one is refused with every candidate, and an unknown one with the
+  closest names. A link is never fetched, and one to another server is refused
+  (<a href="../adr/030-names-are-matched-leniently-and-a-refusal-names-the-next-step/">ADR-030</a>).</li>
+<li><strong>A write others see takes an address.</strong> The tools that post or change what
+  others see take a channel, a post or a team by its address alone, matched
+  exactly: <code>mattermost://&lt;server&gt;/&lt;team&gt;/channels/&lt;channel&gt;</code>, a direct
+  message's <code>mattermost://&lt;server&gt;/&lt;team&gt;/messages/@&lt;username&gt;</code>, a post's as
+  its channel's address followed by its id, and a team's as
+  <code>mattermost://&lt;server&gt;/&lt;team&gt;</code>. Your MCP client's approval of the call, or
+  its AI reviewer, sees the tool's arguments and nothing else, so the address
+  shows where the write goes by name. An id, a name or a link is refused with
+  where to read the address, and so is the old address of a renamed channel.</li>
+<li><strong>Every place comes with its link and its address.</strong> Each post, channel,
+  team and draft an answer describes carries its address, and the link it opens
+  at, and so do the post and channel of each file <code>search_files</code> finds, made
+  from names: a channel's in its
+  team, a direct or group message's in your first team, as
+  <code>/&lt;team&gt;/messages/@&lt;username&gt;</code>, and a post's in its channel's team, as
+  Copy Link gives it. Asked where something was said, the agent links the post,
+  not the conversation. Beside each link is the name Mattermost shows: a
+  channel's display name, and a direct or group message named after the other
+  people in it.</li>
+<li><strong>Every list pages the same way.</strong> Give <code>limit</code>, and pass the <code>next_cursor</code> an
+  answer ends with back as <code>cursor</code>, with the same other arguments, for the next
+  page, until an answer has none
+  (<a href="../adr/032-every-list-pages-by-an-opaque-cursor/">ADR-032</a>).</li>
+<li><strong>Every post comes back in one shape:</strong> its link and address, its author's
+  username and name, its channel by name, link and address and its team by
+  name, its files with their ids and resource addresses, reactions with who
+  reacted, <code>responses</code>, how many reactions and replies it has, whether it is
+  pinned or marked as written with AI, its thread, and when it was edited. An
+  answer whose posts are all in one channel names the channel and team once.</li>
+<li><strong>A list cuts a long message short.</strong> A message longer than 4,000 characters
+  is cut, with its whole length said; <code>read_post</code> reads it whole.</li>
+<li><strong>Times are your own.</strong> A time in an answer is in the timezone you set in
+  Mattermost, with its offset, such as <code>2026-10-09T09:30:00+02:00</code>, and a time
+  you give without an offset is read in it too. With no timezone set, UTC.</li>
+</ul>
+<h3 id="files-as-resources">Files as resources<a class="headerlink" href="#files-as-resources" title="Permanent link">&para;</a></h3>
+<p>Every file attached to a post is also an MCP resource, at
+<code>mattermost://&lt;your server&gt;/files/&lt;file id&gt;</code>, from a template mm-mcp lists
+(<a href="../adr/029-files-reach-the-model-as-content-and-the-disk-only-locally/">ADR-029</a>).
+A client can read one when it needs it, and some let you attach one to the
+conversation or save it. It reads as <a href="#read_file"><code>read_file</code></a> reads the file,
+but whole: text, a Word, PowerPoint or Excel file's text and an archive's
+listing as text, an image as the image <code>read_file</code> returns, and anything else
+as itself, in one message of up to 10 MiB, a binary file counted as its
+base64: MCP sends a resource whole, and clients drop a larger message.
+<code>MM_MCP_RESOURCE_MAX_MB</code> changes that for a client that takes more
+(<a href="../configuration/">Configuration</a>). A file larger than your Mattermost now
+takes in one, its Maximum File Size, is not downloaded.
+Past a limit, a text is read with <code>read_file</code>, in windows, and a file saved
+with <code>save_file</code>.
+Each post's files, and each file <code>search_files</code> finds, give the address, the
+answer links each file as a resource, and every <code>file_id</code> takes the address. An
+image also gives its size and its preview's address, at
+<code>mattermost://&lt;your server&gt;/files/&lt;file id&gt;/preview</code>: the smaller image its post
+shows, cheaper to look at than the whole image.</p>
+<p>The pictures a post shows with it are resources too: a person's profile picture,
+at <code>mattermost://&lt;your server&gt;/users/&lt;user id&gt;/image</code>, the one they set or the
+one Mattermost draws from their initials, and a custom emoji's, at
+<code>mattermost://&lt;your server&gt;/emoji/&lt;name&gt;</code>. Each reads as a picture, PNG, JPEG,
+GIF or WebP and never SVG, and one read again within a few minutes comes from
+what mm-mcp kept rather than from Mattermost. A
+client that completes resource addresses offers, as you type part of a file's
+name, the ids of the files that match. Threads and conversations are not
+resources: a conversation has no end to read it whole to.</p>
+<h3 id="views">Views<a class="headerlink" href="#views" title="Permanent link">&para;</a></h3>
+<p>In an AI app that shows MCP Apps views, <a href="#show"><code>show</code></a> puts a thread, or what
+is unread for you, in the chat as Mattermost lays it out, every post your
+agent makes shows itself there as posted, and a post it proposes with
+<a href="#propose_post"><code>propose_post</code></a> waits there for you to post, change or discard
+(<a href="../adr/022-mcp-apps-views-on-show-and-on-every-post/">ADR-022</a>). The view is a
+page in mm-mcp itself, which reaches no network: the app reads what it shows
+from mm-mcp, and the pictures as <a href="#files-as-resources">resources</a>, with mm-mcp's
+credential. Where the app reads no pictures, people are their initials and a
+custom emoji its name. The page takes the app's light or dark theme and its
+language, where mm-mcp has words for it, and English otherwise. Goose's desktop
+app shows views, and so does VS Code with its <code>chat.mcp.apps.enabled</code> setting
+on; <code>diagnose</code> says whether yours does. <a href="../views/">Views</a> shows each of them,
+live.</p>
+<h3 id="page-sizes">Page sizes<a class="headerlink" href="#page-sizes" title="Permanent link">&para;</a></h3>
+<p>What a page holds when <code>limit</code> is not given, and the most it can hold.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Default</th>
+<th>At most</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#read_channel"><code>read_channel</code></a>, <a href="#read_unread"><code>read_unread</code></a></td>
+<td>30</td>
+<td>200</td>
+</tr>
+<tr>
+<td><a href="#read_post"><code>read_post</code></a></td>
+<td>100</td>
+<td>200</td>
+</tr>
+<tr>
+<td><a href="#list_pinned_posts"><code>list_pinned_posts</code></a></td>
+<td>30</td>
+<td>100</td>
+</tr>
+<tr>
+<td><a href="#search_posts"><code>search_posts</code></a>, <a href="#list_mentions"><code>list_mentions</code></a>, <a href="#search_files"><code>search_files</code></a></td>
+<td>20</td>
+<td>100</td>
+</tr>
+<tr>
+<td><a href="#list_saved"><code>list_saved</code></a>, <a href="#list_threads"><code>list_threads</code></a>, <a href="#list_drafts"><code>list_drafts</code></a>, <a href="#search_users"><code>search_users</code></a></td>
+<td>20</td>
+<td>100</td>
+</tr>
+<tr>
+<td><a href="#get_user_teams"><code>get_user_teams</code></a>, <a href="#get_user_channels"><code>get_user_channels</code></a>, <a href="#search_channels"><code>search_channels</code></a>, <a href="#list_team_channels"><code>list_team_channels</code></a>, <a href="#list_archived_channels"><code>list_archived_channels</code></a></td>
+<td>50</td>
+<td>200</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-a-write-is-checked">How a write is checked<a class="headerlink" href="#how-a-write-is-checked" title="Permanent link">&para;</a></h3>
+<p>Your MCP client's own approval of each call decides whether a change others see
+goes ahead: its prompt, its permission rules or its auto mode
+(<a href="../adr/033-the-client-decides-whether-a-write-runs/">ADR-033</a>). mm-mcp does
+not ask you by default. What it controls is what it checks itself, on every
+call, whoever approved it: how far a post or an edit goes, the text an edit
+replaces and the reactions and replies that answer it, and what a deletion
+takes away, each stated in the call and read again just before the write;
+where it goes, by address; and the message itself. A refusal says what mm-mcp
+found and tells the model to weigh whether that is what you meant.</p>
+<p>A post can also go ahead on your own press. In an app that shows views, a post
+your agent proposes with <a href="#propose_post"><code>propose_post</code></a> shows with Post, which
+sends it only while your draft holds what the view shows, after Mattermost's
+own question where it would ask one
+(<a href="../views/#questions-people-ask">Views</a>).
+<code>MM_MCP_POST_FROM_VIEWS=false</code> takes Post out of the view.</p>
+<p>With <code>MM_MCP_ELICITATION_OPT_IN=true</code>, mm-mcp asks you as well
+(<a href="../configuration/">Configuration</a>): it shows what will change, where, and under
+whose name, and acts only when you tick the box and accept. The question is an
+MCP elicitation, a form the client shows, so these tools then need a client that
+shows one; a client that declares it cannot gets an error that says so, and
+nothing is written. Some clients declare that they can and decline the form
+without showing it, as Claude Code does in the Claude desktop app's Code tab.
+<code>diagnose</code> with <code>ask_test_question</code> tells you whether yours shows it.
+<code>MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE</code> has Claude Code ask on every
+call instead.</p>
+<p>Every message is checked before the write
+(<a href="../adr/031-a-message-is-checked-before-it-is-posted/">ADR-031</a>): one longer
+than the server takes is refused with its length and the limit, and an @mention
+of someone nobody is is refused with the closest usernames. Where mm-mcp asks,
+the question says how many people <code>@here</code>, <code>@channel</code> and <code>@all</code> reach, who
+of those mentioned is deactivated, and, on a licensed server with user groups,
+how many a group's mention notifies, and puts what a post does, and every file
+it carries, before the message. Mentions are found as Mattermost finds them, so
+code mentions nobody and <code>@here.</code> ending a sentence is <code>@here</code>.</p>
+<h4 id="how-far-a-message-goes">How far a message goes<a class="headerlink" href="#how-far-a-message-goes" title="Permanent link">&para;</a></h4>
+<p><code>create_post</code> states in its call how far the message goes, as two numbers
+mm-mcp counts itself
+(<a href="../adr/031-a-message-is-checked-before-it-is-posted/">ADR-031</a>):</p>
+<ul>
+<li><code>reaches</code>, on every post: how many members the channel has. Everyone in it
+  can read the message, whatever it mentions.</li>
+<li><code>notifies</code>, exactly where Mattermost's web app would ask before sending,
+  with the number it would show: everyone but you for <code>@channel</code>, <code>@all</code>
+  or <code>@here</code> in a channel of more than 5 members, or a mentioned user
+  group's members in the channel, above 5. As in Mattermost, it is not asked
+  while the server's <code>EnableConfirmNotificationsToChannel</code> is off, or of
+  someone who may not mention the whole channel.</li>
+</ul>
+<p><code>update_post</code> states <code>reaches</code> too, never <code>notifies</code>. The numbers are in
+the call because that is what your MCP client's own approval shows you, or its
+AI reviewer, and the model cannot state them without looking. A missing or wrong
+number is refused with the real one, and the model is told to weigh whether you
+meant the message for that many people before it calls again. Each is counted
+again just before the post goes out, so members who joined since the count was
+read stop it.</p>
+<p>For example, when the model posts <code>@channel the release is out</code> in ~Town
+Square, a channel of 512 members, without stating the numbers, the call is
+refused with:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>create_post did not run: a message in ~Town Square reaches 512 people, the
+channel's members as Mattermost counts them, and the call left the number
+out. Consider whether the person meant this message for all of them. If they
+did, call again with reaches: 512. If not, send it somewhere narrower, such as
+a smaller channel or a direct or group message, or ask them where it should go</p>
+</div>
+<p>With <code>reaches: 512</code> it is refused again, because Mattermost would ask before
+alerting the whole channel:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>create_post did not run: @channel alerts 511 people, every member of ~Town
+Square but the user, which Mattermost asks about before sending, and the call
+left the number out. Consider whether the person meant to alert all of them.
+If they did, call again with notifies: 511. If not, mention only the people
+meant, post somewhere narrower, or ask them</p>
+</div>
+<p>The model then calls again with <code>reaches: 512</code> and <code>notifies: 511</code>, which
+your client's approval shows you, as does mm-mcp's question where it asks.
+Nothing is posted until both are right.</p>
+<h4 id="what-an-edit-changes">What an edit changes<a class="headerlink" href="#what-an-edit-changes" title="Permanent link">&para;</a></h4>
+<p><code>update_post</code> states the post's current text in full, <code>old_message</code>, alongside
+its replacement
+(<a href="../adr/031-a-message-is-checked-before-it-is-posted/">ADR-031</a>).
+The model cannot edit a post without writing out all of what it replaces, and
+your client's approval shows both texts. An <code>old_message</code> that differs from the
+post's current text, because you edited the post after the model read it or
+because only part of it is quoted, is refused with the current text.</p>
+<p>A post with reactions, or with replies in the thread it starts, also takes
+<code>responses</code>, their number, as <code>read_post</code> gives it. An edit leaves those
+reactions and replies under the replacing text, and Mattermost tells nobody
+about an edit, so a thumbs up given to one sentence stands under another. For
+example, an edit of your "Give me a thumbs up if you like cat memes", which has
+five 👍 and two replies, that leaves out <code>responses</code> is refused with:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>update_post did not run: 7 reactions and replies respond to your post in
+~Town Square: &#58;thumbsup&#58; ×5 (@brent, @ann, @joe, 2 more), 2 replies in its
+thread, and the call left the number out. An edit leaves them under the
+replacing text, and Mattermost tells nobody about it. Consider whether they
+fit the replacement; if the change is news to those who responded, reply in
+the thread instead. If they fit it, call again with responses: 7</p>
+</div>
+<p>A post without reactions or replies takes no <code>responses</code>.</p>
+<h4 id="what-a-write-takes-away">What a write takes away<a class="headerlink" href="#what-a-write-takes-away" title="Permanent link">&para;</a></h4>
+<p>A deletion states how much goes in its call, as a number mm-mcp reads itself:
+<code>discards</code>, the characters of the draft <code>delete_draft</code> deletes, as
+<code>list_drafts</code> gives each draft's length; and <code>deletes</code>, the posts
+<code>delete_post</code> removes, the post and every reply in its thread. A missing or
+wrong number is refused with the real one and the start of what would go, and
+the model is told to weigh whether you meant to lose it. Each is counted again
+just before the write, so a draft you typed on or a reply that arrived since
+the model read it stops the write.</p>
+<p>For example, deleting a post that started a thread of 12 replies, without
+<code>deletes</code>:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>delete_post did not run: it deletes 13 posts, your post in ~Town Square,
+which begins “Who is in for the release party on Friday? I'll book a table”,
+and the 12 replies in its thread, other people's included, and the call left
+the number out. Consider whether the person meant to delete all of them. If
+they did, call again with deletes: 13. If not, leave it, or ask the person</p>
+</div>
+<p>A thirteenth reply arriving before the model calls again with <code>deletes: 13</code>
+gets the same refusal, with 14.</p>
+<p><code>propose_post</code> takes nothing away. A draft of yours where the proposal would go,
+one you wrote or typed in, is left as it is. In an app that shows views, the
+view asks you which to keep; in one that does not, the call is refused with what
+the draft holds. For example, proposing a reply in ~Town Square, where you
+started one of your own:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>propose_post did not run: the person has a draft there, which was left as it
+is: “Sounds good, but can we move it to”. If they asked you to change it,
+delete it with delete_draft, stating discards: 34, and propose again. If
+not, they can finish or clear it in Mattermost, or post with create_post</p>
+</div>
+<p>When you asked for your draft to be changed, the model deletes it with
+<code>delete_draft</code>, whose call states its length, and proposes again.</p>
+<h4 id="where-a-write-goes">Where a write goes<a class="headerlink" href="#where-a-write-goes" title="Permanent link">&para;</a></h4>
+<p>A write others see names its channel, post or team by its address
+(<a href="#works-the-same-everywhere">above</a>,
+<a href="../adr/030-names-are-matched-leniently-and-a-refusal-names-the-next-step/">ADR-030</a>),
+so your client's approval shows where it goes by name. A post to ~Town Square
+named by its channel's name, on a server at chat.example.com, is refused with:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>channel_id: ~town-square is a name, but this takes an address,
+mattermost://chat.example.com/&lt;team&gt;/channels/&lt;channel&gt;, or
+&lt;team&gt;/messages/@&lt;username&gt; for a direct message, which names the place
+exactly and shows it to whoever approves the call; get_user_channels,
+get_channel_info and every post give each channel's address</p>
+</div>
+<p>and a reply whose <code>root_id</code> names the post by its link:</p>
+<div class="admonition warning">
+<p class="admonition-title">Refused</p>
+<p>root_id: https://chat.example.com/eng/pl/4xk3m9p7qfgt8jw1yb5hc2ndre is a link,
+but this takes an address, mattermost://chat.example.com/&lt;team&gt;/channels/&lt;channel&gt;/&lt;post id&gt;:
+its channel's address, then its id, which names the place exactly and shows it
+to whoever approves the call; read_post, read_channel and search_posts give
+each post's address</p>
+</div>
+<p>The model reads the address, <code>mattermost://chat.example.com/eng/channels/town-square</code>,
+and calls again with it.</p>
+<p>Where mm-mcp asks, what a write acts on is what you were asked about: a reply
+posted, a file rewritten or a draft typed on while you read the question stops
+the write.
+Posts and edits are marked as written with AI, as Mattermost shows it, unless
+<code>MM_MCP_MARK_AI_GENERATED</code> is false. A proposal is not: what you send from
+Mattermost is yours.</p>
+<h3 id="on-your-machine">On your machine<a class="headerlink" href="#on-your-machine" title="Permanent link">&para;</a></h3>
+<p><code>save_file</code>, and attaching a file by its <code>path</code>, are offered only when mm-mcp
+runs on your own machine, started by your client over stdio, whether writes are
+allowed or not: they reach your disk, not Mattermost
+(<a href="../adr/029-files-reach-the-model-as-content-and-the-disk-only-locally/">ADR-029</a>).</p>
+<h3 id="not-offered">Not offered<a class="headerlink" href="#not-offered" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Scheduled posts.</strong> Mattermost's scheduled posts need a licence, and Team
+  Edition, which mm-mcp is tested against, refuses them
+  (<a href="../adr/004-live-tests-against-a-real-mattermost/">ADR-004</a>).</li>
+<li><strong>Marking what the model read as read, or anything unread.</strong> What you have
+  read is yours to record, and a model reading a channel is not you reading
+  it; <code>mark_channel_read</code> marks a channel read when you ask
+  (<a href="../adr/021-read-only-by-default/">ADR-021</a>).</li>
+</ul>
+<h3 id="how-the-tools-are-built">How the tools are built<a class="headerlink" href="#how-the-tools-are-built" title="Permanent link">&para;</a></h3>
+<p>Every tool declares a title and the four MCP annotations: whether it only reads,
+whether it may destroy something, whether repeating it changes nothing more, and
+that it works in a closed domain, your one Mattermost server, which the MCP
+specification counts as closed however freely people write in it
+(<a href="../adr/021-read-only-by-default/">ADR-021</a>). They are
+hints: a client may use them to decide what to ask you about, or ignore them,
+and none of them is a security control. Some clients run a tool marked
+read-only without asking you or their AI reviewer, so only a tool that changes
+nothing in Mattermost is marked so, and a test holds each one to the endpoints
+it calls.</p>
+<p>Each tool also accounts for every parameter of the Mattermost endpoints it
+calls: which argument sets it, or why it is fixed or left out
+(<a href="../adr/028-every-parameter-of-an-operation-a-tool-calls-is-accounted-for/">ADR-028</a>),
+and a live test calls every tool against a real Mattermost
+(<a href="../adr/004-live-tests-against-a-real-mattermost/">ADR-004</a>).</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+  
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+        
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../administrators/" class="md-footer__link md-footer__link--prev" aria-label="Previous: For administrators">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                For administrators
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../views/" class="md-footer__link md-footer__link--next" aria-label="Next: Views">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Views
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      mm-mcp is an independent project, not affiliated with, endorsed by or supported by Mattermost, Inc. Mattermost is a trademark of Mattermost, Inc.
+    </div>
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/vriesdemichael/mm-mcp" target="_blank" rel="noopener" title="mm-mcp on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.top", "navigation.tracking", "navigation.sections", "navigation.indexes", "navigation.footer", "toc.follow", "content.code.copy", "content.tabs.link", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/views/demo.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "input": {
+    "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+    "message": "Here is the signed invoice, invoice_\u202efdp.exe\u202c, and the [payment page](https://pay.example.net/acme-invoices)."
+  },
+  "result": {
+    "content": [
+      {
+        "text": "Proposed as the person's draft in Design, and shown to them as it will be posted: they post, change or discard it in the view, or in Mattermost. Learn what they did from Mattermost, with list_drafts or by reading the channel, rather than proposing it again; do not repeat the message unless they ask.",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "address": "mattermost://chat.example.com/acme/channels/design",
+      "channel": "Design",
+      "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+      "channel_url": "https://chat.example.com/acme/channels/design",
+      "length": 109,
+      "message": "Here is the signed invoice, invoice_\u202efdp.exe\u202c, and the [payment page](https://pay.example.net/acme-invoices).",
+      "saved": true,
+      "team": "Acme",
+      "updated_at": "2026-10-20T21:51:33Z",
+      "url": "https://chat.example.com/acme/channels/design"
+    }
+  }
+}
