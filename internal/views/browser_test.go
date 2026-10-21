@@ -307,6 +307,108 @@ func TestTextFromMattermostIsNeverParsedAsHTML(t *testing.T) {
 	}
 }
 
+// A post shaped to make a parser backtrack, or look again and again for a
+// close, as long as Mattermost lets a post be, is drawn about as fast as
+// plain text as long: a thread of them must not freeze the view.
+func TestAMessageBuiltToBeSlowIsDrawnAsFastAsPlainText(t *testing.T) {
+	h := openHost(t)
+	i := h.mount(showThread(nil))
+	const longest = 16383
+	separator := string(rune(0x2028))
+	// Each ends in a word on a line of its own, which shows it was drawn.
+	fill := func(head, unit, tail string) string {
+		tail += "\nend"
+		size := longest - len(head) - len(tail)
+		return head + strings.Repeat(unit, size/len(unit)+1)[:size] + tail
+	}
+	// draw hands the view a thread of message as its host does, and reads
+	// how long the view took to draw it, the fastest of three, and whether it
+	// drew it to its end.
+	draw := func(message string) (float64, bool) {
+		root := post("p1", "alice", "", "u1", "2026-10-09T09:30:00+02:00", message, nil)
+		result, _ := json.Marshal(map[string]any{"content": []any{}, "structuredContent": map[string]any{"post": root, "root_id": "p1", "thread": []any{root}}})
+		var drawn struct {
+			Took float64
+			End  bool
+		}
+		// The message is dispatched as it arrives, and drawn before
+		// dispatchEvent returns.
+		h.in(i, `const message = { jsonrpc: "2.0", method: "ui/notifications/tool-result", params: `+string(result)+` };
+			let took = Infinity;
+			for (let n = 0; n < 3; n++) {
+				const t0 = w.performance.now();
+				w.dispatchEvent(new w.MessageEvent("message", { data: message, source: w.parent }));
+				took = Math.min(took, w.performance.now() - t0);
+			}
+			const markdown = d.querySelector(".markdown");
+			return { Took: took, End: Boolean(markdown) && markdown.textContent.trim().endsWith("end") };`, &drawn)
+		return drawn.Took, drawn.End
+	}
+	plain, _ := draw(fill("", "plain words of a long message ", ""))
+	hostile := map[string]string{
+		"a heading padded to a line separator":   fill("# ", " ", separator),
+		"a list item padded to a line separator": fill("* ", "\t", separator),
+		"a fence padded to a line separator":     fill("~~~", "~", separator),
+		"brackets around backticks":              fill("", "[`", ""),
+		"a run of underscores":                   fill("#", "__", ""),
+		"emphasis that never closes":             fill("", " *a", ""),
+		"links that never finish":                fill("", "[a](", ""),
+		"addresses that never finish":            fill("", "(http://", ""),
+		"brackets that never close":              fill("", "[", ""),
+	}
+	for name, message := range hostile {
+		took, end := draw(message)
+		if !end {
+			t.Errorf("%s was not drawn to its end", name)
+		}
+		if took > 20*plain+10 {
+			t.Errorf("%s took %.1f ms to draw; plain text as long took %.1f", name, took, plain)
+		}
+	}
+}
+
+// A view takes messages from its host's window alone: a page beside it, or
+// one it holds, cannot hand it a result to draw.
+func TestOnlyTheHostSpeaksToTheView(t *testing.T) {
+	h := openHost(t)
+	i := h.mount(showThread(nil))
+	forged, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "method": "ui/notifications/tool-result", "params": map[string]any{
+		"content": []any{}, "structuredContent": map[string]any{"post": post("p9", "mallory", "", "u9", "2026-10-09T09:30:00+02:00", "forged", nil), "root_id": "p9"},
+	}})
+	// Everything the view draws from here is kept.
+	h.in(i, `w.seen = [];
+		new w.MutationObserver(() => w.seen.push(d.getElementById("app").textContent)).observe(d.getElementById("app"), { childList: true, subtree: true });
+		return true;`, nil)
+	// A frame beside the view, in the host's page, and a frame inside the
+	// view each post the forged result to it.
+	h.eval(`(() => {
+		const view = mmHost.frames[`+fmt.Sprint(i)+`].iframe;
+		const send = (into) => {
+			const frame = into.createElement("iframe");
+			frame.srcdoc = "<script>(" + ((target, message) => { window.sent = true; target().postMessage(message, "*"); }).toString() + ")(() => " + (into === document ? "parent.mmHost.frames[`+fmt.Sprint(i)+`].iframe.contentWindow" : "parent") + ", " + JSON.stringify(`+string(forged)+`) + ")<\/script>";
+			into.body.append(frame);
+			return frame;
+		};
+		window.forgers = [send(document), send(view.contentDocument)];
+		return true;
+	})()`, nil)
+	h.until("window.forgers.every((frame) => frame.contentWindow && frame.contentWindow.sent)")
+	// Then the host itself sends a result, which arrives after theirs.
+	later := post("p8", "alice", "", "u1", "2026-10-09T09:40:00+02:00", "from the host", nil)
+	result, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "method": "ui/notifications/tool-result", "params": map[string]any{
+		"content": []any{}, "structuredContent": map[string]any{"post": later, "root_id": "p8", "thread": []any{later}},
+	}})
+	h.eval(fmt.Sprintf("(() => { mmHost.frames[%d].iframe.contentWindow.postMessage(%s, '*'); return true; })()", i, result), nil)
+	h.untilIn(i, "d.querySelector('.markdown') && d.querySelector('.markdown').textContent === 'from the host'")
+	var seen []string
+	h.in(i, "return w.seen;", &seen)
+	for _, text := range seen {
+		if strings.Contains(text, "forged") {
+			t.Fatalf("the view drew a result a page other than its host sent: %q", text)
+		}
+	}
+}
+
 func TestMoreOfAThreadComesThroughTheToolOnlyViewsCall(t *testing.T) {
 	h := openHost(t)
 	next := map[string]any{"root_id": "p1", "thread": []any{
@@ -479,5 +581,25 @@ func TestAPostAloneIsShownWithoutItsThread(t *testing.T) {
 	h.in(i, "return { Posts: d.querySelectorAll('.post').length, More: Boolean(d.querySelector('.more')), Title: d.querySelector('.thread-title').textContent };", &drawn)
 	if drawn.Posts != 1 || drawn.More || drawn.Title != "Town Square" {
 		t.Errorf("a post alone is drawn as %+v", drawn)
+	}
+}
+
+// A thread of many people reads at most 60 of their pictures, however many
+// there are, so a crowded thread cannot have the view make a request for each
+// (#39).
+func TestAViewReadsAtMostSixtyPictures(t *testing.T) {
+	h := openHost(t)
+	posts := []any{}
+	for n := range 80 {
+		posts = append(posts, post(fmt.Sprintf("p%d", n), fmt.Sprintf("user%d", n), "", fmt.Sprintf("u%02d", n),
+			fmt.Sprintf("2026-10-09T09:%02d:00+02:00", n%60), "a word", map[string]any{"root_id": "p0"}))
+	}
+	data := map[string]any{"post": posts[0], "root_id": "p0", "thread": posts}
+	i := h.mount(showThread(map[string]any{"result": map[string]any{"content": []any{}, "structuredContent": data}}))
+	h.untilIn(i, "d.querySelectorAll('.post').length === 80")
+	var reads int
+	h.in(i, "return f.reads.length;", &reads)
+	if reads != 60 {
+		t.Errorf("a thread of 80 people read %d pictures; want the cap, 60", reads)
 	}
 }

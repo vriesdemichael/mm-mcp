@@ -3,6 +3,7 @@
 package live
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -226,5 +227,86 @@ func TestEveryToolThatPostsShowsThePostAsPosted(t *testing.T) {
 		if c.channel != "" && !strings.Contains(posted.Channel, c.channel) {
 			t.Errorf("%s names the channel %q; want %q", c.tool, posted.Channel, c.channel)
 		}
+	}
+}
+
+// A view reads its pictures as resources, through the host, and no result a
+// view is drawn from carries a picture's bytes: some clients hand a result to
+// their model, whose context megabytes of an image would fill (#39, ADR-022).
+func TestNoAnswerAViewDrawsCarriesAPicturesBytes(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other := seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other)
+	channel := seedChannel(t, admin, team, user, other)
+	author := clientAs(t, other)
+	_, err := author.SetProfileImage(t.Context(), other.Id, picture(t))
+	check(t, err)
+	root, _ := attachAs(t, author, channel.Id, "chart.png", picture(t))
+	postAs(t, author, channel.Id, root.Id, "and the numbers")
+	session := writingViewsSession(t, personalAccessToken(t, admin, user.Id).Token)
+
+	png := base64.StdEncoding.EncodeToString(picture(t))[:24]
+	for _, call := range []*mcp.CallToolParams{
+		{Name: "show", Arguments: map[string]any{"kind": "thread", "post_id": root.Id}},
+		{Name: "show", Arguments: map[string]any{"kind": "unreads"}},
+		{Name: "view_action", Arguments: map[string]any{"action": "thread", "post_id": root.Id}},
+	} {
+		result := callTool(t, session, call)
+		if result.IsError {
+			t.Fatalf("%s failed: %s", call.Name, errorText(result))
+		}
+		// Text, and links to the files a post holds, which a client reads as
+		// resources when it chooses.
+		for _, content := range result.Content {
+			switch content.(type) {
+			case *mcp.TextContent, *mcp.ResourceLink:
+			default:
+				t.Errorf("%s %v answers with %T; a view's answer is text, links and structured data", call.Name, call.Arguments, content)
+			}
+		}
+		raw, err := json.Marshal(result)
+		check(t, err)
+		if strings.Contains(string(raw), png) || strings.Contains(string(raw), `"blob"`) {
+			t.Errorf("%s %v carries a picture's bytes", call.Name, call.Arguments)
+		}
+	}
+}
+
+// A view shows a screenful, and says when Mattermost has more: a thread's
+// first 30 posts, and at most 20 channels with something unread, however
+// many there are, so a busy Mattermost cannot make a view read without end
+// (#39, ADR-022).
+func TestAViewShowsAScreenfulAndSaysMattermostHasMore(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other := seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other)
+	own, author := clientAs(t, user), clientAs(t, other)
+	var channels []*model.Channel
+	for range 22 {
+		channel := seedChannel(t, admin, team, user, other)
+		_, _, err := own.ViewChannel(t.Context(), user.Id, &model.ChannelView{ChannelId: channel.Id})
+		check(t, err)
+		channels = append(channels, channel)
+	}
+	for _, channel := range channels {
+		postAs(t, author, channel.Id, "", "news in "+channel.Name)
+	}
+	root := postAs(t, author, channels[0].Id, "", "A long thread")
+	for i := range 34 {
+		postAs(t, author, channels[0].Id, root.Id, fmt.Sprintf("reply %d", i+1))
+	}
+	session := viewsSession(t, personalAccessToken(t, admin, user.Id).Token)
+
+	var unreads server.Unreads
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "show", Arguments: map[string]any{"kind": "unreads"}}), &unreads)
+	if len(unreads.Channels.Channels) != 20 || unreads.Channels.NextCursor == "" {
+		t.Errorf("the unread view lists %d of 22 channels, saying Mattermost has more: %v", len(unreads.Channels.Channels), unreads.Channels.NextCursor != "")
+	}
+	var thread server.PostWithThread
+	structured(t, callTool(t, session, &mcp.CallToolParams{Name: "show", Arguments: map[string]any{"kind": "thread", "post_id": root.Id}}), &thread)
+	if len(thread.Thread) != 30 || thread.NextCursor == "" {
+		t.Errorf("the thread view shows %d of 35 posts, saying Mattermost has more: %v", len(thread.Thread), thread.NextCursor != "")
 	}
 }

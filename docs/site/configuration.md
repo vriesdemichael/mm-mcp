@@ -52,7 +52,9 @@ setting left empty, counts as unset.
     the Claude desktop app's Code tab, which declines it unseen, and mm-mcp
     cannot tell their answer from yours. While it is on, a client that cannot
     show a question at all is refused every such change. A change that is yours
-    alone or gone in seconds never asks.
+    alone or gone in seconds never asks, and neither does your press in a view,
+    which is your own action: `MM_MCP_POST_FROM_VIEWS=false` keeps Post out of
+    the views.
 
 `MM_MCP_ASK_BEFORE_WRITES`
 :   Sets nothing. A server started with it set stops and says to remove it;
@@ -110,7 +112,9 @@ setting left empty, counts as unset.
     ([ADR-035](adr/035-a-proposed-post-waits-as-the-persons-draft.md)).
     `false` takes Post out of the view, and the draft waits in Mattermost for
     you to send. It is for an app that cannot be trusted to keep the view's own
-    tool from its model, or to press only when you click.
+    tool from its model, or to press only when you click. It does not follow
+    `MM_MCP_ELICITATION_OPT_IN`: a press is never asked about, so where every
+    post should wait for a question, set this to `false` as well.
 
 `MM_MCP_DOWNLOAD_DIR`
 :   Optional. The directory `save_file` writes attachments to, when the server

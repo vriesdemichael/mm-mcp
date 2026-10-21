@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -88,16 +89,21 @@ func existingDraft(ctx context.Context, client *mattermost.Client, userID, teamI
 	return nil, nil
 }
 
-// onlyText reports whether a draft is text alone, with no files, priority or
-// properties a person set in Mattermost: a proposal they added any of these
-// to is theirs. The mark a proposal carries is mm-mcp's own.
+// onlyText reports whether a draft is text alone, with no files, priority,
+// kind of post or properties a person set in Mattermost: a proposal they
+// added any of these to is theirs. The mark a proposal carries is mm-mcp's
+// own, and what Mattermost reads from the text, such as a link's preview, is
+// the text's.
 func onlyText(draft *model.Draft) bool {
 	for key := range draft.GetProps() {
 		if key != proposalKey {
 			return false
 		}
 	}
-	return len(draft.FileIds) == 0 && draft.Priority == nil
+	if metadata := draft.Metadata; metadata != nil && (len(metadata.Files) > 0 || metadata.Priority != nil || len(metadata.Acknowledgements) > 0) {
+		return false
+	}
+	return len(draft.FileIds) == 0 && len(draft.Priority) == 0 && draft.Type == ""
 }
 
 // draftsSync refuses a draft the person would never see: one on a server that
@@ -139,6 +145,33 @@ func proposalMark(message string) string {
 func proposed(draft *model.Draft) bool {
 	mark, _ := draft.GetProps()[proposalKey].(string)
 	return mark != "" && mark == proposalMark(draft.Message)
+}
+
+// editedMark is the mark of a text the person wrote in a proposal's view.
+// The draft is theirs, which no proposal replaces, and still the view's,
+// which the view's presses reach until the person types on in Mattermost.
+func editedMark(message string) string {
+	return "edited " + proposalMark(message)
+}
+
+// fromView reports whether a draft holds, unchanged, what a proposal's view
+// showed: mm-mcp's proposal, or the person's text from the view's editor. A
+// press acts on nothing else; a draft the person wrote in Mattermost is sent
+// from there.
+func fromView(draft *model.Draft) bool {
+	mark, _ := draft.GetProps()[proposalKey].(string)
+	return mark != "" && (mark == proposalMark(draft.Message) || mark == editedMark(draft.Message))
+}
+
+// slashCommand refuses a proposal Mattermost would run as a slash command
+// when the person sends it from their message box: one that starts with a
+// slash, which reads as a message in the proposal and acts as a command.
+func slashCommand(tool, message string) error {
+	if strings.HasPrefix(strings.TrimLeft(message, " \t\r\n"), "/") {
+		return fmt.Errorf("%s did not run: a message that starts with / runs as a slash command when the person sends it from Mattermost; "+
+			"begin it with other words, or post it as text with create_post", tool)
+	}
+	return nil
 }
 
 type proposePostInput struct {
@@ -215,7 +248,8 @@ func proposePostSpec() Spec {
 				"does not exist yet is not started here, since starting one shows it to the other people at once. mm-mcp's own " +
 				"proposal there, unchanged, is replaced; a draft of the person's never is. In a client that renders MCP Apps views, " +
 				"the person sees the proposal as it will be posted, and posts, changes or discards it there; where a draft of " +
-				"theirs is in the way, the view asks them which to keep. The message is checked as a post's is. It answers with " +
+				"theirs is in the way, the view asks them which to keep. The message is checked as a post's is, and one that starts with / is " +
+				"refused, since Mattermost runs it as a slash command when the person sends it. It answers with " +
 				"the draft and the link where it waits.",
 			Annotations: personal("Propose post"),
 			Meta:        viewToolMeta(),
@@ -249,6 +283,9 @@ func proposePostSpec() Spec {
 		}, draftsUses(), messageUses(false), describeUses(true)),
 		func(clientFor ClientFor) mcp.ToolHandlerFor[proposePostInput, Proposal] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input proposePostInput) (*mcp.CallToolResult, Proposal, error) {
+				if err := slashCommand("propose_post", input.Message); err != nil {
+					return nil, Proposal{}, err
+				}
 				client, err := clientFor(ctx, request)
 				if err != nil {
 					return nil, Proposal{}, err
@@ -291,7 +328,9 @@ func proposePostSpec() Spec {
 				// which states what goes, and in the proposal's view the person's
 				// own press. mm-mcp's own proposal, unchanged, is mm-mcp's to
 				// replace. The same text is there already, and is left as it is
-				// rather than written again, which would drop its files.
+				// rather than written again, which would drop its files; where
+				// the person wrote it, the view asks them, since its presses
+				// reach only what a view put there.
 				there, err := existingDraft(ctx, client, self.Id, teamID, channelID, rootID)
 				if err != nil {
 					return nil, Proposal{}, err
@@ -301,7 +340,7 @@ func proposePostSpec() Spec {
 				switch {
 				case there == nil, there.Message != input.Message && proposed(there) && onlyText(there):
 					write = true
-				case there.Message == input.Message:
+				case there.Message == input.Message && (fromView(there) || !views):
 				case views:
 					theirs = there
 				default:
@@ -611,7 +650,7 @@ func deleteDraftSpec() Spec {
 
 // DraftChange is what came of the person's press on a proposal's view.
 type DraftChange struct {
-	Status   string    `json:"status" jsonschema:"what came of the press: posted; confirm, nothing was posted, since Mattermost has the sender confirm a message that alerts this many people first; saved, the draft holds the new text; discarded; changed, the draft no longer holds what the view showed and was left as it is; elsewhere, it holds files or settings added in Mattermost, which a view cannot show, and is sent from there; gone, there is no draft there"`
+	Status   string    `json:"status" jsonschema:"what came of the press: posted; confirm, nothing was posted, since Mattermost has the sender confirm a message that alerts this many people first; saved, the draft holds the new text; discarded; changed, the draft holds a newer proposal than the view showed, or, for replace, the person's draft changed, and was left as it is; elsewhere, the person wrote in it in Mattermost, or gave it files or settings there, and it is sent from there; gone, there is no draft there"`
 	Draft    Draft     `json:"draft,omitzero" jsonschema:"the draft as it is now, when it was saved, has changed, or is sent from Mattermost"`
 	Post     Post      `json:"post,omitzero" jsonschema:"the post, once posted"`
 	Notifies *Notifies `json:"notifies,omitempty" jsonschema:"for confirm: whom the message alerts, as Mattermost's confirmation names them"`
@@ -619,9 +658,11 @@ type DraftChange struct {
 
 // pressDraft does what the person pressed in a proposal's view: post the
 // draft, change its text, discard it, or put the proposal in place of their
-// own (ADR-035). Each acts only while the draft holds what the view shows,
-// text alone: a draft typed on since, or given files or settings in
-// Mattermost, is left as it is, and the view draws it again. Posting checks
+// own (ADR-035). Post, Edit and Discard act only on what a view put there,
+// unchanged, and only while it holds the text the view shows, text alone: a
+// newer proposal is drawn again, and a draft the person wrote in, or gave
+// files or settings, in Mattermost is sent from there. Replace acts only
+// while the person's draft holds what the view shows of it. Posting checks
 // the message again; one that alerts as many people as Mattermost has its
 // sender confirm is posted only on a press that confirmed it, counted as the
 // press is made. It marks the post as written with AI, and deletes the draft,
@@ -632,6 +673,11 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 	}
 	if input.Action == "edit" && strings.TrimSpace(input.Message) == "" {
 		return DraftChange{}, fmt.Errorf("the draft would be empty; Discard deletes it")
+	}
+	if input.Action == "replace" {
+		if err := slashCommand("view_change", input.Message); err != nil {
+			return DraftChange{}, err
+		}
 	}
 	if input.Action == "edit" || input.Action == "replace" {
 		if err := checkLength(ctx, client, input.Message); err != nil {
@@ -658,14 +704,20 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 		return DraftChange{Status: status, Draft: described[0]}, nil
 	}
 	switch {
-	case there == nil && input.Action == "replace":
-		// The person's own draft went meanwhile: nothing of theirs is in the
-		// way of the proposal they chose.
 	case there == nil:
 		return DraftChange{Status: "gone"}, nil
+	case input.Action == "replace":
+		// The person's own draft, which they chose to put the proposal in
+		// place of, as the view shows it.
+		if there.Message != input.Shown {
+			return now(there, "changed")
+		}
+	case !fromView(there):
+		return now(there, "elsewhere")
 	case there.Message != input.Shown:
 		return now(there, "changed")
-	case !onlyText(there):
+	}
+	if !onlyText(there) {
 		return now(there, "elsewhere")
 	}
 	switch input.Action {
@@ -709,25 +761,32 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 				return DraftChange{Status: "confirm", Notifies: notifies}, nil
 			}
 		}
+		// Bound to the draft as it was read, as Mattermost's own client binds
+		// a post to its pending id: presses on it at once, from two views of
+		// it, post it once.
 		created, err := client.CreatePost(ctx, mattermost.NewPost{
 			ChannelID: input.ChannelID, RootID: input.RootID, Message: there.Message,
-			Props: aiMarker(cfg.MarkAIGenerated, self.Id),
+			Props:     aiMarker(cfg.MarkAIGenerated, self.Id),
+			PendingID: self.Id + ":" + strconv.FormatInt(there.UpdateAt, 10),
 		})
 		if err != nil {
 			return DraftChange{}, err
 		}
-		// Gone once posted, as Mattermost's own client clears a draft it sends.
-		// The post stands whatever comes of this.
-		_ = client.DeleteDraft(ctx, self.Id, input.ChannelID, input.RootID)
+		// Gone once posted, as Mattermost's own client clears a draft it sends,
+		// so a later press finds nothing to post. Tried twice; the post stands
+		// whatever comes of it.
+		if err := client.DeleteDraft(ctx, self.Id, input.ChannelID, input.RootID); err != nil {
+			_ = client.DeleteDraft(ctx, self.Id, input.ChannelID, input.RootID)
+		}
 		posted, err := describePosts(ctx, client, []*model.Post{created})
 		if err != nil {
 			return DraftChange{Status: "posted", Post: Post{ID: created.Id, ChannelID: created.ChannelId, RootID: created.RootId, Message: created.Message, AuthorID: created.UserId}}, nil
 		}
 		return DraftChange{Status: "posted", Post: posted[0]}, nil
 	case "edit":
-		// Changed by the person, the draft is theirs: it carries no mark of a
-		// proposal, and a later proposal leaves it as it is.
-		saved, err := client.Draft(ctx, self.Id, input.ChannelID, input.RootID, input.Message, nil)
+		// Changed by the person, the draft is theirs: a later proposal leaves
+		// it as it is. Its mark says the view wrote it, for the view's presses.
+		saved, err := client.Draft(ctx, self.Id, input.ChannelID, input.RootID, input.Message, model.StringInterface{proposalKey: editedMark(input.Message)})
 		if err != nil {
 			return DraftChange{}, err
 		}
@@ -774,6 +833,8 @@ func pressUses() []Use {
 				"body.metadata": Omitted("metadata such as a post's priority is a Mattermost feature beyond posting text, which the person is not shown"),
 				"set_online":    Omitted("Mattermost's default marks the user online when they post, as its own client does"),
 				"silent":        Omitted("a silent post notifies nobody it mentions, unlike a post from Mattermost's own message box"),
+				"body.pending_post_id": Undocumented("", "createPost in server/channels/app/post.go deduplicates by it on both supported releases: "+
+					"a second post with the same id within 30 seconds answers with the first; set to the user and the draft's update time, so presses on one draft post once"),
 			},
 			Releases: "11.7 has no silent parameter, which the tool never sends",
 		},
@@ -785,8 +846,8 @@ func pressUses() []Use {
 				"body.message":    SetBy("message"),
 				"body.file_ids":   Omitted("a proposal carries text; the person attaches files in Mattermost"),
 				"body.priority":   Omitted("a message's priority is the person's to set when they send it"),
-				"body.props": Fixed(`{"mm_mcp_proposal": a mark of the message} for replace; none for edit`,
-					"a proposal put in place of the person's draft is mm-mcp's, unchanged; a draft the person changed is theirs"),
+				"body.props": Fixed(`{"mm_mcp_proposal": a mark of the message}, as a proposal's for replace and as the person's text for edit`,
+					"a proposal put in place of the person's draft is mm-mcp's, unchanged; a draft the person changed in the view is theirs, which only the view's presses reach"),
 				"body.type": Omitted("a draft is an ordinary message, which is the default"),
 			},
 			Releases: "11.7 serves POST /api/v4/drafts, as its router shows, though its specification leaves it out; nothing differs in use",

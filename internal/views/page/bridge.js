@@ -23,7 +23,10 @@ function createBridge(appInfo) {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         pending.delete(id);
-        reject(new Error(method + " got no answer"));
+        // Unanswered is not refused: the host may have passed the request on.
+        const error = new Error(method + " got no answer");
+        error.unanswered = true;
+        reject(error);
       }, timeout);
       pending.set(id, {
         resolve: (value) => { clearTimeout(timer); resolve(value); },

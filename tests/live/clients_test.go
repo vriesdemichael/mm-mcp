@@ -471,6 +471,13 @@ func TestClientsProposeAPostAndThePersonPostsItFromTheView(t *testing.T) {
 			if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 {
 				t.Errorf("Discard left %d posts in the channel; want the one posted before", len(posts))
 			}
+
+			// The press is the view's alone: on a server that writes, the
+			// model is offered propose_post and never the tools views call.
+			offered := run.offered()
+			if !slices.Contains(offered, "propose_post") || slices.Contains(offered, "view_change") || slices.Contains(offered, "view_action") {
+				t.Errorf("%s offered its model %v; want propose_post, never view_change or view_action", client, offered)
+			}
 		})
 	}
 }

@@ -456,3 +456,32 @@ func TestNoFileHidesACharacter(t *testing.T) {
 		t.Fatalf("only %d files were checked; the walk has stopped matching", checked)
 	}
 }
+
+// namedTest is a test the security page names, as code.
+var namedTest = regexp.MustCompile("`(Test[A-Za-z0-9_]+)`")
+
+// TestEveryTestTheSecurityPageNamesExists holds the security page's threat
+// table to the tests it says hold each mitigation (#39): a test renamed or
+// removed would leave the page vouching for a guard nothing checks.
+func TestEveryTestTheSecurityPageNamesExists(t *testing.T) {
+	t.Parallel()
+	page := read(t, filepath.Join(root, "docs", "site", "security.md"))
+	named := namedTest.FindAllStringSubmatch(page, -1)
+	if len(named) < 10 {
+		t.Fatalf("the security page names %d tests; the scan has stopped matching", len(named))
+	}
+	defined := map[string]bool{}
+	walk(t, func(path string) {
+		if !strings.HasSuffix(path, "_test.go") {
+			return
+		}
+		for _, match := range regexp.MustCompile(`(?m)^func (Test[A-Za-z0-9_]+)\(`).FindAllStringSubmatch(read(t, path), -1) {
+			defined[match[1]] = true
+		}
+	})
+	for _, name := range named {
+		if !defined[name[1]] {
+			t.Errorf("the security page names %s, which no test file defines", name[1])
+		}
+	}
+}

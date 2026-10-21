@@ -40,7 +40,9 @@ const ISOLATED_POLICY = "default-src 'none'; script-src 'unsafe-inline'; style-s
 //              ISOLATED_POLICY, where a test cannot read what it drew
 //   input      the arguments of the call the view belongs to
 //   result     the call's result
-//   tools      each tool's answers, in turn; the last one is kept
+//   tools      each tool's answers, in turn; the last one is kept. An
+//              answer { hold: true } never comes, as from a host that lost
+//              the call
 //   answer     a function (name, arguments) giving a tool's answer, or
 //              nothing to fall back on tools
 //   resources  each resource, by its address
@@ -92,6 +94,7 @@ function mount(page, options) {
     const answers = (settings.tools || {})[params.name];
     if (!answers || answers.length === 0) throw new Error("the host answers no call of " + params.name);
     const answer = answers.length > 1 ? answers.shift() : answers[0];
+    if (answer.hold) return new Promise(() => {});
     if (answer.error) throw new Error(answer.error);
     return answer;
   };

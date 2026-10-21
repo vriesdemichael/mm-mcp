@@ -435,7 +435,8 @@ states before it acts ([below](#how-a-write-is-checked)).
     in a channel, a thread, or a direct or group message you already have, in
     your message box in every Mattermost app, and the answer links where it
     waits. Nothing is sent. The message is checked as a post's is, and its notes
-    say what its mentions will do. Proposing again replaces mm-mcp's own
+    say what its mentions will do. One that starts with `/` is refused, since
+    Mattermost runs it as a slash command when you send it. Proposing again replaces mm-mcp's own
     proposal while you have not changed it; a draft you wrote or typed in is
     never replaced ([below](#what-a-write-takes-away)). A conversation that
     does not exist yet is not started, since starting one shows it to the other
@@ -447,8 +448,9 @@ states before it acts ([below](#how-a-write-is-checked)).
     In an app that shows views, the proposal appears in the chat as it will be
     posted, where it waits, and what its mentions do, with Post, Edit and
     Discard ([Views](#views)). Each acts on the text the view shows, and only
-    while your draft still holds it: a draft you typed on in Mattermost is
-    drawn again as it is now. Post marks the post as written with AI, and asks
+    while your draft still holds it as the view put it there: a draft you typed
+    on in Mattermost is yours to send from there, and a newer proposal is drawn
+    again as it is now. Post marks the post as written with AI, and asks
     first, in Mattermost's own words, where Mattermost would ask before an
     `@channel` or `@here` reaches more than five people. A link shows where it
     leads, a character you cannot see or that turns the text's direction is
