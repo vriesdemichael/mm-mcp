@@ -308,8 +308,8 @@ never by one built from an id; and how Mattermost formats mentions and Markdown.
 `mm-mcp serve --transport http` listens only on a loopback address. It refuses a
 request whose `Host` header does not name a loopback address, which prevents
 DNS rebinding, and a request a browser marks as sent from a web page of another
-origin ([Installation](installation.md#over-http)). It does not yet
-authenticate clients: any process on the machine that can reach the port acts
+origin ([Installation](installation.md#over-http)). It authenticates no
+client: any process on the machine that can reach the port acts
 as the account mm-mcp runs with, including processes of other users on a shared
 machine. Over stdio, the default, only the application that started mm-mcp can
 communicate with it.

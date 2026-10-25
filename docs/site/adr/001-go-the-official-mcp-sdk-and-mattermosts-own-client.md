@@ -13,5 +13,5 @@ Write handlers with typed input and output structs, so the SDK derives and valid
 
 ## Not chosen
 
-- **Python on FastMCP, with a client generated from the OpenAPI specification**: Built and measured first. The specification needed seven repairs before a generator would accept it and still lacked fields the server sends, and every repair was a belief to keep current. FastMCP's ready-made HTTP authentication is the real loss; it is written here when hosted operation needs it (ADR-020).
+- **Python on FastMCP, with a client generated from the OpenAPI specification**: Built and measured first. The specification needed seven repairs before a generator would accept it and still lacked fields the server sends, and every repair was a belief to keep current. FastMCP's ready-made HTTP authentication would have been the real loss had mm-mcp been hosted, which it is not (ADR-020).
 - **TypeScript**: Mattermost's web client is TypeScript, but the server's own Go types and client are what its API tests exercise.

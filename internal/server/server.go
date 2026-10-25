@@ -73,9 +73,8 @@ messages short and to the point, as people write in chat.`
 // identity it acts as.
 //
 // Everything reaches Mattermost through it, so the identity a request acts as
-// is decided in one place. A single-tenant server answers with its one client;
-// a multi-tenant HTTP deployment replaces it with a lookup keyed by the
-// authenticated MCP client (ADR-020).
+// is decided in one place; a server acts as one identity, and answers with its
+// one client (ADR-020).
 type ClientFor func(ctx context.Context, request mcp.Request) (*mattermost.Client, error)
 
 // Single is the ClientFor of a server that acts as one identity.
