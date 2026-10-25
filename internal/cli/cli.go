@@ -158,8 +158,8 @@ func serve(ctx context.Context, args []string, deps Deps) int {
 	}
 	if *transport == "http" && !IsLoopback(*host) {
 		// Over HTTP the server acts as its one configured identity for anyone who
-		// reaches the port, and it authenticates no client yet (ADR-020).
-		fmt.Fprintf(deps.Stderr, "mm-mcp: refusing to bind %s: the HTTP transport serves only a loopback address until it authenticates its clients\n", *host)
+		// reaches the port, and it authenticates no client (ADR-020).
+		fmt.Fprintf(deps.Stderr, "mm-mcp: refusing to bind %s: the HTTP transport authenticates no client, so it serves only a loopback address\n", *host)
 		return ExitConfig
 	}
 

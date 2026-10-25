@@ -26,7 +26,7 @@ holds and why, and the alternatives it turned down.
 - [ADR-017: Planning lives in GitHub issues, and an issue closes when its fix reaches main](017-planning-in-github-issues.md)
 - [ADR-018: Agents and tasks write temporary files to .tmp](018-agents-write-temporary-files-to-tmp.md)
 - [ADR-019: The server is given a credential; acquiring one is a separate concern](019-credentials-are-supplied-not-acquired.md)
-- [ADR-020: stdio and Streamable HTTP from one server, single-tenant first](020-stdio-and-streamable-http-single-tenant-first.md)
+- [ADR-020: stdio and loopback Streamable HTTP from one server, for one person](020-stdio-and-streamable-http-single-tenant-first.md)
 - [ADR-021: Read-only by default](021-read-only-by-default.md)
 - [ADR-022: MCP Apps views, on show and on every post](022-mcp-apps-views-on-show-and-on-every-post.md)
 - [ADR-023: Distributed as signed binaries, .mcpb bundles, and through the MCP Registry](023-distributed-as-signed-binaries-mcpb-bundles-and-the-mcp-registry.md)

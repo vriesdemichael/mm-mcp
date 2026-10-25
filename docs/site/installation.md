@@ -212,8 +212,8 @@ mm-mcp serve --transport http
 ```
 
 The server listens on `http://127.0.0.1:8765/mcp`, and says so when it starts.
-It authenticates no client yet, so it refuses to listen anywhere but a
-loopback address
+It authenticates no client, so it refuses to listen anywhere but a loopback
+address
 ([ADR-020](adr/020-stdio-and-streamable-http-single-tenant-first.md)), and
 refuses a request a browser marks as sent from a web page of another origin,
 so a page you open cannot use it.
