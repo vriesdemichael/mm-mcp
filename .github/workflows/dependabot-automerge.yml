@@ -99,6 +99,37 @@ jobs:
             const dependencyNames = [...message.matchAll(/dependency-name:\s*(\S+)/g)]
               .map((m) => m[1]);
 
+            // The container image's base is pinned by tag and digest, and
+            // Dependabot moves only the digest, which has no semver update
+            // type. Such an update merges itself when it changes nothing but
+            // that digest on the FROM line of image/Dockerfile, keeping the tag:
+            // CI has then verified distroless's own signature on the new base,
+            // and built the image on it and served it against Mattermost
+            // (ADR-012, ADR-023).
+            const baseLine = /^FROM gcr\.io\/distroless\/[a-z0-9-]+:[a-z0-9._-]+@sha256:[0-9a-f]{64}$/;
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              ...context.repo,
+              pull_number: pr.number,
+            });
+            const changed = files.length === 1 && files[0].filename === 'image/Dockerfile'
+              ? (files[0].patch || '').split('\n').filter((line) => /^[-+]/.test(line))
+              : [];
+            const removed = changed.filter((line) => line.startsWith('-')).map((line) => line.slice(1));
+            const added = changed.filter((line) => line.startsWith('+')).map((line) => line.slice(1));
+            const tagOf = (line) => line.replace(/@sha256:[0-9a-f]{64}$/, '');
+            const baseDigestOnly =
+              updateTypes.length === 0 &&
+              dependencyNames.length > 0 &&
+              dependencyNames.every((name) => name.startsWith('gcr.io/distroless/')) &&
+              removed.length === 1 && added.length === 1 &&
+              baseLine.test(removed[0]) && baseLine.test(added[0]) &&
+              tagOf(removed[0]) === tagOf(added[0]) && removed[0] !== added[0];
+            if (baseDigestOnly) {
+              core.notice(`PR #${pr.number}: moves the image's base, ${tagOf(added[0]).slice('FROM '.length)}, to a new digest; eligible for auto-merge.`);
+              core.setOutput('should_merge', 'true');
+              return;
+            }
+
             // Fail closed.  If the trailer is missing or unparseable we cannot
             // tell a patch from a major, and merging unread is the wrong default.
             if (updateTypes.length === 0) {

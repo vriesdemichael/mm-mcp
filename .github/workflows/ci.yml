@@ -543,6 +543,12 @@ jobs:
           reported="$(dist/mm-mcp_linux_amd64_v1/mm-mcp version)"
           [ "$reported" = "mm-mcp v0.0.0" ] || { echo "::error::the binary reports '$reported'"; exit 1; }
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Verify the container image's base is distroless's
+        run: task release:image:base:verify
+
       # The image a release pushes, from these binaries, for both platforms: the
       # same commit and version build the same digest, so this is what a
       # release would push.

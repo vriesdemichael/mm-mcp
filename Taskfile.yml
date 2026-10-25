@@ -353,6 +353,21 @@ tasks:
         vars:
           OUTPUT: type=image,name={{.IMAGE}},push-by-digest=true,name-canonical=true,push=true
 
+  release:image:base:verify:
+    desc: Verify that the container image's base, as image/Dockerfile pins it, carries distroless's own keyless Sigstore signature (ADR-023). Needs cosign
+    # The identity distroless signs its images with, as its README gives it. A
+    # digest Dependabot proposes merges itself (ADR-012), so this is what tells
+    # a rebuild of distroless's from an image someone else pushed.
+    cmd: |
+      base=$(sed -n 's/^FROM \([^ ]*\).*/\1/p' image/Dockerfile)
+      if [ -z "$base" ]; then
+        echo "image/Dockerfile names no base image on a FROM line." >&2
+        exit 1
+      fi
+      cosign verify --certificate-identity keyless@distroless.iam.gserviceaccount.com \
+        --certificate-oidc-issuer https://accounts.google.com "$base" > /dev/null
+      echo "$base carries distroless's signature."
+
   release:image:build:
     internal: true
     # One build for a release and a snapshot. BuildKit's provenance and SBOM are

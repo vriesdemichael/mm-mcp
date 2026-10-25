@@ -206,6 +206,7 @@ jobs:
       - name: Build the container image and push it by its digest
         run: |
           set -euo pipefail
+          task release:image:base:verify
           task release:image:push IMAGE="$IMAGE" VERSION="$VERSION"
           digest=$(jq -r '."containerimage.digest" // empty' dist/image.json)
           manifests=$(docker buildx imagetools inspect --raw "$IMAGE@$digest")

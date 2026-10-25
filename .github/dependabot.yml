@@ -85,9 +85,11 @@ updates:
           - "version-update:semver-minor"
 
   # The container image's base, distroless's static image, pinned by digest
-  # (ADR-023). Its certificate authorities and time zones ship in the next
-  # release's image; a chore releases nothing by itself, since distroless is
-  # rebuilt more often than mm-mcp changes.
+  # (ADR-023). A new digest merges itself once CI has verified distroless's
+  # signature on it and built and served the image on it (ADR-012). Its
+  # certificate authorities and time zones ship in the next release's image;
+  # a chore releases nothing by itself, since distroless is rebuilt more often
+  # than mm-mcp changes.
   - package-ecosystem: "docker"
     directory: "/image"
     target-branch: "next"

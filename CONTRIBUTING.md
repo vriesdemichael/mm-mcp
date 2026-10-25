@@ -157,7 +157,7 @@ git add --renormalize .
 | Coverage Gates | global and patch coverage over the unit and live profiles merged |
 | Codecov | publishes coverage history and the README badge |
 | Docs Site | builds the documentation strictly |
-| Release Artifacts | builds every platform's archive, SBOM and `.mcpb` bundle, and the container image for linux/amd64 and linux/arm64 (`task release:image`) |
+| Release Artifacts | builds every platform's archive, SBOM and `.mcpb` bundle, verifies distroless's signature on the container image's base (`task release:image:base:verify`), and builds the image for linux/amd64 and linux/arm64 (`task release:image`) |
 | CI Complete | passes only when every job above did; the one status branch protection requires |
 
 A weekly workflow also runs the live suite against every Mattermost release

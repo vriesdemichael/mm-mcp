@@ -94,7 +94,10 @@ cosign verify-blob --bundle sha256sums.txt.sigstore.json --certificate-identity 
 The container image, `ghcr.io/vriesdemichael/mm-mcp`, is signed by the same
 workflow, its index and each platform's image alike, and attested in the
 registry with its build provenance and, for each platform, an SPDX SBOM scanned
-from the image. It is tagged only once those are in place:
+from the image. Its base, distroless's static image, is pinned by digest, and
+distroless's own Sigstore signature on that digest is verified before the image
+is built on it, in CI and in the release. It is tagged only once those are in
+place:
 
 ```bash
 gh attestation verify oci://ghcr.io/vriesdemichael/mm-mcp:0.2.0 --repo vriesdemichael/mm-mcp
