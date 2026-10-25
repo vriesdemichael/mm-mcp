@@ -150,11 +150,16 @@ func TestTheImageSavesIntoAMountedDirectoryWhenToldTo(t *testing.T) {
 	channel := seedChannel(t, admin, team, user, other)
 	_, id := attachAs(t, clientAs(t, other), channel.Id, "minutes.txt", []byte("decided: ship it\n"))
 	mounted := t.TempDir()
-	// The image runs as distroless's nonroot user, not as this test's.
-	check(t, os.Chmod(mounted, 0o777)) //nolint:gosec // a directory of the test's own, for another user to write
+	// As installation.md says: the container runs as the person, who owns the
+	// directory and reads what is saved there, rather than as distroless's
+	// nonroot user. Windows has no user ids, and Docker shares a directory
+	// with the container whole.
+	args := []string{"--volume", mounted + ":/downloads"}
+	if uid := os.Getuid(); uid >= 0 {
+		args = append(args, "--user", fmt.Sprintf("%d:%d", uid, os.Getgid()))
+	}
 	session := imageSession(t, personalAccessToken(t, admin, user.Id).Token,
-		map[string]string{config.EnvLocalFiles: "true", config.EnvDownloadDir: "/downloads"},
-		"--volume", mounted+":/downloads")
+		map[string]string{config.EnvLocalFiles: "true", config.EnvDownloadDir: "/downloads"}, args...)
 
 	result, err := session.CallTool(t.Context(), &mcp.CallToolParams{Name: "save_file", Arguments: map[string]any{"file_id": id}})
 	check(t, err)
