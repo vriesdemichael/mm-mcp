@@ -172,7 +172,10 @@ func serve(ctx context.Context, args []string, deps Deps) int {
 		fmt.Fprintf(deps.Stderr, "mm-mcp: %v\nmm-mcp: `mm-mcp doctor` checks the rest of the setup.\n", err)
 		return ExitConfig
 	}
-	cfg.Local = *transport == "stdio"
+	// Over HTTP the server may run anywhere, so a path names nothing of the
+	// person's, whatever MM_MCP_LOCAL_FILES says; over stdio it can only turn
+	// the disk off, as the container image does (ADR-029).
+	cfg.Local = *transport == "stdio" && cfg.LocalFiles
 	httpTransport, err := doctor.Transport(cfg)
 	if err != nil {
 		fmt.Fprintf(deps.Stderr, "mm-mcp: %v\n", err)

@@ -30,6 +30,7 @@
         "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE": "${user_config.force_human_in_the_loop_in_claude_code}",
         "MM_MCP_MARK_AI_GENERATED": "${user_config.mark_ai_generated}",
         "MM_MCP_POST_FROM_VIEWS": "${user_config.post_from_views}",
+        "MM_MCP_LOCAL_FILES": "${user_config.local_files}",
         "MM_MCP_DOWNLOAD_DIR": "${user_config.download_dir}",
         "MM_MCP_CA_FILE": "${user_config.ca_file}",
         "MM_MCP_RESOURCE_MAX_MB": "${user_config.resource_max_mb}"
@@ -82,6 +83,13 @@
       "type": "boolean",
       "title": "Post a proposal from its view",
       "description": "Where your app shows mm-mcp's views, a post the model proposes as your draft can be posted from the view with Post. Off, the draft waits in Mattermost for you to send.",
+      "default": true,
+      "required": false
+    },
+    "local_files": {
+      "type": "boolean",
+      "title": "Files on this computer",
+      "description": "Let mm-mcp save an attachment to your download directory with save_file, and attach a file from this computer to a post. Off, it reaches no file on this computer.",
       "default": true,
       "required": false
     },

@@ -116,6 +116,16 @@ setting left empty, counts as unset.
     `MM_MCP_ELICITATION_OPT_IN`: a press is never asked about, so where every
     post should wait for a question, set this to `false` as well.
 
+`MM_MCP_LOCAL_FILES`
+:   Optional, `true` by default. A server over stdio runs on your own machine,
+    so it offers `save_file` and attaching a file from a path to a post.
+    `false` turns both off, so the model reaches no file on the machine. The
+    [container image](installation.md#container-image) sets it to `false`,
+    since a container's disk is not yours: set it back to `true` there only
+    with a directory mounted and `MM_MCP_DOWNLOAD_DIR` naming it. Over HTTP no
+    server reaches these files, whatever it says
+    ([ADR-029](adr/029-files-reach-the-model-as-content-and-the-disk-only-locally.md)).
+
 `MM_MCP_DOWNLOAD_DIR`
 :   Optional. The directory `save_file` writes attachments to, when the server
     runs over stdio on your own machine. Your Downloads directory by default.

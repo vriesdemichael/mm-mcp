@@ -70,7 +70,9 @@ disclosure only to what the agent asks to read.
   ([ADR-035](adr/035-a-proposed-post-waits-as-the-persons-draft.md)).
 - **Save attachments to the local disk**, when it runs on the person's machine:
   to their download directory, never over an existing file, and marked as
-  downloaded from the internet.
+  downloaded from the internet. `MM_MCP_LOCAL_FILES=false` turns this off, and
+  attaching a file by its path with it; the container image starts with it
+  off ([Installation](installation.md#container-image)).
 
 By default, every post and edit is marked as written with AI, as Mattermost
 displays it, a post from a proposal's view included; what the person sends from
@@ -317,7 +319,8 @@ communicate with it.
 ## Releases and updates
 
 Every archive, Linux package and bundle is signed with Sigstore by the release
-workflow, with a build provenance attestation and an SBOM
+workflow, with a build provenance attestation and an SBOM, and so is the
+container image, attested in its registry
 ([Installation](installation.md#verifying-a-download)). Homebrew, Scoop and
 WinGet install the release's own archives and verify each against the SHA-256
 hash in their manifest; to verify a signature directly, download the same

@@ -302,7 +302,7 @@ func TestAServerNotOnThePersonsMachineAttachesNoFileFromAPath(t *testing.T) {
 	result := callTool(t, session, &mcp.CallToolParams{Name: "create_post", Arguments: map[string]any{
 		"channel_id": channel.Id, "message": "x", "files": []map[string]any{{"path": onDisk}},
 	}})
-	if !result.IsError || !strings.Contains(errorText(result), "does not run on the person's machine") {
+	if !result.IsError || !strings.Contains(errorText(result), "reaches no file on the person's machine") {
 		t.Fatalf("a server not on the person's machine took a file from a path: %s", errorText(result))
 	}
 	if questions.count() != 0 || len(messagesIn(t, admin, channel.Id)) != 0 {

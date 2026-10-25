@@ -59,6 +59,12 @@ Support Release, and `task test:live RELEASE=11.9.2` against any release.
 Each checkout, every linked worktree included, has its own instances, so
 parallel work never shares one; see [docker/README.md](docker/README.md).
 
+A change to `image/Dockerfile`, or to how mm-mcp reads its environment or
+serves over stdio, is checked in the container image as well:
+`task test:image` builds the image around this checkout's mm-mcp and serves it
+against the same instance. `task release:image` builds, from a
+`task release:snapshot`, the image a release would push, for both platforms.
+
 ## Making a change
 
 **Branch from `next`.** Every change targets `next`; `main` moves only when a
@@ -147,11 +153,11 @@ git add --renormalize .
 | Unit Tests (windows-latest), Unit Tests (macos-latest) | the unit suite on Windows and macOS |
 | View Tests | the MCP Apps view page in Playwright's Chromium, inside the official MCP Apps bridge (`task test:views`) |
 | Client Tests | the views in Goose and VS Code at their pinned versions, with a scripted model, against the newest release (`task test:clients`) |
-| Live Tests | starts Mattermost and runs the live suite, on the newest release and the Extended Support Release |
+| Live Tests | starts Mattermost and runs the live suite, then serves the container image against it (`task test:image`), on the newest release and the Extended Support Release |
 | Coverage Gates | global and patch coverage over the unit and live profiles merged |
 | Codecov | publishes coverage history and the README badge |
 | Docs Site | builds the documentation strictly |
-| Release Artifacts | builds every platform's archive, SBOM and `.mcpb` bundle |
+| Release Artifacts | builds every platform's archive, SBOM and `.mcpb` bundle, and the container image for linux/amd64 and linux/arm64 (`task release:image`) |
 | CI Complete | passes only when every job above did; the one status branch protection requires |
 
 A weekly workflow also runs the live suite against every Mattermost release

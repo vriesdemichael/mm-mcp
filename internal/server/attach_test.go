@@ -65,7 +65,7 @@ func TestAttachmentsAreRefusedBeforeAnyoneIsAsked(t *testing.T) {
 		files []attachFile
 		says  string
 	}{
-		"a path on a server that is not local": {config.Config{}, []attachFile{{Path: onDisk}}, "does not run on the person's machine"},
+		"a path on a server that is not local": {config.Config{}, []attachFile{{Path: onDisk}}, "reaches no file on the person's machine"},
 		"a relative path":                      {local, []attachFile{{Path: "a.txt"}}, "not a full path"},
 		"a directory":                          {local, []attachFile{{Path: dir}}, "not a file"},
 		"path and content":                     {local, []attachFile{{Path: onDisk, Content: "x"}}, "not both"},

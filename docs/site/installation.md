@@ -225,6 +225,58 @@ attached. Anything on your machine that reaches the port acts as mm-mcp's
 account
 ([Security](security.md#http-transport)).
 
+## Container image
+
+Each release is also an image on GitHub Container Registry, for linux/amd64
+and linux/arm64 under one tag, which the MCP Registry lists
+([ADR-023](adr/023-distributed-as-signed-binaries-mcpb-bundles-and-the-mcp-registry.md)).
+It is for an MCP client that installs servers from the registry and runs them
+in a container. On your own machine, the binary above starts at once and needs
+no container runtime.
+
+```json
+{
+  "mcpServers": {
+    "mattermost": {
+      "command": "docker",
+      "args": ["run", "--interactive", "--rm", "--env", "MM_URL", "--env", "MM_TOKEN", "ghcr.io/vriesdemichael/mm-mcp:<version>"],
+      "env": {
+        "MM_URL": "https://chat.example.com",
+        "MM_TOKEN": "<your token>"
+      }
+    }
+  }
+}
+```
+
+`--env MM_TOKEN` hands the token on by its name, from the env block, so it is
+not among the command's arguments. The container cannot reach your system's
+credential store, so give it a token rather than an `mm-mcp login`.
+
+A container's disk is not yours: a file saved there is lost with it, and a
+path names nothing you have. So the image sets `MM_MCP_LOCAL_FILES=false`, and
+offers neither `save_file` nor attaching a file by its path
+([ADR-029](adr/029-files-reach-the-model-as-content-and-the-disk-only-locally.md)).
+To have `save_file` write into a directory of yours, mount it, name it, and
+turn the setting back on, running as yourself so the container can write
+there:
+
+```bash
+docker run --interactive --rm --env MM_URL --env MM_TOKEN \
+  --env MM_MCP_LOCAL_FILES=true --env MM_MCP_DOWNLOAD_DIR=/downloads \
+  --volume "$HOME/Downloads:/downloads" --user "$(id -u):$(id -g)" \
+  ghcr.io/vriesdemichael/mm-mcp:<version>
+```
+
+A path to attach is then the container's, such as `/downloads/notes.txt`, so
+only a file in the mounted directory can be attached. A certificate authority
+for `MM_MCP_CA_FILE` is mounted the same way:
+`--volume /path/to/ca.pem:/etc/mm-mcp/ca.pem:ro --env MM_MCP_CA_FILE=/etc/mm-mcp/ca.pem`.
+
+The image serves over stdio only. [Over HTTP](#over-http), mm-mcp listens on a
+loopback address, which a container cannot publish to its host, until it
+authenticates its clients.
+
 ## Verifying a download
 
 Every archive and bundle is signed, and every archive's SBOM is attested. With
@@ -232,4 +284,11 @@ the GitHub CLI:
 
 ```bash
 gh attestation verify mm-mcp_<version>_linux_amd64.tar.gz --repo vriesdemichael/mm-mcp
+```
+
+The container image is signed, and attested with its build provenance and
+each platform's SBOM, in the registry:
+
+```bash
+gh attestation verify oci://ghcr.io/vriesdemichael/mm-mcp:<version> --repo vriesdemichael/mm-mcp
 ```

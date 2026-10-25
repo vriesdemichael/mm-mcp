@@ -69,6 +69,8 @@ Install mm-mcp with `brew install vriesdemichael/tap/mm-mcp`,
 `scoop bucket add vriesdemichael https://github.com/vriesdemichael/scoop`), or
 download the binary for your machine from the
 [latest release](https://github.com/vriesdemichael/mm-mcp/releases/latest).
+A [container image](https://vriesdemichael.github.io/mm-mcp/installation/#container-image),
+`ghcr.io/vriesdemichael/mm-mcp`, serves the clients that run servers in one.
 Then get a personal access token in Mattermost under **Profile → Security →
 Personal Access Tokens**, and keep it in your system's credential store, out of
 your client's configuration, with

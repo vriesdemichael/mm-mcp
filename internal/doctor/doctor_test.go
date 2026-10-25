@@ -333,6 +333,43 @@ func TestPostingFromAProposalsViewIsReported(t *testing.T) {
 	}
 }
 
+// Whether this machine's files are reached is said as the server decides it:
+// over stdio unless MM_MCP_LOCAL_FILES turns it off, never over HTTP (ADR-029).
+func TestReachingThisMachinesFilesIsReported(t *testing.T) {
+	t.Parallel()
+	settings := func(value string) []Check {
+		return Settings(testsupport.Env(map[string]string{config.EnvURL: "https://chat.example.com", config.EnvLocalFiles: value}), false)
+	}
+	if got := find(t, settings("false"), config.EnvLocalFiles); got.Status != OK || !strings.Contains(got.Detail, "no server offers save_file") {
+		t.Errorf("turned off: %+v", got)
+	}
+	if got := find(t, settings("${user_config.local_files}"), config.EnvLocalFiles); got.Status != OK || !strings.Contains(got.Detail, "over stdio offers save_file") {
+		t.Errorf("left to its default: %+v", got)
+	}
+	if got := find(t, settings("mounted"), config.EnvLocalFiles); got.Status != Failed {
+		t.Errorf("unreadable: %+v", got)
+	}
+	for _, check := range settings("") {
+		if check.Name == config.EnvLocalFiles {
+			t.Errorf("unset, and still reported: %+v", check)
+		}
+	}
+
+	loaded := func(cfg config.Config) []Check {
+		cfg.URL = "https://chat.example.com"
+		return Loaded(cfg, "")
+	}
+	if got := find(t, loaded(config.Config{LocalFiles: true, Local: true}), "transport"); !strings.Contains(got.Detail, "save_file and attaching a file from a path are offered") {
+		t.Errorf("over stdio: %+v", got)
+	}
+	if got := find(t, loaded(config.Config{LocalFiles: false}), config.EnvLocalFiles); !strings.Contains(got.Detail, "are not offered, as in the container image") {
+		t.Errorf("over stdio, turned off: %+v", got)
+	}
+	if got := find(t, loaded(config.Config{LocalFiles: true}), "transport"); !strings.Contains(got.Detail, "Streamable HTTP") {
+		t.Errorf("over HTTP: %+v", got)
+	}
+}
+
 // A placeholder reads as unset, so a setting that is on by default is on.
 func TestAPlaceholderForASettingOnByDefaultReadsAsOn(t *testing.T) {
 	t.Parallel()

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/server"
 )
 
@@ -89,50 +90,66 @@ func TestAnUnknownPlatformOrVersionIsRefused(t *testing.T) {
 	}
 }
 
-func TestTheRegistryEntryListsEveryBundleByAddressAndChecksum(t *testing.T) {
+const image = "ghcr.io/vriesdemichael/mm-mcp"
+
+func TestTheRegistryEntryListsEveryBundleByAddressAndChecksumAndTheImageByTag(t *testing.T) {
 	t.Parallel()
-	raw, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com/download/v0.3.1/",
+	raw, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com/download/v0.3.1/", image,
 		map[string]string{"mm-mcp_0.3.1_linux_amd64.mcpb": "aa", "mm-mcp_0.3.1_darwin_arm64.mcpb": "bb"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var document struct {
-		Version  string `json:"version"`
-		Packages []struct {
-			RegistryType string `json:"registryType"`
-			Identifier   string `json:"identifier"`
-			FileSha256   string `json:"fileSha256"`
-		} `json:"packages"`
+		Version  string           `json:"version"`
+		Packages []map[string]any `json:"packages"`
 	}
 	if err := json.Unmarshal(raw, &document); err != nil {
 		t.Fatal(err)
 	}
-	if document.Version != "0.3.1" || len(document.Packages) != 2 ||
-		document.Packages[0].Identifier != "https://example.com/download/v0.3.1/mm-mcp_0.3.1_darwin_arm64.mcpb" ||
-		document.Packages[0].FileSha256 != "bb" || document.Packages[1].RegistryType != "mcpb" {
+	if document.Version != "0.3.1" || len(document.Packages) != 3 ||
+		document.Packages[0]["identifier"] != "https://example.com/download/v0.3.1/mm-mcp_0.3.1_darwin_arm64.mcpb" ||
+		document.Packages[0]["fileSha256"] != "bb" || document.Packages[0]["version"] != "0.3.1" || document.Packages[1]["registryType"] != "mcpb" {
 		t.Fatalf("got %+v", document)
 	}
-	if _, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com", nil); err == nil {
+	// The registry refuses an image package with a version, a checksum or a
+	// registry address of its own: the tag is its version.
+	oci := document.Packages[2]
+	if oci["registryType"] != "oci" || oci["identifier"] != image+":0.3.1" || oci["transport"].(map[string]any)["type"] != "stdio" {
+		t.Fatalf("got %+v", oci)
+	}
+	for _, refused := range []string{"version", "fileSha256", "registryBaseUrl"} {
+		if _, ok := oci[refused]; ok {
+			t.Errorf("the image's package has %s: %+v", refused, oci)
+		}
+	}
+	if _, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com", image, nil); err == nil {
 		t.Fatal("an entry with no bundles was written")
+	}
+	for _, wrong := range []string{"", image + ":0.3.1", image + "@sha256:aa"} {
+		if _, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com", wrong,
+			map[string]string{"mm-mcp_0.3.1_linux_amd64.mcpb": "aa"}); err == nil {
+			t.Errorf("an entry with the image %q was written", wrong)
+		}
 	}
 }
 
-func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) {
+func TestEveryRegistryPackageDeclaresTheVariablesItsServerCanUse(t *testing.T) {
 	t.Parallel()
-	raw, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com",
+	raw, err := ServerJSON(template(t, "server.json"), template(t, "mcpb/manifest.json"), "v0.3.1", "https://example.com", image,
 		map[string]string{"mm-mcp_0.3.1_linux_amd64.mcpb": "aa", "mm-mcp_0.3.1_windows_arm64.mcpb": "bb"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var document struct {
 		Packages []struct {
+			RegistryType         string           `json:"registryType"`
 			EnvironmentVariables []map[string]any `json:"environmentVariables"`
 		} `json:"packages"`
 	}
 	if err := json.Unmarshal(raw, &document); err != nil {
 		t.Fatal(err)
 	}
-	if len(document.Packages) != 2 {
+	if len(document.Packages) != 3 {
 		t.Fatalf("got %d packages", len(document.Packages))
 	}
 	want := map[string]map[string]any{
@@ -143,13 +160,21 @@ func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) 
 		"MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE": {"isRequired": false, "isSecret": false, "format": "boolean", "default": "false"},
 		"MM_MCP_MARK_AI_GENERATED":                      {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
 		"MM_MCP_POST_FROM_VIEWS":                        {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
+		"MM_MCP_LOCAL_FILES":                            {"isRequired": false, "isSecret": false, "format": "boolean", "default": "true"},
 		"MM_MCP_DOWNLOAD_DIR":                           {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_CA_FILE":                                {"isRequired": false, "isSecret": false, "format": "filepath"},
 		"MM_MCP_RESOURCE_MAX_MB":                        {"isRequired": false, "isSecret": false, "format": "number", "default": "10"},
 	}
+	// The image's disk is not the person's: no path of theirs, and no reaching
+	// it (ADR-029).
+	notInTheImage := []string{"MM_MCP_LOCAL_FILES", "MM_MCP_DOWNLOAD_DIR", "MM_MCP_CA_FILE"}
 	for _, pkg := range document.Packages {
-		if len(pkg.EnvironmentVariables) != len(want) {
-			t.Fatalf("got %v, want %d variables", pkg.EnvironmentVariables, len(want))
+		count := len(want)
+		if pkg.RegistryType == "oci" {
+			count -= len(notInTheImage)
+		}
+		if len(pkg.EnvironmentVariables) != count {
+			t.Fatalf("%s: got %v, want %d variables", pkg.RegistryType, pkg.EnvironmentVariables, count)
 		}
 		for _, variable := range pkg.EnvironmentVariables {
 			name, _ := variable["name"].(string)
@@ -157,6 +182,9 @@ func TestEveryRegistryPackageDeclaresTheVariablesTheBundleAsksFor(t *testing.T) 
 			if !ok {
 				t.Errorf("%s is declared, and the bundle does not set it", name)
 				continue
+			}
+			if pkg.RegistryType == "oci" && slices.Contains(notInTheImage, name) {
+				t.Errorf("the image's package declares %s, which names or reaches the person's disk", name)
 			}
 			if description, _ := variable["description"].(string); description == "" {
 				t.Errorf("%s has no description", name)
@@ -237,5 +265,24 @@ func TestArtifactsWithoutBinariesAreRefused(t *testing.T) {
 	t.Parallel()
 	if _, err := Binaries([]byte(`[{"type":"Archive"}]`)); err == nil {
 		t.Fatal("artifacts with no binaries were accepted")
+	}
+}
+
+// The registry lists the image only when its label names this server, and the
+// image's package leaves out MM_MCP_LOCAL_FILES because the image sets it off.
+func TestTheImageNamesTheServerAndKeepsToItsOwnDisk(t *testing.T) {
+	t.Parallel()
+	var entry struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(template(t, "server.json"), &entry); err != nil || entry.Name == "" {
+		t.Fatalf("server.json: %v, %+v", err, entry)
+	}
+	dockerfile := string(template(t, "image/Dockerfile"))
+	if !strings.Contains(dockerfile, `io.modelcontextprotocol.server.name="`+entry.Name+`"`) {
+		t.Errorf("image/Dockerfile does not label the image as %s", entry.Name)
+	}
+	if !slices.Contains(strings.Split(dockerfile, "\n"), "ENV "+config.EnvLocalFiles+"=false") {
+		t.Errorf("image/Dockerfile does not set %s=false", config.EnvLocalFiles)
 	}
 }

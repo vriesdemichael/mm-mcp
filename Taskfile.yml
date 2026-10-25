@@ -179,6 +179,14 @@ tasks:
           go test -tags=live,clients -count=1 -timeout 20m -run '^TestClients' ./tests/live/
         fi
 
+  test:image:
+    desc: The container image, built around an mm-mcp built here, served over stdio against this checkout's instance, which it starts first (ADR-023). Needs Docker
+    deps: [stack:up]
+    env:
+      MM_LIVE_STACK: '{{.STACK}}'
+      MM_LIVE_RELEASE: '{{.RELEASE}}'
+    cmd: go test -tags=live,image -count=1 -timeout 10m -run TestTheImage ./tests/live/
+
   test:live:compile:
     desc: Build the live suite and its client tests without running them, so a break shows in seconds
     # It catches a live test that no longer compiles, not one whose assertion has
@@ -188,6 +196,7 @@ tasks:
       - go test -tags=live -c -o .tmp/live.test ./tests/live
       - go test -tags=live,clients -c -o .tmp/live.test ./tests/live
       - go test -tags=live,record -c -o .tmp/live.test ./tests/live
+      - go test -tags=live,image -c -o .tmp/live.test ./tests/live
 
   # ------------------------------------------------------------------ local stack
 
@@ -323,6 +332,57 @@ tasks:
     cmds:
       - npx --yes "@anthropic-ai/mcpb@${MCPB_VERSION}" unpack dist/mm-mcp_0.0.0_linux_amd64.mcpb .tmp/mcpb-check
       - npx --yes "@anthropic-ai/mcpb@${MCPB_VERSION}" validate .tmp/mcpb-check/manifest.json
+
+  release:image:
+    desc: Build the container image from the Linux binaries in dist/ for linux/amd64 and linux/arm64 as a release does, into dist/image.tar, and load this machine's into Docker as mm-mcp:snapshot (ADR-023). Needs Docker, and release:snapshot first
+    cmds:
+      - task: release:image:build
+        vars:
+          OUTPUT: type=oci,dest=dist/image.tar
+      - task: release:image:build
+        vars:
+          OUTPUT: type=docker,name=mm-mcp:snapshot
+          PLATFORMS: ""
+
+  release:image:push:
+    desc: Build the container image as release:image does and push it to IMAGE by its digest alone, with no tag, writing the digest to dist/image.json. The release tags it once every check has passed (ADR-023)
+    requires:
+      vars: [IMAGE, VERSION]
+    cmds:
+      - task: release:image:build
+        vars:
+          OUTPUT: type=image,name={{.IMAGE}},push-by-digest=true,name-canonical=true,push=true
+
+  release:image:build:
+    internal: true
+    # One build for a release and a snapshot. BuildKit's provenance and SBOM are
+    # left out: the release attests both with Sigstore, as it does the archives.
+    # The time is the commit's, and every file in the image is stamped with it,
+    # so the same commit builds the same digest and a repeated release pushes the
+    # image it pushed before. The builder runs BuildKit at the pinned release,
+    # since Docker's own builder builds for two platforms at once only with
+    # containerd's image store; IMAGE_BUILDER names another.
+    vars:
+      VERSION: '{{.VERSION | default "v0.0.0"}}'
+      PLATFORMS: '{{if eq (printf "%v" .PLATFORMS) ""}}{{else}}{{.PLATFORMS | default "linux/amd64,linux/arm64"}}{{end}}'
+      IMAGE_BUILDER: '{{.IMAGE_BUILDER | default "mm-mcp-image"}}'
+      REVISION:
+        sh: git rev-parse HEAD
+    env:
+      SOURCE_DATE_EPOCH:
+        sh: git log -1 --format=%ct
+    cmds:
+      - docker buildx inspect {{.IMAGE_BUILDER}} >/dev/null 2>&1 || docker buildx create --name {{.IMAGE_BUILDER}} --driver docker-container --driver-opt "image=moby/buildkit:${BUILDKIT_VERSION}"
+      - >-
+        docker buildx build --builder {{.IMAGE_BUILDER}} --file image/Dockerfile
+        {{if .PLATFORMS}}--platform {{.PLATFORMS}} --metadata-file dist/image.json
+        --annotation "index:org.opencontainers.image.description=An MCP server for Mattermost."
+        --annotation "index:org.opencontainers.image.source=https://github.com/vriesdemichael/mm-mcp"
+        --annotation "index:org.opencontainers.image.licenses=Apache-2.0"{{end}}
+        --provenance=false --sbom=false
+        --build-arg VERSION={{trimPrefix "v" .VERSION}} --build-arg REVISION={{.REVISION}}
+        --output {{.OUTPUT}},rewrite-timestamp=true
+        dist
 
   pr:rebase:
     desc: Bring the branch up to date with next (ADR-011)

@@ -1,0 +1,4 @@
+# The image's context is dist/, which also holds every archive, package, SBOM
+# and bundle a release makes: only the Linux binaries go in.
+*
+!mm-mcp_linux_*/mm-mcp

@@ -127,8 +127,9 @@ func loadAttachments(cfg config.Config, files []attachFile, keep bool) ([]attach
 }
 
 // readLocal reads a file from this machine's disk, which only a server running
-// on it, over stdio, may do: over HTTP a path names a file on wherever the
-// server runs, not on the person's machine. The path is refused when it names
+// on it, over stdio, may do, unless MM_MCP_LOCAL_FILES turns it off: over HTTP
+// a path names a file on wherever the server runs, not on the person's
+// machine, and in a container it names one in the container. The path is refused when it names
 // another machine, a device or a file the system makes up rather than stores,
 // before anything is opened: on Windows, merely looking at \\host\share makes
 // the machine sign in to host with the person's credentials. A file where
@@ -137,7 +138,7 @@ func loadAttachments(cfg config.Config, files []attachFile, keep bool) ([]attach
 // reads, and the person may tick the box without reading the path.
 func readLocal(cfg config.Config, file attachFile, keep bool) (attachment, error) {
 	if !cfg.Local {
-		return attachment{}, fmt.Errorf("this server does not run on the person's machine, so it attaches no file from a path; give the content of a text file instead")
+		return attachment{}, fmt.Errorf("this server reaches no file on the person's machine, since it serves over HTTP or %s is false, so it attaches no file from a path; give the content of a text file instead", config.EnvLocalFiles)
 	}
 	path := strings.TrimSpace(file.Path)
 	if err := ordinaryPath(path); err != nil {

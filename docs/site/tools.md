@@ -822,6 +822,9 @@ Mattermost is yours.
 runs on your own machine, started by your client over stdio, whether writes are
 allowed or not: they reach your disk, not Mattermost
 ([ADR-029](adr/029-files-reach-the-model-as-content-and-the-disk-only-locally.md)).
+`MM_MCP_LOCAL_FILES=false` turns them off, as the
+[container image](installation.md#container-image) does
+([Configuration](configuration.md)).
 
 ### Not offered
 

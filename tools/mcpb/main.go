@@ -1,7 +1,7 @@
 // Command mcpb makes a release's .mcpb bundles and its MCP Registry entry (ADR-023).
 //
 //	go run ./tools/mcpb bundle -version v0.2.0 -artifacts dist/artifacts.json -out dist
-//	go run ./tools/mcpb server-json -version v0.2.0 -bundles dist -base-url <release download url>
+//	go run ./tools/mcpb server-json -version v0.2.0 -bundles dist -base-url <release download url> -image ghcr.io/vriesdemichael/mm-mcp
 //
 // `bundle` reads the binaries GoReleaser built from its artifacts.json and packs
 // each into a bundle for its platform: a zip of the manifest, from
@@ -9,8 +9,9 @@
 // stamped in, and the binary under server/. It is what `mcpb pack` makes, made
 // here so a release needs no Node; CI checks one with the official tool.
 // `server-json` writes server.json listing every bundle in the directory by its
-// download address and SHA-256, which is how the registry names an .mcpb, with
-// the environment variables the manifest sets from its user configuration.
+// download address and SHA-256, which is how the registry names an .mcpb, and
+// the container image by its tag, each with the environment variables the
+// manifest sets from its user configuration that it can use.
 package main
 
 import (
@@ -25,6 +26,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/vriesdemichael/mm-mcp/internal/config"
 	"github.com/vriesdemichael/mm-mcp/internal/server"
 )
 
@@ -38,6 +40,7 @@ func main() {
 	out := flags.String("out", "dist", "the directory to write the bundles into")
 	bundles := flags.String("bundles", "dist", "the directory holding the release's .mcpb files")
 	baseURL := flags.String("base-url", "", "where the release's files are downloaded from")
+	image := flags.String("image", "", "the container image the release published, without its tag")
 	_ = flags.Parse(os.Args[2:])
 
 	switch os.Args[1] {
@@ -58,7 +61,7 @@ func main() {
 			sum := sha256.Sum256(read(file))
 			hashes[filepath.Base(file)] = hex.EncodeToString(sum[:])
 		}
-		document, err := ServerJSON(read("server.json"), read("mcpb/manifest.json"), *version, *baseURL, hashes)
+		document, err := ServerJSON(read("server.json"), read("mcpb/manifest.json"), *version, *baseURL, *image, hashes)
 		fail(err)
 		fail(os.WriteFile("server.json", document, 0o600))
 	default:
@@ -190,16 +193,34 @@ func EnvironmentVariables(manifest []byte) ([]EnvironmentVariable, error) {
 	return variables, nil
 }
 
+// ImageVariables are the bundle's variables the container image's package
+// declares. A path on the person's machine names nothing in the container, and
+// MM_MCP_LOCAL_FILES, which the image sets to false, is of use there only with
+// a directory mounted, which the package cannot declare (ADR-029).
+func ImageVariables(variables []EnvironmentVariable) []EnvironmentVariable {
+	var kept []EnvironmentVariable
+	for _, variable := range variables {
+		if variable.Format != "filepath" && variable.Name != config.EnvLocalFiles {
+			kept = append(kept, variable)
+		}
+	}
+	return kept
+}
+
 // ServerJSON is the registry entry for a release: one package per bundle,
 // each named by its download address and checksum, and each declaring the
-// environment variables the bundle's manifest sets.
-func ServerJSON(template, manifest []byte, version, baseURL string, hashes map[string]string) ([]byte, error) {
+// environment variables the bundle's manifest sets, and one for the container
+// image, named by the release's tag, which holds every Linux architecture.
+func ServerJSON(template, manifest []byte, version, baseURL, image string, hashes map[string]string) ([]byte, error) {
 	number, err := bare(version)
 	if err != nil {
 		return nil, err
 	}
 	if len(hashes) == 0 {
 		return nil, fmt.Errorf("no .mcpb bundles to list")
+	}
+	if image == "" || strings.ContainsAny(image, ":@") {
+		return nil, fmt.Errorf("the image is %q, not a repository such as ghcr.io/owner/name without a tag", image)
 	}
 	variables, err := EnvironmentVariables(manifest)
 	if err != nil {
@@ -226,6 +247,14 @@ func ServerJSON(template, manifest []byte, version, baseURL string, hashes map[s
 			"environmentVariables": variables,
 		})
 	}
+	// The registry takes an image's version from its tag, and refuses a
+	// separate one.
+	packages = append(packages, map[string]any{
+		"registryType":         "oci",
+		"identifier":           image + ":" + number,
+		"transport":            map[string]string{"type": "stdio"},
+		"environmentVariables": ImageVariables(variables),
+	})
 	document["packages"] = packages
 	encoded, err := json.MarshalIndent(document, "", "  ")
 	return append(encoded, '\n'), err

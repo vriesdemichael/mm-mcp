@@ -327,6 +327,9 @@ jobs:
       - name: Run the live suite with coverage
         run: task test:live:coverage STACK=${{ matrix.stack }}
 
+      - name: Serve the container image against Mattermost
+        run: task test:image STACK=${{ matrix.stack }}
+
       - name: Upload live coverage
         if: always() && matrix.stack == 'latest'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -539,6 +542,22 @@ jobs:
         run: |
           reported="$(dist/mm-mcp_linux_amd64_v1/mm-mcp version)"
           [ "$reported" = "mm-mcp v0.0.0" ] || { echo "::error::the binary reports '$reported'"; exit 1; }
+
+      # The image a release pushes, from these binaries, for both platforms: the
+      # same commit and version build the same digest, so this is what a
+      # release would push.
+      - name: Build the container image
+        run: task release:image
+
+      - name: Run the container image
+        run: |
+          reported="$(docker run --rm mm-mcp:snapshot version)"
+          [ "$reported" = "mm-mcp v0.0.0" ] || { echo "::error::the image reports '$reported'"; exit 1; }
+          user="$(docker image inspect --format '{{.Config.User}}' mm-mcp:snapshot)"
+          [ "$user" = "65532:65532" ] || { echo "::error::the image runs as '$user', not distroless's nonroot user"; exit 1; }
+          index=$(tar -xOf dist/image.tar index.json | jq -r '.manifests[0].digest | sub("sha256:"; "")')
+          platforms=$(tar -xOf dist/image.tar "blobs/sha256/$index" | jq -r '[.manifests[].platform | "\(.os)/\(.architecture)"] | sort | join(" ")')
+          [ "$platforms" = "linux/amd64 linux/arm64" ] || { echo "::error::the image is for '$platforms'"; exit 1; }
 
   ci-complete:
     name: CI Complete

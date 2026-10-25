@@ -55,6 +55,11 @@ func Settings(lookup func(string) string, urlGiven bool) []Check {
 			"a proposal's view offers Post, where the client renders it",
 			"a proposal's view offers no Post: the draft waits in Mattermost for the person to send"))
 	}
+	if raw := lookup(config.EnvLocalFiles); strings.TrimSpace(raw) != "" {
+		checks = append(checks, boolean(config.EnvLocalFiles, raw, true,
+			"a server over stdio offers save_file and attaching a file from a path; over HTTP no server does",
+			"no server offers save_file or attaching a file from a path, as in the container image"))
+	}
 	if raw := strings.TrimSpace(lookup(config.EnvDownloadDir)); raw != "" && !config.Placeholder(raw) {
 		checks = append(checks, downloadDir(raw))
 	}
@@ -214,13 +219,16 @@ func Loaded(cfg config.Config, where string) []Check {
 	if cfg.CAFile != "" {
 		checks = append(checks, ok(config.EnvCAFile, "the certificate authorities in %s are trusted beside the system's", cfg.CAFile))
 	}
-	if cfg.Local {
+	switch {
+	case cfg.Local:
 		dir := cfg.DownloadDir
 		if dir == "" {
 			dir = "your Downloads directory"
 		}
 		checks = append(checks, ok("transport", "stdio, on the person's own machine: save_file and attaching a file from a path are offered, and save_file writes to %s", dir))
-	} else {
+	case !cfg.LocalFiles:
+		checks = append(checks, ok(config.EnvLocalFiles, "is false: the tools that read or write this machine's files are not offered, as in the container image, whose disk is not the person's"))
+	default:
 		checks = append(checks, ok("transport", "Streamable HTTP: the tools that read or write this machine's files are not offered"))
 	}
 	return checks

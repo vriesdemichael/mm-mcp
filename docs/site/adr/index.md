@@ -29,7 +29,7 @@ holds and why, and the alternatives it turned down.
 - [ADR-020: stdio and Streamable HTTP from one server, single-tenant first](020-stdio-and-streamable-http-single-tenant-first.md)
 - [ADR-021: Read-only by default](021-read-only-by-default.md)
 - [ADR-022: MCP Apps views, on show and on every post](022-mcp-apps-views-on-show-and-on-every-post.md)
-- [ADR-023: Distributed as signed binaries, .mcpb bundles, and through the MCP Registry](023-distributed-as-signed-binaries-mcpb-bundles-and-the-mcp-registry.md)
+- [ADR-023: Distributed as signed binaries, .mcpb bundles, a container image, and through the MCP Registry](023-distributed-as-signed-binaries-mcpb-bundles-and-the-mcp-registry.md)
 - [ADR-024: Mattermost is reached through its own client, at the commit of the newest supported release](024-mattermosts-client-at-the-newest-release.md)
 - [ADR-025: The supported window runs from the oldest supported Extended Support Release to the newest release](025-supported-mattermost-releases.md)
 - [ADR-026: Each supported release's specification and route table are vendored, as reference](026-the-openapi-specification-is-vendored-per-supported-release.md)

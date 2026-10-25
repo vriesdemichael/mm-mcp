@@ -91,6 +91,16 @@ Or with cosign, against the signing identity:
 cosign verify-blob --bundle sha256sums.txt.sigstore.json --certificate-identity 'https://github.com/vriesdemichael/mm-mcp/.github/workflows/release.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' sha256sums.txt
 ```
 
+The container image, `ghcr.io/vriesdemichael/mm-mcp`, is signed by the same
+workflow, its index and each platform's image alike, and attested in the
+registry with its build provenance and, for each platform, an SPDX SBOM scanned
+from the image. It is tagged only once those are in place:
+
+```bash
+gh attestation verify oci://ghcr.io/vriesdemichael/mm-mcp:0.2.0 --repo vriesdemichael/mm-mcp
+cosign verify ghcr.io/vriesdemichael/mm-mcp:0.2.0 --certificate-identity 'https://github.com/vriesdemichael/mm-mcp/.github/workflows/release.yml@refs/heads/main' --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'
+```
+
 ## Telemetry
 
 mm-mcp sends no telemetry and makes no network calls other than to the

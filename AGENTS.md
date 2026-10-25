@@ -46,6 +46,7 @@ task test:live RELEASE=11.9.2
 task test:browser
 task test:views
 task test:clients
+task test:image
 task quality:verify
 task quality:format
 task docs:validate
@@ -55,7 +56,7 @@ task docs:view-pictures
 task openapi:refresh
 ```
 
-`test:live` starts this checkout's Mattermost if needed. `test:browser` drives every browser on the machine, Playwright's Chromium included, which it installs with Node. `test:views` runs the MCP Apps view page in Chromium inside the official MCP Apps bridge, which it bundles with Node. `test:clients` runs the views in Goose and VS Code at their pinned versions, which it installs, with a scripted model; on Linux without a display it uses Xvfb. `quality:verify` is every
+`test:live` starts this checkout's Mattermost if needed. `test:browser` drives every browser on the machine, Playwright's Chromium included, which it installs with Node. `test:views` runs the MCP Apps view page in Chromium inside the official MCP Apps bridge, which it bundles with Node. `test:clients` runs the views in Goose and VS Code at their pinned versions, which it installs, with a scripted model; on Linux without a display it uses Xvfb. `test:image` builds the container image around this checkout's mm-mcp and serves it over stdio against the stack; `release:image` builds it from a `release:snapshot` as a release does. `quality:verify` is every
 static gate but one, golangci-lint included; govulncheck (`quality:vulncheck`)
 runs in CI only, because its answer comes from a vulnerability database it
 fetches (ADR-014). Run `docs:adr-index` after adding or removing a record,
@@ -81,11 +82,12 @@ and `openapi:refresh` after a stack's image tag changes.
 | `internal/scriptedmodel` | the chat model the client tests give a client: scripted, no inference |
 | `internal/testsupport` | the unit-test seal |
 | `internal/repository` | repository-wide governance tests |
-| `tests/live` | the live suite (build tag `live`), and the client tests (`live` and `clients`) |
+| `tests/live` | the live suite (build tag `live`), the client tests (`live` and `clients`), and the image tests (`live` and `image`) |
 | `tests/live/clients` | the driver that operates the clients over CDP, and VS Code's scripted model extension |
 | `tools/` | one Go command per directory, each with its reason in its package comment |
 | `openapi/` | the vendored specification and route table of each supported release, as reference |
 | `docker/` | the compose file of each live-test stack, `latest` and `esr`, and its settings |
+| `image/` | the container image's Dockerfile, which builds from GoReleaser's `dist/` |
 | `mcpb/` | the `.mcpb` bundle's manifest template; server.json's variables are written from it |
 
 ## Fixing a bug

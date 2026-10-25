@@ -25,6 +25,7 @@ const (
 	EnvAskBeforeWrites                 = "MM_MCP_ASK_BEFORE_WRITES"
 	EnvForceHumanInTheLoopInClaudeCode = "MM_MCP_FORCE_HUMAN_IN_THE_LOOP_IN_CLAUDE_CODE"
 	EnvDownloadDir                     = "MM_MCP_DOWNLOAD_DIR"
+	EnvLocalFiles                      = "MM_MCP_LOCAL_FILES"
 	EnvMarkAIGenerated                 = "MM_MCP_MARK_AI_GENERATED"
 	EnvPostFromViews                   = "MM_MCP_POST_FROM_VIEWS"
 	EnvBlockExternalNetwork            = "MM_MCP_BLOCK_EXTERNAL_NETWORK"
@@ -48,8 +49,8 @@ const maxMB = math.MaxInt64 >> 20
 // empties each of them, and a governance test fails when the source names one
 // that is not listed here (ADR-006).
 var EnvironmentVariables = []string{
-	EnvURL, EnvToken, EnvAllowWrites, EnvElicitationOptIn, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvMarkAIGenerated,
-	EnvPostFromViews, EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
+	EnvURL, EnvToken, EnvAllowWrites, EnvElicitationOptIn, EnvAskBeforeWrites, EnvForceHumanInTheLoopInClaudeCode, EnvDownloadDir, EnvLocalFiles,
+	EnvMarkAIGenerated, EnvPostFromViews, EnvBlockExternalNetwork, EnvCAFile, EnvResourceMaxMB,
 }
 
 // Config is a server's configuration.
@@ -83,6 +84,11 @@ type Config struct {
 	// DownloadDir is where save_file writes; empty means the person's
 	// Downloads directory.
 	DownloadDir string
+	// LocalFiles lets a server over stdio reach the files of the machine it
+	// runs on. On unless turned off, as the container image turns it off: a
+	// container's disk is not the person's (ADR-029). It never reaches them
+	// over HTTP.
+	LocalFiles bool
 	// CAFile is a PEM file of certificate authorities to trust beside the
 	// system's, for a server whose certificate an organisation signed itself.
 	CAFile string
@@ -91,9 +97,10 @@ type Config struct {
 	// ResourceBytes reads it.
 	ResourceMaxMB int64
 	// Local says the server runs on the person's own machine, for the one client
-	// that started it over stdio. It comes from how the server is served, not
-	// from the environment, and only a local server offers the tools that read
-	// or write this machine's files.
+	// that started it over stdio, and may reach its files. It comes from how the
+	// server is served, which the environment can only narrow, through
+	// LocalFiles, and only a local server offers the tools that read or write
+	// this machine's files.
 	Local bool
 }
 
@@ -111,8 +118,8 @@ func (c Config) ResourceBytes() int64 {
 
 // String leaves the token out, so a Config can be logged or printed in an error.
 func (c Config) String() string {
-	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, Elicit: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, PostFromViews: %t, DownloadDir: %q, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
-		c.URL, c.AllowWrites, c.Elicit, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.PostFromViews, c.DownloadDir, c.CAFile, c.ResourceMaxMB, c.Local)
+	return fmt.Sprintf("Config{URL: %q, AllowWrites: %t, Elicit: %t, ForceHumanInTheLoopInClaudeCode: %t, MarkAIGenerated: %t, PostFromViews: %t, DownloadDir: %q, LocalFiles: %t, CAFile: %q, ResourceMaxMB: %d, Local: %t}",
+		c.URL, c.AllowWrites, c.Elicit, c.ForceHumanInTheLoopInClaudeCode, c.MarkAIGenerated, c.PostFromViews, c.DownloadDir, c.LocalFiles, c.CAFile, c.ResourceMaxMB, c.Local)
 }
 
 // GoString is String, so %#v leaves the token out too.
@@ -193,6 +200,12 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 			return Config{}, err
 		}
 	}
+	localFiles := true
+	if raw := lookup(EnvLocalFiles); strings.TrimSpace(raw) != "" {
+		if localFiles, err = ParseBool(EnvLocalFiles, raw); err != nil {
+			return Config{}, err
+		}
+	}
 	downloadDir := strings.TrimSpace(lookup(EnvDownloadDir))
 	if downloadDir != "" && !filepath.IsAbs(downloadDir) {
 		// A relative directory would be the MCP client's working directory,
@@ -214,6 +227,7 @@ func Load(lookup func(string) string, stored Stored) (Config, error) {
 		URL: address, Token: token, TokenStored: fromStore, Stored: stored, AllowWrites: allowWrites, Elicit: elicit, ForceHumanInTheLoopInClaudeCode: force, MarkAIGenerated: markAI,
 		PostFromViews: postFromViews,
 		DownloadDir:   downloadDir,
+		LocalFiles:    localFiles,
 		CAFile:        strings.TrimSpace(lookup(EnvCAFile)),
 		ResourceMaxMB: resourceMax,
 	}, nil
