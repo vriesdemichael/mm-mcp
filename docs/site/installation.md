@@ -234,6 +234,35 @@ It is for an MCP client that installs servers from the registry and runs them
 in a container. On your own machine, the binary above starts at once and needs
 no container runtime.
 
+### Binary or image
+
+Use the binary, or the `.mcpb` bundle, when your AI app starts mm-mcp on your
+own machine, as Claude Desktop, Claude Code, VS Code and Goose do. It starts at
+once, `mm-mcp login` keeps your login in your system's credential store, single
+sign-on and OAuth included, and `save_file` and attaching a file by its path
+work as they are.
+
+Use the image when:
+
+- your client installs servers from the MCP Registry and runs its container
+  package;
+- the machine lets you run containers but not install programs;
+- you want mm-mcp kept from your files by the container as well as by
+  `MM_MCP_LOCAL_FILES=false`, which the binary honours too: the container sees
+  only what you mount.
+
+What the image costs:
+
+- Docker, or another container runtime, must be running whenever your client
+  starts mm-mcp, and each start is a new container;
+- it takes its token from the env block: `mm-mcp login`, and its single sign-on
+  and OAuth, do not reach it;
+- `save_file` and attaching a file by its path need a mounted directory, as
+  below;
+- it serves over stdio only, not over HTTP.
+
+### Running it
+
 ```json
 {
   "mcpServers": {
