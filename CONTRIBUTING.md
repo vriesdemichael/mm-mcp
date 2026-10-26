@@ -63,7 +63,9 @@ parallel work never shares one; see [docker/README.md](docker/README.md).
 
 **Branch from `next`.** Every change targets `next`; `main` moves only when a
 maintainer promotes `next` onto it, and only `main` releases
-([ADR-011](docs/site/adr/011-next-integrates-and-main-releases.md)).
+([ADR-011](docs/site/adr/011-next-integrates-and-main-releases.md)). A pull
+request opened against `main` is moved to `next` for you, and CI runs again
+against `next`.
 
 **Use [Conventional Commits](https://www.conventionalcommits.org/).** The commit
 type decides the version of the release your change ships in:

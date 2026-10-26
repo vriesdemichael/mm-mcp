@@ -69,7 +69,8 @@ jobs:
             // (ADR-011). One based anywhere else is usually a security update,
             // which Dependabot opens against the default branch whatever its
             // configuration says. Merged into main it would move main ahead of
-            // next, so a person retargets it instead.
+            // next, so it is left for Retarget to next, which moves it there and
+            // asks for the rebase that runs CI against next.
             if (pr.base?.ref !== 'next') {
               core.notice(
                 `PR #${pr.number} is based on ${pr.base?.ref || 'an unknown branch'}, not next; leaving it for review.`
