@@ -216,6 +216,41 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .emoji { font-size: 1.15em; line-height: 1; }
 .emoji-custom img { inline-size: 1.3em; block-size: 1.3em; object-fit: contain; vertical-align: -0.25em; }
 
+/*
+ * Message attachments: the cards an integration posts, each beside a bar in
+ * the color the integration chose, drawn as the view's own nearest one.
+ * Mattermost's own good, warning and danger are its own colors.
+ */
+
+.attachments { display: grid; gap: 6px; margin-block-start: 4px; }
+.attachment { min-width: 0; }
+.attachment > .markdown { margin-block-end: 4px; }
+.attachment-card {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding-block: 8px;
+  padding-inline: 12px;
+  border: 1px solid var(--mm-border);
+  border-inline-start: 4px solid var(--mm-border-strong);
+  border-radius: var(--mm-radius-sm);
+}
+.attachment-card[data-bar="green"] { border-inline-start-color: #00c100; }
+.attachment-card[data-bar="yellow"] { border-inline-start-color: #dede01; }
+.attachment-card[data-bar="red"] { border-inline-start-color: #e40303; }
+.attachment-card[data-bar="orange"] { border-inline-start-color: #f08c00; }
+.attachment-card[data-bar="blue"] { border-inline-start-color: #2f81b7; }
+.attachment-card[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
+.attachment-card[data-bar="gray"] { border-inline-start-color: #8b8f99; }
+.attachment-author { font-size: var(--mm-text-xs); font-weight: 600; overflow-wrap: anywhere; }
+.attachment-title { margin: 0; font-size: var(--mm-heading); overflow-wrap: anywhere; }
+.attachment-title .link { font-weight: 600; }
+.attachment-fields { display: grid; gap: 4px; }
+.attachment-row { inline-size: 100%; border-collapse: collapse; table-layout: fixed; }
+.attachment-row th { padding: 0; font-weight: 600; text-align: start; overflow-wrap: anywhere; }
+.attachment-row td { padding: 0; vertical-align: top; }
+.attachment-footer { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
+
 /* Files. */
 
 .files { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 6px; }
