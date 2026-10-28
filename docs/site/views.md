@@ -92,7 +92,8 @@ Nothing is changed until you press.
 
 Ask to see a thread and your agent shows it with
 [`show`](tools.md#show). You get pictures, formatting, reactions, custom
-emoji, and images you can open full size. A long thread loads more as you
+emoji, images you can open full size, and the cards a webhook or bot posts,
+such as an alert with its red or green bar. A long thread loads more as you
 ask.
 
 <div class="mm-view" data-view="thread" data-title="A thread"></div>
