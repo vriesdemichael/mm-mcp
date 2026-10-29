@@ -19,7 +19,7 @@ import (
 
 // MessageAttachment is one of a post's message attachments.
 type MessageAttachment struct {
-	Color      string                   `json:"color,omitempty" jsonschema:"the color of the bar beside it, which the integration chose: good, warning, danger or a hex color, and where Mattermost draws blocks, any CSS color, such as red"`
+	Color      string                   `json:"color,omitempty" jsonschema:"the color of the bar beside it, which the integration chose: good, warning, danger or a hex color, and where Mattermost draws blocks, a CSS color such as red"`
 	Pretext    string                   `json:"pretext,omitempty" jsonschema:"the text above it, in Mattermost Markdown"`
 	AuthorName string                   `json:"author_name,omitempty" jsonschema:"the name it shows at its top, which the integration chose"`
 	AuthorLink string                   `json:"author_link,omitempty" jsonschema:"where its author's name links to"`
