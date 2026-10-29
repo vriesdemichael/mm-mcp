@@ -93,7 +93,10 @@ Nothing is changed until you press.
 Ask to see a thread and your agent shows it with
 [`show`](tools.md#show). You get pictures, formatting, reactions, custom
 emoji, images you can open full size, and the cards a webhook or bot posts,
-such as an alert with its red or green bar. A post marked Important or
+such as an alert with its red or green bar. A link to another post shows that
+post quoted below it, and a link to a web page the page's card. A picture a
+link or a card leads to is named, and opens in your browser: the view itself
+reaches nothing outside Mattermost. A post marked Important or
 Urgent carries its label, and one that asks to be acknowledged says how many
 did, with who when you point at it. A burn-on-read message you have not
 opened stays concealed, as in Mattermost: **View message in Mattermost**

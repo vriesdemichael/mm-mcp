@@ -1,0 +1,220 @@
+{
+  "quote": {
+    "id": "p9g35q1qhpny5xttxph81khfme",
+    "create_at": 1793274064868,
+    "update_at": 1793274064868,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "Is this still true? http://localhost:32777/rec-priority-2978/pl/us13e1etyib58f3wwd1xicg51c",
+    "type": "",
+    "props": {
+      "previewed_post": "us13e1etyib58f3wwd1xicg51c"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "embeds": [
+        {
+          "type": "permalink",
+          "data": {
+            "post_id": "us13e1etyib58f3wwd1xicg51c",
+            "post": {
+              "id": "us13e1etyib58f3wwd1xicg51c",
+              "create_at": 1793274052822,
+              "update_at": 1793274052822,
+              "edit_at": 0,
+              "delete_at": 0,
+              "is_pinned": false,
+              "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+              "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+              "root_id": "",
+              "original_id": "",
+              "message": "The **retry budget** is 3 attempts per request.",
+              "type": "",
+              "props": {},
+              "hashtags": "",
+              "file_ids": [],
+              "pending_post_id": "",
+              "remote_id": "",
+              "reply_count": 0,
+              "last_reply_at": 0,
+              "participants": null,
+              "metadata": {
+                "priority": {
+                  "priority": "important",
+                  "requested_ack": null,
+                  "persistent_notifications": null,
+                  "PostId": "us13e1etyib58f3wwd1xicg51c",
+                  "ChannelId": "zkicjyjqqbg58cnmqfmzr89dqh"
+                }
+              }
+            },
+            "team_name": "rec-priority-2978",
+            "channel_display_name": "Incidents",
+            "channel_type": "O",
+            "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh"
+          }
+        }
+      ]
+    }
+  },
+  "page": {
+    "id": "wuiortwkz7r7zfh98eendzdiaw",
+    "create_at": 1793274052991,
+    "update_at": 1793274052991,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "The release notes https://github.com/mattermost/mattermost/releases",
+    "type": "",
+    "props": {},
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "embeds": [
+        {
+          "type": "opengraph",
+          "url": "https://github.com/mattermost/mattermost/releases",
+          "data": {
+            "type": "object",
+            "url": "https://github.com/mattermost/mattermost/releases",
+            "title": "Releases · mattermost/mattermost",
+            "description": "Mattermost is an open source platform for secure collaboration across the entire software development lifecycle.. - mattermost/mattermost",
+            "determiner": "",
+            "site_name": "GitHub",
+            "locale": "",
+            "locales_alternate": null,
+            "images": [
+              {
+                "url": "https://repository-images.githubusercontent.com/37448451/e844fa80-65ed-11e9-8646-de34d3abda57",
+                "secure_url": "",
+                "type": "",
+                "width": 0,
+                "height": 0
+              }
+            ],
+            "audios": null,
+            "videos": null
+          }
+        }
+      ],
+      "images": {
+        "https://repository-images.githubusercontent.com/37448451/e844fa80-65ed-11e9-8646-de34d3abda57": {
+          "width": 1280,
+          "height": 640,
+          "format": "png",
+          "frame_count": 0
+        }
+      }
+    }
+  },
+  "image": {
+    "id": "mshfawtskib58pd5ayi73notga",
+    "create_at": 1793274053897,
+    "update_at": 1793274053897,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "The logo https://raw.githubusercontent.com/mattermost/mattermost/master/webapp/channels/src/images/logo.png",
+    "type": "",
+    "props": {},
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "embeds": [
+        {
+          "type": "image",
+          "url": "https://raw.githubusercontent.com/mattermost/mattermost/master/webapp/channels/src/images/logo.png"
+        }
+      ],
+      "images": {
+        "https://raw.githubusercontent.com/mattermost/mattermost/master/webapp/channels/src/images/logo.png": {
+          "width": 465,
+          "height": 91,
+          "format": "png",
+          "frame_count": 0
+        }
+      }
+    }
+  },
+  "grafana": {
+    "id": "u8h3mq71tfyamphrddht13ypqh",
+    "create_at": 1793274078319,
+    "update_at": 1793274078319,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "",
+    "type": "slack_attachment",
+    "props": {
+      "attachments": [
+        {
+          "id": 0,
+          "fallback": "[Alerting] API latency",
+          "color": "#d44a3a",
+          "pretext": "",
+          "author_name": "Grafana",
+          "author_link": "https://grafana.example.com/",
+          "author_icon": "https://grafana.example.com/public/img/icon.png",
+          "title": "[Alerting] API latency",
+          "title_link": "https://grafana.example.com/d/api?viewPanel=4",
+          "text": "p99 latency is above 800 ms",
+          "fields": null,
+          "image_url": "https://grafana.example.com/render/d-solo/api?panelId=4",
+          "thumb_url": "https://grafana.example.com/public/img/thumb.png",
+          "footer": "Grafana v11",
+          "footer_icon": "https://grafana.example.com/public/img/fav32.png",
+          "ts": null
+        }
+      ],
+      "from_webhook": "true",
+      "override_username": "Grafana",
+      "webhook_display_name": "Grafana"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "embeds": [
+        {
+          "type": "message_attachment"
+        }
+      ]
+    }
+  }
+}

@@ -239,7 +239,8 @@ The tools that write are offered only once you allow writes, with
 
     - Kind `thread` shows a thread: who wrote each post, with their profile
       picture, when, the Markdown drawn, `@mentions` and `~channels`, the
-      cards a webhook or bot posted beside their colored bars, reactions with
+      cards a webhook or bot posted beside their colored bars, the post a
+      link quotes and the card of a page it leads to, reactions with
       who reacted, the Important and Urgent labels and how many acknowledged
       a post that asks for it, images you can open whole and file cards, the
       edited and pinned marks, and a burn-on-read post you have not opened as
@@ -560,10 +561,21 @@ states before it acts ([below](#how-a-write-is-checked)).
 - **A post from a webhook or a bot carries its cards.** Integrations such as
   Alertmanager, Grafana, Jira or a CI server post their content as message
   attachments, often with no message beside them. Each post gives them as
-  `message_attachments`, as Mattermost shows them: the pretext, author,
-  title and its link, text, fields, footer and fallback, and the color the
-  integration chose for the bar beside them. Their buttons and
-  menus are left out: pressing one is a change, and it calls the integration.
+  `message_attachments`, as Mattermost shows them: the pretext, author and
+  its link, title and its link, text, fields, footer and fallback, the color
+  the integration chose for the bar beside them, and the addresses of their
+  pictures, `image_url`, such as a chart Grafana drew, and `thumb_url`. Their
+  buttons and menus are left out: pressing one is a change, and it calls the
+  integration.
+- **A post carries what its first link leads to, as Mattermost shows it below
+  the message.** A link to another post gives `quoted_post`: its author,
+  channel, time, link, message, label and files, so "is this still true?"
+  followed by a link reads whole. Mattermost leaves the quote out for you
+  when you cannot read the post it quotes. A link to a web page gives
+  `link_preview` with the page's title, description and site, and a link to a
+  picture `link_preview` with `image` and its size. As in Mattermost, a post
+  with message attachments shows no preview, and the page's text is its
+  owner's.
 - **A post from an integration says so, under the name Mattermost shows.**
   An integration posts under an account, a person's or a bot's, through an
   incoming webhook or as a slash command's answer. Such a post has

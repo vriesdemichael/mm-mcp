@@ -89,6 +89,12 @@
   "proposal.send_there": "It waits as your draft in Mattermost, for you to send from there.",
   "proposal.waits": "It waits as your draft in Mattermost. Nothing is sent until you post it.",
   "proposal.yours": "Your draft",
+  "quote.channel": "Posted in {channel}",
+  "quote.files": {
+    "one": "{count} file",
+    "other": "{count} files"
+  },
+  "quote.open": "Open the quoted post in Mattermost",
   "reactions.label": "Reactions",
   "reactions.who": {
     "one": "{who} reacted with {emoji}",

@@ -141,6 +141,8 @@ function renderPost(post, options) {
       t("post.cut_attachments", { count: post.message_attachments_length }), " ",
       linkButton(post.url, [t("post.read_whole")])));
   }
+  if (!concealed && isObject(post.quoted_post)) body.append(renderQuote(post.quoted_post, markdown));
+  if (!concealed && isObject(post.link_preview)) body.append(renderLinkPreview(post.link_preview, markdown));
   if (!concealed && Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
   const acknowledgements = post.requested_ack === true ? renderAcknowledgements(post) : null;
   const reactions = !concealed && post.reactions && typeof post.reactions === "object" ? renderReactions(post.reactions) : null;
@@ -176,6 +178,61 @@ function marks(post) {
   return found;
 }
 
+function isObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+// renderQuote is the post a post links to, quoted below its message as
+// Mattermost quotes it: its author, under the name an integration chose,
+// when, its label, its message, its own preview, and the channel it was
+// posted in. Its time opens it in Mattermost.
+function renderQuote(quote, markdown) {
+  const text = (value) => typeof value === "string" ? value : "";
+  const at = text(quote.created_at);
+  const files = Array.isArray(quote.files) ? quote.files.length : 0;
+  const priority = priorityLabel(quote.priority);
+  return el("blockquote", { class: "quote" },
+    el("div", { class: "post-header" },
+      el("span", { class: "author", title: text(quote.shown_as) && text(quote.author) ? "@" + quote.author : null },
+        text(quote.shown_as) || text(quote.author_name) || text(quote.author)),
+      linkButton(text(quote.url), [at ? formatTime(at) : t("quote.open")], { class: "link time", "aria-label": t("quote.open") }),
+      priority ? el("span", { class: "priority-tag", dataset: { priority: quote.priority } }, priority) : null,
+      quote.ai_generated === true ? el("span", { class: "mark muted" }, t("post.ai")) : null),
+    renderMarkdown(text(quote.message), markdown),
+    quote.message_length ? el("p", { class: "muted cut" }, t("post.cut", { count: quote.message_length }), " ", linkButton(text(quote.url), [t("post.read_whole")])) : null,
+    files > 0 ? el("div", { class: "muted quote-files" }, icon("file"), t("quote.files", { count: files })) : null,
+    isObject(quote.link_preview) ? renderLinkPreview(quote.link_preview, markdown) : null,
+    text(quote.channel) ? el("div", { class: "muted quote-channel" }, t("quote.channel", { channel: quote.channel })) : null);
+}
+
+// renderLinkPreview is the page or picture a post's first link leads to, as
+// Mattermost shows it below the message: a page's site, its title linking to
+// it and its description, and a picture named rather than drawn, as an image
+// in a message is, since the view has no network.
+function renderLinkPreview(preview, markdown) {
+  const text = (value) => typeof value === "string" ? value : "";
+  if (preview.image === true) {
+    return el("div", { class: "link-preview link-image" }, namedImage(text(preview.url), markdown));
+  }
+  if (!text(preview.title) && !text(preview.description) && !text(preview.site_name)) return null;
+  return el("div", { class: "link-preview" },
+    text(preview.site_name) ? el("div", { class: "muted link-site" }, preview.site_name) : null,
+    text(preview.title) ? el("h3", { class: "link-title" }, linkButton(text(preview.url), [preview.title])) : null,
+    text(preview.description) ? el("p", { class: "link-description" }, preview.description) : null);
+}
+
+// namedImage is a picture an address leads to, named after its file, which
+// opens through the host on a click, as an image in a message does.
+function namedImage(url, markdown) {
+  let name = "";
+  try {
+    name = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
+  } catch {
+    name = "";
+  }
+  return markdownImage(name, url, { base: markdown.base });
+}
+
 // concealedPlaceholder stands in for a burn-on-read post the person has not
 // revealed, as Mattermost conceals it. Revealing it is theirs to do, in
 // Mattermost: it starts the timer after which the post is gone for them.
@@ -188,16 +245,19 @@ function concealedPlaceholder(post) {
 
 // messageAttachment is a card an integration posted, as Mattermost draws it:
 // its pretext above it, and in it, beside a colored bar, its author, its title,
-// which links where the integration says, its text, its fields, two short
-// ones to a row, and its footer. Its fallback is what a notification shows,
+// each linking where the integration says, its thumbnail, its text, its
+// fields, two short ones to a row, its picture, and its footer. Its pictures
+// are named rather than drawn, since the view has no network. Its fallback is what a notification shows,
 // and is not drawn, and a card with nothing else is not drawn either.
 function messageAttachment(card, markdown) {
   const text = (value) => typeof value === "string" ? value : "";
   const parts = [
-    text(card.author_name) ? el("div", { class: "attachment-author" }, card.author_name) : null,
+    text(card.author_name) ? el("div", { class: "attachment-author" }, linkButton(text(card.author_link), [card.author_name])) : null,
     text(card.title) ? el("h3", { class: "attachment-title" }, linkButton(text(card.title_link), [card.title])) : null,
+    text(card.thumb_url) ? el("div", { class: "attachment-thumb" }, namedImage(card.thumb_url, markdown)) : null,
     text(card.text) ? renderMarkdown(card.text, markdown) : null,
     attachmentFields(card.fields, markdown),
+    text(card.image_url) ? el("div", { class: "attachment-image" }, namedImage(card.image_url, markdown)) : null,
     text(card.footer) ? el("div", { class: "attachment-footer muted" }, card.footer) : null,
   ].filter(Boolean);
   return el("div", { class: "attachment" },

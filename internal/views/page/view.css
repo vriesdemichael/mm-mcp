@@ -298,6 +298,30 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .attachment-row th { padding: 0; font-weight: 600; text-align: start; overflow-wrap: anywhere; }
 .attachment-row td { padding: 0; vertical-align: top; }
 .attachment-footer { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
+.attachment-author .link { font-weight: 600; }
+
+/* What a post's first link leads to, below its message: a quoted post, as
+   Mattermost quotes one, and a web page's card. */
+.quote, .link-preview {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+  background: var(--mm-bg);
+}
+.quote .post-header { gap: 2px 8px; }
+.quote-files { display: flex; align-items: center; gap: 4px; font-size: var(--mm-text-xs); }
+.quote-channel { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
+.quote .link-preview { margin: 0; }
+.link-preview { border-inline-start: 4px solid var(--mm-border-strong); }
+.link-image { border: 0; padding: 0; background: none; }
+.link-site { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
+.link-title { margin: 0; font-size: var(--mm-heading); overflow-wrap: anywhere; }
+.link-title .link { font-weight: 600; }
+.link-description { margin: 0; overflow-wrap: anywhere; }
 
 /* Files. */
 
