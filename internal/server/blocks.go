@@ -1,7 +1,6 @@
 package server
 
 import (
-	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -32,7 +31,7 @@ type Block struct {
 	URL         string `json:"url,omitempty" jsonschema:"an image's address"`
 	AltText     string `json:"alt_text,omitempty" jsonschema:"what an image shows, as the integration describes it"`
 	Title       string `json:"title,omitempty" jsonschema:"an image's title"`
-	AccentColor string `json:"accent_color,omitempty" jsonschema:"the color of the bar beside a container, which the integration chose: default, primary, good, warning, danger or a hex color"`
+	AccentColor string `json:"accent_color,omitempty" jsonschema:"the color of the bar beside a container, which the integration chose: default, primary, good, warning, danger, or any CSS color, such as red or #e40303"`
 	Border      bool   `json:"border,omitempty" jsonschema:"set for a container Mattermost draws with a border"`
 	Collapsed   bool   `json:"collapsed,omitempty" jsonschema:"set for a collapsible Mattermost shows folded, its header alone, until the person opens it"`
 }
@@ -59,10 +58,6 @@ type block struct {
 	// collapsible's blocks, a column's items, and a column set's columns.
 	header, content []block
 }
-
-// containerAccent is a bar color the view draws: one Mattermost names, or a
-// hex color. Mattermost draws any CSS color, which nothing else here takes.
-var containerAccent = regexp.MustCompile(`^(#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|default|primary|good|warning|danger)$`)
 
 // interactive is the blocks Mattermost draws of the post, and whether it draws
 // them in place of its message attachments and the preview of its link: where
@@ -524,10 +519,7 @@ func outline(blocks []block, depth int) []Block {
 		case "image":
 			shown.URL, shown.AltText, shown.Title = b.url, b.alt, b.title
 		case "container":
-			if containerAccent.MatchString(b.accent) {
-				shown.AccentColor = b.accent
-			}
-			shown.Border = b.border
+			shown.AccentColor, shown.Border = containerAccent(strings.TrimSpace(b.accent)), b.border
 		case "collapsible":
 			shown.Text, shown.Collapsed = headerText(b.header), b.collapsed
 		}

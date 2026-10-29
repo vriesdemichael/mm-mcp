@@ -55,8 +55,8 @@ func checkDiscards(what, text string, files int, stated *int64) error {
 }
 
 // checkDeletes refuses a delete_post whose deletes is not the post and the
-// replies that go with it. text is the post's, which the refusal quotes.
-func checkDeletes(what, text string, replies int64, stated *int64) error {
+// replies that go with it. quote is what a question quotes of the post.
+func checkDeletes(what, quote string, replies int64, stated *int64) error {
 	count := 1 + replies
 	if stated != nil && *stated == count {
 		return nil
@@ -65,9 +65,9 @@ func checkDeletes(what, text string, replies int64, stated *int64) error {
 	if replies > 0 {
 		thread = fmt.Sprintf(", and the %d %s in its thread, other people's included", replies, plural(replies, "reply", "replies"))
 	}
-	return fmt.Errorf("delete_post did not run: it deletes %d %s, %s, which begins “%s”%s, and the call %s. "+
+	return fmt.Errorf("delete_post did not run: it deletes %d %s, %s: %s%s, and the call %s. "+
 		"Consider whether the person meant to delete all of them. If they did, call again with deletes: %d. If not, "+
-		"leave it, or ask the person", count, plural(count, "post", "posts"), what, excerpt(text), thread, said(stated), count)
+		"leave it, or ask the person", count, plural(count, "post", "posts"), what, quote, thread, said(stated), count)
 }
 
 // What an edit states (ADR-031): the post's current text in full, which binds

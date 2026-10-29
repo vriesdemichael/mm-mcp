@@ -4,6 +4,18 @@
     "one": "Acknowledged by {who}",
     "other": "Acknowledged by {who}"
   },
+  "call.by": "Started by {name}",
+  "call.ended": "Call ended",
+  "call.ended_at": "Ended at {time}",
+  "call.join": "Join it in Mattermost",
+  "call.lasted": "Lasted {duration}",
+  "call.lasted_moment": "Lasted less than a minute",
+  "call.participants": {
+    "one": "{count} person was in it: {names}",
+    "other": "{count} people were in it: {names}"
+  },
+  "call.started": "Call started",
+  "call.started_by": "Started at {time} by {name}",
   "confirm.all": "By using @all or @channel you are about to send notifications to {people} people. Are you sure you want to do this?",
   "confirm.all_timezones": {
     "one": "By using @all or @channel you are about to send notifications to {people} people in {count} timezone. Are you sure you want to do this?",
@@ -23,6 +35,8 @@
   "file.open": "Open its post in Mattermost",
   "file.unnamed": "A file",
   "file.view_image": "View {name}",
+  "file.withheld": "Files not available",
+  "file.withheld_why": "Access to files is restricted based on attributes",
   "image.close": "Close",
   "image.loading": "Loading the image…",
   "image.unavailable": "This image cannot be shown here. Open its post in Mattermost.",

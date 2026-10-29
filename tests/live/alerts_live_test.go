@@ -121,3 +121,47 @@ func TestEveryReadToolCarriesTheMessageAttachmentsOfAWebhookPost(t *testing.T) {
 		return fmt.Sprint(got) == newestFirst, fmt.Sprint(got)
 	})
 }
+
+// An attachment's bar keeps the color the release draws it in: where 11.11
+// draws attachments as blocks, any CSS color, as the integration wrote it; on
+// 11.7, a hex color or one of the three Mattermost names. A container in an
+// integration's blocks keeps any CSS color too (mm-mcp#79).
+func TestAnAttachmentKeepsTheColorTheReleaseDrawsItsBarIn(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	config, _, err := admin.GetClientConfig(t.Context(), "")
+	check(t, err)
+	drawsBlocks := config["FeatureFlagMmBlocksEnabled"] == "true"
+	user := seedUser(t, admin)
+	team := seedTeam(t, admin, user)
+	channel := seedChannel(t, admin, team, user)
+	hook := seedWebhook(t, admin, channel, "")
+	marker := word(t)
+	colors := []string{"red", "rgb(220, 0, 0)", "#00ff00", "good", "ff0000"}
+	for _, color := range colors {
+		postToWebhook(t, hook, map[string]any{"text": marker, "attachments": []map[string]any{{"color": color, "title": "Disk full"}}})
+	}
+	postToWebhook(t, hook, map[string]any{"text": marker, "props": map[string]any{"mm_blocks": []any{
+		map[string]any{"type": "container", "accent_color": "red", "content": []any{map[string]any{"type": "text", "text": "Disk full"}}},
+	}}})
+
+	var got []string
+	for _, post := range readChannel(t, sessionFor(t, admin, user), map[string]any{"channel_id": channel.Id}).Posts {
+		switch {
+		case !strings.Contains(post.Message, marker):
+		case len(post.MessageAttachments) == 1:
+			got = append(got, post.MessageAttachments[0].Color)
+		case len(post.Blocks) > 0:
+			got = append(got, "block "+post.Blocks[0].AccentColor)
+		default:
+			got = append(got, "nothing")
+		}
+	}
+	want := []string{"red", "rgb(220, 0, 0)", "#00ff00", "good", "", "block red"}
+	if !drawsBlocks {
+		want = []string{"", "", "#00ff00", "good", "", "nothing"}
+	}
+	if fmt.Sprintf("%q", got) != fmt.Sprintf("%q", want) {
+		t.Errorf("the colors of %q and a red container read as %q; want %q", colors, got, want)
+	}
+}

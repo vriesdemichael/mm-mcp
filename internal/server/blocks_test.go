@@ -154,14 +154,14 @@ func TestBlocksThatAreNotValidAreLeftOutAsMattermostLeavesThemOut(t *testing.T) 
 		{"type": "container", "content": [{"type": "button", "text": "Approve", "action_id": "approve"}]},
 		{"type": "container", "content": [], "accent_color": "danger"},
 		{"type": "collapsible", "header": [], "content": [{"type": "text", "text": "a"}]},
-		{"type": "container", "accent_color": "rgb(1,2,3)", "content": [{"type": "text", "text": "a color the view does not draw"}]},
+		{"type": "container", "accent_color": "ff0000", "content": [{"type": "text", "text": "a color the browser does not draw"}]},
 		{"type": "carousel", "items": []},
 		"text"
 	]`), &raw); err != nil {
 		t.Fatal(err)
 	}
 	got := drawn(outline(limitBlocks(mmBlocks(raw, 1), 1, &blockCounts{}), 0))
-	if got != "container\n  text \"a color the view does not draw\"" {
+	if got != "container\n  text \"a color the browser does not draw\"" {
 		t.Errorf("invalid blocks are drawn as\n%s", got)
 	}
 }

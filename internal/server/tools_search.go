@@ -161,7 +161,9 @@ func searchPostsSpec() Spec {
 			Name: "search_posts",
 			Description: "Search the messages the user can read, across every team or one: by words, and by who wrote them, " +
 				"in which channel and when, through from, in, before, after and on. Search for @username to find where someone was mentioned. " +
-				"Mattermost's search finds the 100 most recent matches at most; capped says when it did, and before reaches older ones.",
+				"Mattermost's search finds the 100 most recent matches at most; capped says when it did, and before reaches older ones. " +
+				"Without Elasticsearch, which needs a license, it searches a post's message alone and finds none whose words are only in " +
+				"its attachments or blocks, as an alert's often are: for those, read the channel with read_channel and since.",
 			Annotations: readOnly("Search posts"),
 		},
 		uses([]Use{

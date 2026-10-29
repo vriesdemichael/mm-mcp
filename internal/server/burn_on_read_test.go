@@ -97,3 +97,21 @@ func TestOnlyABurnOnReadPostTheReaderDidNotRevealIsConcealed(t *testing.T) {
 		t.Errorf("a plain post burns at %d", got)
 	}
 }
+
+// A question about a concealed post, such as whether to react to it, quotes
+// none of what it holds: the cards Mattermost leaves in its props included.
+func TestAQuestionDoesNotQuoteAConcealedPost(t *testing.T) {
+	t.Parallel()
+	posts := burnOnReadPosts(t)
+	reader := &model.User{Id: "k1a7m3cz5tgn8qxbdwpse9hjzo", Username: "alice"}
+	author := &model.User{Id: "y6d8b4ebgbfjjenyatq36utqgy", Username: "bob"}
+	if got := (display{}).quote(posts["concealed"], reader); got != "a burn-on-read message, not opened yet" {
+		t.Errorf("a concealed post is quoted as %q", got)
+	}
+	if got := (display{}).quote(posts["revealed"], reader); !strings.HasPrefix(got, "“"+excerpt(posts["revealed"].Message)) {
+		t.Errorf("a revealed post is quoted as %q", got)
+	}
+	if got := (display{}).quote(posts["author"], author); !strings.HasPrefix(got, "“"+excerpt(posts["author"].Message)) {
+		t.Errorf("a burn-on-read post is quoted to its author as %q", got)
+	}
+}

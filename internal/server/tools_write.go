@@ -87,13 +87,86 @@ func oneLine(name string) string {
 	}, name)
 }
 
+// by names who a post is from in a question, as Mattermost shows them: the
+// author, and before them the name an integration chose where the server shows
+// it in their place, which anyone could have chosen.
+func (d display) by(post *model.Post, author string) string {
+	if name := d.shownAs(post); name != "" {
+		return fmt.Sprintf("“%s” (an integration posting as @%s)", oneLine(name), author)
+	}
+	return "@" + author
+}
+
+// quote is what a question quotes of a post to say which it means: the start
+// of what it says, or where it says nothing, the names of its files. A
+// burn-on-read message the user has not opened is not quoted: it is concealed
+// from them, as it is in Mattermost.
+func (d display) quote(post *model.Post, self *model.User) string {
+	if concealed(post, self) {
+		return "a burn-on-read message, not opened yet"
+	}
+	if text := d.shownText(post); text != "" {
+		return "“" + excerpt(text) + "”"
+	}
+	var names []string
+	if post.Metadata != nil {
+		for _, file := range post.Metadata.Files {
+			names = append(names, oneLine(file.Name))
+		}
+	}
+	if len(names) == 0 {
+		return "a post that shows no text"
+	}
+	return fmt.Sprintf("no text, %d %s: “%s”", len(names), plural(int64(len(names)), "file", "files"), excerpt(strings.Join(names, ", ")))
+}
+
+// shownText is the text a post shows: its message, or where it has none, what
+// Mattermost shows in its place, its blocks or its message attachments, in the
+// order clip counts them, without the addresses. An attachment's fallback,
+// which Mattermost shows only in a notification, is read only when the
+// attachments show nothing else.
+func (d display) shownText(post *model.Post) string {
+	if strings.TrimSpace(post.Message) != "" {
+		return post.Message
+	}
+	var texts, fallbacks []string
+	add := func(list []attachmentText, fallback *string) {
+		for _, text := range list {
+			switch {
+			case text.whole || *text.text == "":
+			case text.text == fallback:
+				fallbacks = append(fallbacks, *text.text)
+			default:
+				texts = append(texts, *text.text)
+			}
+		}
+	}
+	if blocks, drawn := d.interactive(post); drawn {
+		for i := range blocks {
+			add(blocks[i].texts(), nil)
+		}
+	} else {
+		attachments := d.messageAttachments(post)
+		for i := range attachments {
+			add(attachments[i].texts(), &attachments[i].Fallback)
+		}
+	}
+	if len(texts) == 0 {
+		texts = fallbacks
+	}
+	return strings.Join(texts, " · ")
+}
+
 // postInContext is a post with what a question about it names: the user, the
-// post's author, and where it is.
+// post's author, who Mattermost shows it is from, what it says, and where it
+// is.
 type postInContext struct {
 	post    *model.Post
 	self    *model.User
 	channel *model.Channel
 	author  string
+	by      string
+	quote   string
 	in      string
 }
 
@@ -101,7 +174,7 @@ type postInContext struct {
 func (p postInContext) mine() bool { return p.post.UserId == p.self.Id }
 
 // readPostInContext reads a post with its author and channel.
-// GetPost, GetUser, GetChannel, GetUsersByIds.
+// GetPost, GetUser, GetChannel, GetUsersByIds, GetClientConfig.
 func readPostInContext(ctx context.Context, client *mattermost.Client, postID string) (postInContext, error) {
 	post, err := client.Post(ctx, postID)
 	if err != nil {
@@ -128,7 +201,12 @@ func readPostInContext(ctx context.Context, client *mattermost.Client, postID st
 	if err != nil {
 		return postInContext{}, err
 	}
-	return postInContext{post: post, self: self, channel: channel, author: author, in: place(channel, self.Id, names, groups[channel.Id])}, nil
+	shown, err := readDisplay(ctx, client)
+	if err != nil {
+		return postInContext{}, err
+	}
+	return postInContext{post: post, self: self, channel: channel, author: author, by: shown.by(post, author), quote: shown.quote(post, self),
+		in: place(channel, self.Id, names, groups[channel.Id])}, nil
 }
 
 // postContextUses are the operations readPostInContext calls, for a tool that
@@ -155,6 +233,7 @@ func postContextUses() []Use {
 			Params:    map[string]Coverage{"since": Omitted("the tool reads each username, whenever it changed")},
 		},
 		groupNamesUse,
+		{Operation: "GetClientConfig", Params: map[string]Coverage{}},
 	}
 }
 
@@ -433,10 +512,15 @@ func postQuestion(ctx context.Context, client *mattermost.Client, where destinat
 	if author == "" {
 		author = where.root.UserId
 	}
+	shown, err := readDisplay(ctx, client)
+	if err != nil {
+		return confirmation{}, err
+	}
+	by := shown.by(where.root, author)
 	return confirmation{
-		Message: fmt.Sprintf("Reply as @%s in %s, in the thread @%s started with:\n“%s”%s\n\nThe reply:\n\n%s",
-			where.self.Username, where.label, author, excerpt(where.root.Message), summary, message),
-		Label: "Post this reply" + files + " in @" + author + "'s thread",
+		Message: fmt.Sprintf("Reply as @%s in %s, in the thread started by %s with:\n%s%s\n\nThe reply:\n\n%s",
+			where.self.Username, where.label, by, shown.quote(where.root, where.self), summary, message),
+		Label: "Post this reply" + files + " in the thread started by " + by,
 	}, nil
 }
 
@@ -898,10 +982,10 @@ func deletePostSpec() Spec {
 					if err != nil {
 						return confirmation{}, err
 					}
-					if err := checkDeletes("your post in "+p.in, p.post.Message, repliesTo(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, p.quote, repliesTo(p.post), input.Deletes); err != nil {
 						return confirmation{}, err
 					}
-					message := fmt.Sprintf("Delete your post in %s:\n“%s”", p.in, excerpt(p.post.Message))
+					message := fmt.Sprintf("Delete your post in %s:\n%s", p.in, p.quote)
 					label := "Delete your post in " + p.in
 					if p.post.RootId == "" && p.post.ReplyCount > 0 {
 						message += fmt.Sprintf("\n\nIt starts a thread, and its %d %s, other people's included, will be deleted with it.",
@@ -922,7 +1006,7 @@ func deletePostSpec() Spec {
 					if err := stillAsAsked(ctx, "delete_post", state(p.post)); err != nil {
 						return nil, Deleted{}, err
 					}
-					if err := checkDeletes("your post in "+p.in, p.post.Message, repliesTo(p.post), input.Deletes); err != nil {
+					if err := checkDeletes("your post in "+p.in, p.quote, repliesTo(p.post), input.Deletes); err != nil {
 						return nil, Deleted{}, err
 					}
 					if err := client.DeletePost(ctx, input.PostID); err != nil {
@@ -985,8 +1069,8 @@ func pinPostSpec() Spec {
 						verb = "Unpin"
 					}
 					return confirmation{
-						Message: fmt.Sprintf("%s @%s's post in %s, as @%s:\n“%s”", verb, p.author, p.in, p.self.Username, excerpt(p.post.Message)),
-						Label:   fmt.Sprintf("%s @%s's post in %s", verb, p.author, p.in),
+						Message: fmt.Sprintf("%s the post by %s in %s, as @%s:\n%s", verb, p.by, p.in, p.self.Username, p.quote),
+						Label:   fmt.Sprintf("%s the post by %s in %s", verb, p.by, p.in),
 					}, nil
 				},
 				func(ctx context.Context, request *mcp.CallToolRequest, input pinPostInput) (*mcp.CallToolResult, Pinned, error) {

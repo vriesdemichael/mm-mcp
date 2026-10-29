@@ -67,15 +67,42 @@ func TestAWebhookPostCarriesItsMessageAttachments(t *testing.T) {
 
 func TestAMessageAttachmentKeepsOnlyAColorMattermostDraws(t *testing.T) {
 	t.Parallel()
-	for color, kept := range map[string]bool{
-		"good": true, "warning": true, "danger": true, "#e40303": true, "#E40": true, "#e40303cc": true,
-		"red": false, "#e4030": false, "#zzzzzz": false, "Good": false, "#e40303; background: red": false,
+	// Each color, with what 11.7 keeps of it and what 11.11 keeps where it
+	// draws attachments as blocks.
+	for color, kept := range map[string][2]string{
+		"good":                     {"good", "good"},
+		"warning":                  {"warning", "warning"},
+		"danger":                   {"danger", "danger"},
+		"#e40303":                  {"#e40303", "#e40303"},
+		"#E40":                     {"#E40", "#E40"},
+		"#e40303cc":                {"#e40303cc", "#e40303cc"},
+		"primary":                  {"", "primary"},
+		"red":                      {"", "red"},
+		"Red":                      {"", "Red"},
+		" red ":                    {"", "red"},
+		"rebeccapurple":            {"", "rebeccapurple"},
+		"rgb(220, 0, 0)":           {"", "rgb(220, 0, 0)"},
+		"rgba(220,0,0,.5)":         {"", "rgba(220,0,0,.5)"},
+		"hsl(0 80% 45% / 0.9)":     {"", "hsl(0 80% 45% / 0.9)"},
+		"oklch(62% 0.2 29deg)":     {"", "oklch(62% 0.2 29deg)"},
+		"transparent":              {"", ""},
+		"currentcolor":             {"", ""},
+		"ff0000":                   {"", ""},
+		"#e4030":                   {"", ""},
+		"#zzzzzz":                  {"", ""},
+		"Good":                     {"", ""},
+		"rgb(220, 0)":              {"", ""},
+		"url(https://x.example)":   {"", ""},
+		"#e40303; background: red": {"", ""},
+		"red; background: url(x)":  {"", ""},
 	} {
 		post := &model.Post{}
 		post.AddProp(model.PostPropsAttachments, []*model.MessageAttachment{{Color: color, Text: "disk full"}})
-		got := messageAttachments(post)
-		if len(got) != 1 || (got[0].Color == color) != kept || (!kept && got[0].Color != "") {
-			t.Errorf("%q: got %+v", color, got)
+		for release, shown := range []display{{}, {blocks: true}} {
+			got := shown.messageAttachments(post)
+			if len(got) != 1 || got[0].Color != kept[release] {
+				t.Errorf("%q on %s: got %+v; want %q", color, []string{"11.7", "11.11"}[release], got, kept[release])
+			}
 		}
 	}
 }
@@ -88,12 +115,12 @@ func TestAMessageAttachmentWithOnlyButtonsIsLeftOut(t *testing.T) {
 		nil,
 		{Title: "Deploy", Fields: []*model.MessageAttachmentField{nil, {Title: "pods", Value: 3}, {Title: "labels", Value: map[string]any{"app": "api"}}, {Title: "note"}}},
 	})
-	got := messageAttachments(post)
+	got := (display{}).messageAttachments(post)
 	want := []MessageAttachment{{Title: "Deploy", Fields: []MessageAttachmentField{{Title: "pods", Value: "3"}, {Title: "labels", Value: `{"app":"api"}`}, {Title: "note"}}}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %+v\nwant %+v", got, want)
 	}
-	if got := messageAttachments(&model.Post{Message: "plain"}); got != nil {
+	if got := (display{}).messageAttachments(&model.Post{Message: "plain"}); got != nil {
 		t.Errorf("a plain post: got %+v", got)
 	}
 }
@@ -161,4 +188,28 @@ func attachmentsLength(attachments []MessageAttachment) int {
 		}
 	}
 	return length
+}
+
+// A question quotes a post with no message by its attachments' texts, without
+// their addresses, and by their fallback, which Mattermost shows only in a
+// notification, only when they show nothing else.
+func TestAQuestionQuotesAPostWithNoMessageByItsAttachments(t *testing.T) {
+	t.Parallel()
+	alert := &model.Post{}
+	model.ParseMessageAttachment(alert, []*model.MessageAttachment{{
+		Title: "HighErrorRate api", TitleLink: "https://alerts.example.com/1", Text: "7.2% of requests failed",
+		Fields: []*model.MessageAttachmentField{{Title: "severity", Value: "critical"}}, Fallback: "[FIRING:1] HighErrorRate",
+	}})
+	if got := (display{}).quote(alert, nil); got != "“HighErrorRate api · 7.2% of requests failed · severity · critical”" {
+		t.Errorf("an alert is quoted as %q", got)
+	}
+
+	fallbackOnly := &model.Post{}
+	model.ParseMessageAttachment(fallbackOnly, []*model.MessageAttachment{{Fallback: "Deploy 4821 failed", ImageURL: "https://ci.example.com/chart.png"}})
+	if got := (display{}).quote(fallbackOnly, nil); got != "“Deploy 4821 failed”" {
+		t.Errorf("an attachment with only a fallback is quoted as %q", got)
+	}
+	if got := (display{}).quote(&model.Post{}, nil); got != "a post that shows no text" {
+		t.Errorf("an empty post is quoted as %q", got)
+	}
 }

@@ -137,6 +137,32 @@ func TestAMessageAttachmentIsNeverParsedAsHTMLNorStyledFromItsData(t *testing.T)
 	}
 }
 
+// Where Mattermost draws blocks, 11.11 on, an integration's bar may be any
+// color CSS takes, which the view draws in its own color nearest it, as it
+// does a hex one; a color no one can see draws no bar (mm-mcp#79).
+func TestABarInAnyCSSColorIsDrawnInTheViewsColorNearestIt(t *testing.T) {
+	h := openHost(t)
+	colors := []string{"red", "rgb(0, 160, 0)", "hsl(220 70% 50%)", "rebeccapurple", "silver", "rgba(220, 0, 0, 0)", "not a color"}
+	var thread []any
+	for i, color := range colors {
+		id := "c" + string(rune('1'+i))
+		thread = append(thread, post(id, "hookbot", "Hook Bot", "u9", "2026-10-09T09:3"+string(rune('0'+i))+":00+02:00", "", map[string]any{
+			"type": "slack_attachment", "message_attachments": []any{map[string]any{"color": color, "title": color}},
+			"channel": "Alerts", "channel_url": "https://chat.example.com/team/channels/alerts", "team": "Team",
+		}))
+	}
+	i := h.mount(map[string]any{
+		"input":     map[string]any{"kind": "thread", "post_id": "c1"},
+		"result":    map[string]any{"content": []any{map[string]any{"type": "text", "text": "Shown to the person"}}, "structuredContent": map[string]any{"post": thread[0], "root_id": "c1", "thread": thread}},
+		"resources": pictures(),
+	})
+	var bars []string
+	h.in(i, `return [...d.querySelectorAll('.attachment-card')].map((c) => c.dataset.bar);`, &bars)
+	if want := "red green blue purple gray none none"; strings.Join(bars, " ") != want {
+		t.Errorf("the bars of %q are %v; want %s", colors, bars, want)
+	}
+}
+
 // integrations is a thread as read_post answers with it: two posts a webhook a
 // bot owns made under a name and icon of its own; three posts of a bot's own,
 // the last written with AI; and a person's webhook on a server that lets no

@@ -188,6 +188,11 @@ The tools that write are offered only once you allow writes, with
     only ones Mattermost searches, and `from` a username, refused with the
     closest when nobody has it. The days `before`, `after` and `on` name are
     your own, in the timezone you set in Mattermost, as in its search box.
+    The database search Team Edition uses looks in a post's message alone, so
+    a post whose words are only in its attachments or blocks, as an alert's
+    often are, is not found; Elasticsearch finds them. The description says
+    so, and points the model to `read_channel` with `since` for a channel of
+    alerts.
 
 `search_files`: Search files { #search_files }
 :   Files attached to posts you can read, by name, by type with `ext:pdf`, and by
@@ -244,8 +249,10 @@ The tools that write are offered only once you allow writes, with
       link quotes and the card of a page it leads to, reactions with
       who reacted, the Important and Urgent labels and how many acknowledged
       a post that asks for it, images you can open whole and file cards, the
-      edited and pinned marks, and a burn-on-read post you have not opened as
-      a placeholder that opens it in Mattermost. It shows the first 30 posts, says how
+      edited and pinned marks, a burn-on-read post you have not opened as
+      a placeholder that opens it in Mattermost, a call as the Calls plugin's
+      card, and files an access policy withholds as Mattermost's placeholder.
+      It shows the first 30 posts, says how
       many more the thread has, and loads more as you ask.
     - Kind `unreads` shows what is waiting for you: up to 20 channels with
       something unread, grouped by team, with their unread and mention
@@ -567,7 +574,10 @@ states before it acts ([below](#how-a-write-is-checked)).
   the integration chose for the bar beside them, and the addresses of their
   pictures, `image_url`, such as a chart Grafana drew, and `thumb_url`. Their
   buttons and menus are left out: pressing one is a change, and it calls the
-  integration.
+  integration. The color is kept where Mattermost draws it: `good`,
+  `warning`, `danger` and hex colors everywhere, and from 11.11 on, where
+  Mattermost draws attachments as blocks, any CSS color, such as `red` or
+  `rgb(220, 0, 0)`, as the integration wrote it. So is a container's.
 - **A post from an integration carries its blocks.** From Mattermost 11.11 on,
   integrations can post their content as blocks, in Mattermost's own format,
   Slack's Block Kit or Microsoft's Adaptive Cards, often with no message
@@ -614,6 +624,18 @@ states before it acts ([below](#how-a-write-is-checked)).
   what it holds. No tool opens one: your agent can tell you it waits, and its
   `url` takes you to it. `expire_at` is when it is gone for you: once opened,
   when its timer runs out, and until then, the latest it is kept.
+- **A call carries the call.** The Calls plugin, on by default, starts a call
+  with a post of `type` `custom_calls`, and draws its own card in place of the
+  message. Such a post has `call`: its title, `started_at`, and once it ended,
+  `ended_at` and the usernames of its `participants`. The attachment the
+  plugin adds for clients without it, which repeats the message, is left out.
+  Joining a call is for you to do in Mattermost.
+- **Other posts read as Mattermost shows them.** A `/me` post has `type`
+  `me`: Mattermost shows its message without the asterisks around it. A
+  reminder the system bot sends you links to its post whole, as Mattermost
+  does, also on a server without a site URL, whose reminders hold only a
+  path. On a licensed server, `withheld_files` says how many files an access
+  policy keeps from you, where Mattermost shows a placeholder.
 - **A list cuts a long post short.** A list shows at most 4,000 characters of
   a post: its message first, then the text of its message attachments or
   blocks. What is cut says its whole length, `message_length`,
@@ -704,7 +726,11 @@ own question where it would ask one
 
 With `MM_MCP_ELICITATION_OPT_IN=true`, mm-mcp asks you as well
 ([Configuration](configuration.md)): it shows what will change, where, and under
-whose name, and acts only when you tick the box and accept. The question is an
+whose name, and acts only when you tick the box and accept. A question about a
+post quotes what it shows: its message, or for one with none, such as an
+alert, its blocks or cards, or the names of its files, and names an
+integration's post by the name Mattermost shows with the account behind it. A
+burn-on-read post you have not opened is not quoted. The question is an
 MCP elicitation, a form the client shows, so these tools then need a client that
 shows one; a client that declares it cannot gets an error that says so, and
 nothing is written. Some clients declare that they can and decline the form

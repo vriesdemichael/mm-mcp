@@ -207,6 +207,34 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 }
 .concealed .icon { color: var(--mm-danger); }
 .concealed-text { flex: 1 1 16em; }
+/* A call the Calls plugin started, as its card draws it: its title above a
+   box with its state, green while it goes on. */
+.call { display: grid; gap: 4px; min-width: 0; margin-block: 2px; }
+.call-title { margin: 0; font-size: var(--mm-heading); overflow-wrap: anywhere; }
+.call-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  max-inline-size: 600px;
+  padding: 12px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius);
+  background: var(--mm-bg);
+}
+.call-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background: #06d6a0;
+  color: #fff;
+}
+.call-card[data-ended="true"] .call-icon { background: var(--mm-bg-subtle); color: var(--mm-text-muted); }
+.call-text { display: grid; flex: 1 1 14em; min-width: 0; }
+.call-detail, .call-people { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
 .edited { display: block; font-size: var(--mm-text-xs); }
 .cut { margin-block: 4px 0; font-size: var(--mm-text-xs); }
 
@@ -375,6 +403,7 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 }
 .file-text { display: grid; min-width: 0; }
 .file-name { font-weight: 600; }
+.file-card.withheld { margin-block-start: 4px; }
 .file-meta { font-size: var(--mm-text-xs); }
 .icon-button { display: inline-grid; place-items: center; }
 

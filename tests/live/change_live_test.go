@@ -139,7 +139,7 @@ func TestPinPostPinsAndUnpinsWhatListPinnedPostsReads(t *testing.T) {
 	}
 
 	callTool(t, session, &mcp.CallToolParams{Name: "pin_post", Arguments: map[string]any{"post_id": post.Id}})
-	mustContain(t, "question", questions.only(t).Message, "Pin @"+other.Username, "The wiki is at /docs")
+	mustContain(t, "question", questions.only(t).Message, "Pin the post by @"+other.Username, "The wiki is at /docs")
 	if got := pinned(); len(got) != 1 || got[0].ID != post.Id || !got[0].Pinned {
 		t.Fatalf("list_pinned_posts gives %+v after pinning", got)
 	}
