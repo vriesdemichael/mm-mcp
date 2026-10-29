@@ -6,10 +6,9 @@ import (
 
 // The Calls plugin, which comes with Mattermost and is on by default, posts a
 // call in its channel when someone starts one, and changes the post when it
-// ends (createCallStartedPost and updateCallPostEnded in its server/plugin.go,
-// the same at 1.11.6 and 1.12.3). Its message says who started it, then that
-// it ended, and a message attachment repeats that for a client without the
-// plugin. The plugin draws its own card from the post's props instead: the
+// ends (createCallStartedPost and updateCallPostEnded in its server/plugin.go).
+// Its message says who started it, then that it ended, and a message
+// attachment repeats that for a client without the plugin. The plugin draws its own card from the post's props instead: the
 // call's title, when it started and by whom, or when it ended and how long it
 // lasted. A post carries that card as its call, and leaves the attachment out.
 // Joining a call is a write, and stays out.

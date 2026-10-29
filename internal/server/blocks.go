@@ -31,7 +31,7 @@ type Block struct {
 	URL         string `json:"url,omitempty" jsonschema:"an image's address"`
 	AltText     string `json:"alt_text,omitempty" jsonschema:"what an image shows, as the integration describes it"`
 	Title       string `json:"title,omitempty" jsonschema:"an image's title"`
-	AccentColor string `json:"accent_color,omitempty" jsonschema:"the color of the bar beside a container, which the integration chose: default, primary, good, warning, danger, or any CSS color, such as red or #e40303"`
+	AccentColor string `json:"accent_color,omitempty" jsonschema:"the color of the bar beside a container, which the integration chose: default, primary, good, warning, danger, or a CSS color, such as red or #e40303"`
 	Border      bool   `json:"border,omitempty" jsonschema:"set for a container Mattermost draws with a border"`
 	Collapsed   bool   `json:"collapsed,omitempty" jsonschema:"set for a collapsible Mattermost shows folded, its header alone, until the person opens it"`
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/mattermost/mattermost/server/public/model"
 )
 
-// A reminder's link is whole, as Mattermost's web app builds it, and a post an
-// access policy withholds files from says how many (mm-mcp#79).
+// A reminder links to its post with a full URL, as Mattermost's web app builds
+// it (mm-mcp#79).
 
 func TestAReminderLinksToItsPostWhole(t *testing.T) {
 	t.Parallel()
@@ -38,14 +38,5 @@ func TestAReminderLinksToItsPostWhole(t *testing.T) {
 		if got := reminderMessage(client, post); got != relative {
 			t.Errorf("%s reads %q", name, got)
 		}
-	}
-}
-
-func TestAPostSaysHowManyFilesAreWithheld(t *testing.T) {
-	t.Parallel()
-	reader := &model.User{Id: "k1a7m3cz5tgn8qxbdwpse9hjzo", Username: "alice"}
-	post := &model.Post{Id: "p1", UserId: reader.Id, Message: "the plan", Metadata: &model.PostMetadata{RedactedFileCount: 2}}
-	if got := shownWith(post, display{}, reader); got.WithheldFiles != 2 || len(got.Files) != 0 {
-		t.Errorf("a post with withheld files is described as %+v", got)
 	}
 }

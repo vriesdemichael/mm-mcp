@@ -313,10 +313,8 @@ function concealedPlaceholder(post) {
     linkButton(post.url, [t("post.view_message")], { class: "link concealed-open" }));
 }
 
-// renderCall is a call the Calls plugin started, as its card draws it in
-// place of the post's message: its title, and whether it goes on, with when
-// it started and by whom, or when it ended and how long it lasted, and once it
-// ended, who was in it. Joining one is the person's to do, in Mattermost.
+// renderCall draws a call the Calls plugin started, in place of the post's
+// message; its join link opens the post in Mattermost.
 function renderCall(post, call) {
   const text = (value) => typeof value === "string" ? value : "";
   const ended = text(call.ended_at) !== "";
@@ -423,11 +421,11 @@ function hexRGB(color) {
 
 let colorReader;
 
-// cssRGB is any other color CSS takes, such as red or rgb(220, 0, 0), which
-// Mattermost draws where it draws blocks, read as the browser reads it: set on
-// a canvas that is never drawn on or shown, which answers in hex or rgba(). A
-// value it does not take leaves the color set before it, so it is set after
-// two and must read the same.
+// cssRGB reads any other CSS color, such as red or rgb(220, 0, 0), as the
+// browser reads it: set on a canvas that is never drawn on or shown, which
+// answers in hex or rgba(). A value the canvas rejects leaves the previous
+// color in place, so the color is set after black and after white, and kept
+// only when both read back the same.
 function cssRGB(color) {
   if (colorReader === undefined) colorReader = document.createElement("canvas").getContext("2d");
   if (!colorReader) return null;

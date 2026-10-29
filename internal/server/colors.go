@@ -7,19 +7,19 @@ import (
 
 // An integration chooses the color of the bar beside a card or a container.
 // Mattermost 11.7 draws an attachment's bar in a hex color, or for good,
-// warning and danger in its own (message_attachment.tsx). Where it draws
-// blocks, 11.11 draws attachments as blocks too (#75): it names those three,
-// and default and primary, and hands any other color to the browser as
+// warning and danger in its own (message_attachment.tsx). A server that draws
+// blocks (MmBlocksEnabled) draws attachments as blocks too: it names those
+// three, and default and primary, and hands any other color to the browser as
 // --mm-blocks-accent-color (layout_blocks.tsx), so red or rgb(220, 0, 0)
-// draws a bar there. A post keeps the colors the release it is on draws, as
-// the integration wrote them; the view draws each in its own color nearest it.
+// draws a bar there. A post keeps the colors the server draws, as the
+// integration wrote them.
 
 // hexColor is a color written in hex, the one way both releases take.
 var hexColor = regexp.MustCompile(`^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
 
 // cssColorFunction is a color written as a CSS function, such as
-// rgb(220, 0, 0) or hsl(0 80% 45% / 0.9): numbers with their units, apart by
-// commas, spaces or a slash.
+// rgb(220, 0, 0) or hsl(0 80% 45% / 0.9): numbers with their units, separated
+// by commas, spaces or a slash.
 var cssColorFunction = regexp.MustCompile(`^(?i:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*[-+]?[0-9.]+(?i:deg|grad|rad|turn|%)?((\s*[,/]\s*|\s+)[-+]?[0-9.]+(?i:deg|grad|rad|turn|%)?){2,3}\s*\)$`)
 
 // cssNamedColors are the colors CSS names (CSS Color 4). transparent and
@@ -44,15 +44,15 @@ func init() {
 	}
 }
 
-// cssColor says whether the browser draws a color: in hex, by its CSS name,
-// or as a CSS function.
+// cssColor says whether a color is written as CSS writes one: in hex, by its
+// CSS name, or as a CSS function of plain numbers.
 func cssColor(color string) bool {
 	return hexColor.MatchString(color) || cssNamedColors[strings.ToLower(color)] || cssColorFunction.MatchString(color)
 }
 
 // attachmentColor is the color an attachment's bar is drawn in, as the
-// integration wrote it, or "" where Mattermost draws none of its own. blocks
-// says whether the release draws attachments as blocks.
+// integration wrote it, or "" where Mattermost draws no bar for it. blocks
+// says whether the server draws blocks (MmBlocksEnabled).
 func attachmentColor(color string, blocks bool) string {
 	if !blocks {
 		if hexColor.MatchString(color) || color == "good" || color == "warning" || color == "danger" {
@@ -64,7 +64,7 @@ func attachmentColor(color string, blocks bool) string {
 }
 
 // containerAccent is the color a container's bar is drawn in, where
-// Mattermost draws blocks: one it names, or any the browser draws.
+// Mattermost draws blocks: one it names, or a CSS color.
 func containerAccent(color string) string {
 	switch {
 	case color == "default" || color == "primary" || color == "good" || color == "warning" || color == "danger":
