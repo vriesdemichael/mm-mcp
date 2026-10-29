@@ -14,17 +14,22 @@ import (
 // integration such as Alertmanager or a CI server posts its content in, in
 // Slack's format, often with no message beside them. A post carries them as
 // Mattermost shows them under its message, without their buttons and menus:
-// pressing one is a write, and it calls the integration, not Mattermost.
+// pressing one is a write, and it calls the integration, not Mattermost. Their
+// pictures are addresses, and the icons beside the author's and footer's
+// names, which only decorate, are left out.
 
 // MessageAttachment is one of a post's message attachments.
 type MessageAttachment struct {
 	Color      string                   `json:"color,omitempty" jsonschema:"the color of the bar beside it, which the integration chose: good, warning, danger or a hex color"`
 	Pretext    string                   `json:"pretext,omitempty" jsonschema:"the text above it, in Mattermost Markdown"`
 	AuthorName string                   `json:"author_name,omitempty" jsonschema:"the name it shows at its top, which the integration chose"`
+	AuthorLink string                   `json:"author_link,omitempty" jsonschema:"where its author's name links to"`
 	Title      string                   `json:"title,omitempty"`
 	TitleLink  string                   `json:"title_link,omitempty" jsonschema:"where its title links to"`
+	ThumbURL   string                   `json:"thumb_url,omitempty" jsonschema:"the address of the small picture Mattermost shows beside its text, which the integration chose"`
 	Text       string                   `json:"text,omitempty" jsonschema:"in Mattermost Markdown"`
 	Fields     []MessageAttachmentField `json:"fields,omitempty" jsonschema:"a table of titled values"`
+	ImageURL   string                   `json:"image_url,omitempty" jsonschema:"the address of the picture Mattermost shows below its text, such as a chart a monitoring integration drew"`
 	Footer     string                   `json:"footer,omitempty"`
 	Fallback   string                   `json:"fallback,omitempty" jsonschema:"a plain-text summary, which Mattermost shows in a notification rather than in the channel"`
 }
@@ -51,9 +56,12 @@ func messageAttachments(post *model.Post) []MessageAttachment {
 		shaped := MessageAttachment{
 			Pretext:    attachment.Pretext,
 			AuthorName: attachment.AuthorName,
+			AuthorLink: attachment.AuthorLink,
 			Title:      attachment.Title,
 			TitleLink:  attachment.TitleLink,
+			ThumbURL:   attachment.ThumbURL,
 			Text:       attachment.Text,
+			ImageURL:   attachment.ImageURL,
 			Footer:     attachment.Footer,
 			Fallback:   attachment.Fallback,
 		}
@@ -100,11 +108,12 @@ type attachmentText struct {
 // fallback last, which it shows only in a notification. Its color is not
 // among them: it is one of a few short words.
 func (a *MessageAttachment) texts() []attachmentText {
-	out := []attachmentText{{text: &a.Pretext}, {text: &a.AuthorName}, {text: &a.Title}, {text: &a.TitleLink, whole: true}, {text: &a.Text}}
+	out := []attachmentText{{text: &a.Pretext}, {text: &a.AuthorName}, {text: &a.AuthorLink, whole: true}, {text: &a.Title}, {text: &a.TitleLink, whole: true},
+		{text: &a.ThumbURL, whole: true}, {text: &a.Text}}
 	for i := range a.Fields {
 		out = append(out, attachmentText{text: &a.Fields[i].Title}, attachmentText{text: &a.Fields[i].Value})
 	}
-	return append(out, attachmentText{text: &a.Footer}, attachmentText{text: &a.Fallback})
+	return append(out, attachmentText{text: &a.ImageURL, whole: true}, attachmentText{text: &a.Footer}, attachmentText{text: &a.Fallback})
 }
 
 // empty says whether the attachment shows nothing.
