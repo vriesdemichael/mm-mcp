@@ -238,9 +238,10 @@ The tools that write are offered only once you allow writes, with
     Mattermost lays it out.
 
     - Kind `thread` shows a thread: who wrote each post, with their profile
-      picture, when, the Markdown drawn, `@mentions` and `~channels`,
-      reactions with who reacted, images you can open whole and file cards,
-      and the edited and pinned marks. It shows the first 30 posts, says how
+      picture, when, the Markdown drawn, `@mentions` and `~channels`, the
+      cards a webhook or bot posted beside their colored bars, reactions with
+      who reacted, images you can open whole and file cards, and the edited
+      and pinned marks. It shows the first 30 posts, says how
       many more the thread has, and loads more as you ask.
     - Kind `unreads` shows what is waiting for you: up to 20 channels with
       something unread, grouped by team, with their unread and mention
@@ -554,8 +555,17 @@ states before it acts ([below](#how-a-write-is-checked)).
   reacted, `responses`, how many reactions and replies it has, whether it is
   pinned or marked as written with AI, its thread, and when it was edited. An
   answer whose posts are all in one channel names the channel and team once.
-- **A list cuts a long message short.** A message longer than 4,000 characters
-  is cut, with its whole length said; `read_post` reads it whole.
+- **A post from a webhook or a bot carries its cards.** Integrations such as
+  Alertmanager, Grafana, Jira or a CI server post their content as message
+  attachments, often with no message beside them. Each post gives them as
+  `message_attachments`, as Mattermost shows them: the pretext, author,
+  title and its link, text, fields, footer and fallback, and the color the
+  integration chose for the bar beside them. Their buttons and
+  menus are left out: pressing one is a change, and it calls the integration.
+- **A list cuts a long post short.** A list shows at most 4,000 characters of
+  a post: its message first, then the text of its message attachments. What
+  is cut says its whole length, `message_length` or
+  `message_attachments_length`; `read_post` reads it whole.
 - **Times are your own.** A time in an answer is in the timezone you set in
   Mattermost, with its offset, such as `2026-10-09T09:30:00+02:00`, and a time
   you give without an offset is read in it too. With no timezone set, UTC.

@@ -67,8 +67,15 @@ function placeOf(post) {
   return place;
 }
 
+// isSystem says whether Mattermost wrote the post, such as someone joining
+// the channel. A post of another type, such as one an integration posted with
+// message attachments, is written by its author like any other.
+function isSystem(post) {
+  return typeof post.type === "string" && post.type.startsWith("system_");
+}
+
 function continues(previous, post) {
-  if (!previous || previous.author_id !== post.author_id || previous.type || post.type) return false;
+  if (!previous || previous.author_id !== post.author_id || isSystem(previous) || isSystem(post)) return false;
   const before = wallTime(previous.created_at);
   const now = wallTime(post.created_at);
   return Boolean(before && now && now - before < SAME_RUN_MS);
@@ -78,7 +85,7 @@ function renderPost(post, options) {
   const classes = ["post"];
   if (options.asked) classes.push("asked");
   if (options.continued) classes.push("continued");
-  if (post.type) classes.push("system");
+  if (isSystem(post)) classes.push("system");
   const person = { id: post.author_id, username: post.author, name: post.author_name || post.author };
   const time = el("button", {
     type: "button",
@@ -98,10 +105,12 @@ function renderPost(post, options) {
   } else if (marks(post).length > 0) {
     body.append(el("div", { class: "post-header" }, marks(post)));
   }
-  if (post.type) {
+  const markdown = { base: options.place.base, team: options.place.teamURL };
+  const cards = Array.isArray(post.message_attachments) ? post.message_attachments : [];
+  if (isSystem(post)) {
     body.append(el("p", { class: "system-message muted" }, post.message));
-  } else {
-    body.append(renderMarkdown(post.message, { base: options.place.base, team: options.place.teamURL }));
+  } else if (post.message || cards.length === 0) {
+    body.append(renderMarkdown(post.message, markdown));
   }
   if (post.edited_at) {
     body.append(el("span", { class: "edited muted", title: t("post.edited_at", { time: formatMoment(post.edited_at) }) }, t("post.edited")));
@@ -109,6 +118,12 @@ function renderPost(post, options) {
   if (post.message_length) {
     body.append(el("p", { class: "muted cut" },
       t("post.cut", { count: post.message_length }), " ",
+      linkButton(post.url, [t("post.read_whole")])));
+  }
+  if (cards.length > 0) body.append(el("div", { class: "attachments" }, cards.map((card) => messageAttachment(card, markdown))));
+  if (post.message_attachments_length) {
+    body.append(el("p", { class: "muted cut" },
+      t("post.cut_attachments", { count: post.message_attachments_length }), " ",
       linkButton(post.url, [t("post.read_whole")])));
   }
   if (Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
@@ -126,6 +141,82 @@ function marks(post) {
   if (post.pinned) found.push(el("span", { class: "mark pinned" }, icon("pin"), t("post.pinned")));
   if (post.ai_generated) found.push(el("span", { class: "mark muted" }, t("post.ai")));
   return found;
+}
+
+// messageAttachment is a card an integration posted, as Mattermost draws it:
+// its pretext above it, and in it, beside a colored bar, its author, its title,
+// which links where the integration says, its text, its fields, two short
+// ones to a row, and its footer. Its fallback is what a notification shows,
+// and is not drawn, and a card with nothing else is not drawn either.
+function messageAttachment(card, markdown) {
+  const text = (value) => typeof value === "string" ? value : "";
+  const parts = [
+    text(card.author_name) ? el("div", { class: "attachment-author" }, card.author_name) : null,
+    text(card.title) ? el("h3", { class: "attachment-title" }, linkButton(text(card.title_link), [card.title])) : null,
+    text(card.text) ? renderMarkdown(card.text, markdown) : null,
+    attachmentFields(card.fields, markdown),
+    text(card.footer) ? el("div", { class: "attachment-footer muted" }, card.footer) : null,
+  ].filter(Boolean);
+  return el("div", { class: "attachment" },
+    text(card.pretext) ? renderMarkdown(card.pretext, markdown) : null,
+    parts.length > 0 ? el("div", { class: "attachment-card", dataset: { bar: barOf(card.color) } }, parts) : null);
+}
+
+// attachmentFields lays out fields as Mattermost does: a short field shares
+// its row with the next short one, and a long one has a row of its own.
+function attachmentFields(fields, markdown) {
+  if (!Array.isArray(fields)) return null;
+  const rows = [];
+  let row = [];
+  let long = false;
+  for (const field of fields) {
+    if (!field || typeof field !== "object") continue;
+    if (row.length === 2 || field.short !== true || long) {
+      if (row.length > 0) rows.push(row);
+      row = [];
+    }
+    row.push(field);
+    long = field.short !== true;
+  }
+  if (row.length > 0) rows.push(row);
+  if (rows.length === 0) return null;
+  return el("div", { class: "attachment-fields" }, rows.map((cells) => el("table", { class: "attachment-row" },
+    el("thead", {}, el("tr", {}, cells.map((field) => el("th", {}, typeof field.title === "string" ? field.title : "")))),
+    el("tbody", {}, el("tr", {}, cells.map((field) => el("td", {}, renderMarkdown(typeof field.value === "string" ? field.value : "", markdown))))))));
+}
+
+// ATTACHMENT_BARS are the colors Mattermost names for a card's bar, by the
+// fixed color of the view's own that draws each.
+const ATTACHMENT_BARS = { good: "green", warning: "yellow", danger: "red" };
+
+const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+// barOf is the view's color for a card's bar. Colors never come from
+// Mattermost content, so a hex color an integration chose is drawn in the
+// view's color nearest its hue, which keeps red apart from green, firing from
+// resolved: gray when it has little color, and none when it is no color.
+function barOf(color) {
+  if (typeof color !== "string") return "none";
+  if (Object.hasOwn(ATTACHMENT_BARS, color)) return ATTACHMENT_BARS[color];
+  const hex = HEX_COLOR.exec(color);
+  if (!hex) return "none";
+  let digits = hex[1];
+  if (digits.length <= 4) digits = digits.split("").map((digit) => digit + digit).join("");
+  const [r, g, b] = [0, 2, 4].map((at) => parseInt(digits.slice(at, at + 2), 16) / 255);
+  const high = Math.max(r, g, b);
+  const low = Math.min(r, g, b);
+  if (high - low < 0.15) return "gray";
+  let hue;
+  if (high === r) hue = ((g - b) / (high - low) + 6) % 6;
+  else if (high === g) hue = (b - r) / (high - low) + 2;
+  else hue = (r - g) / (high - low) + 4;
+  hue *= 60;
+  if (hue < 15 || hue >= 330) return "red";
+  if (hue < 40) return "orange";
+  if (hue < 70) return "yellow";
+  if (hue < 170) return "green";
+  if (hue < 260) return "blue";
+  return "purple";
 }
 
 function renderFiles(post) {

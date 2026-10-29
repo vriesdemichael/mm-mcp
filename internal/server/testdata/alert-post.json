@@ -1,0 +1,67 @@
+{
+  "id": "89jatbhkxpdffxxzt8p11w9kda",
+  "create_at": 1793193892895,
+  "update_at": 1793193892895,
+  "edit_at": 0,
+  "delete_at": 0,
+  "is_pinned": false,
+  "user_id": "oc8iuj334tn8bmjy7ic8ntgqfw",
+  "channel_id": "48w1iee3gjn4mxyw63tjbs8poo",
+  "root_id": "",
+  "original_id": "",
+  "message": "",
+  "type": "slack_attachment",
+  "props": {
+    "attachments": [
+      {
+        "id": 0,
+        "fallback": "[FIRING:1] HighErrorRate api (critical)",
+        "color": "#e40303",
+        "pretext": "",
+        "author_name": "",
+        "author_link": "",
+        "author_icon": "",
+        "title": "[FIRING:1] HighErrorRate api (critical)",
+        "title_link": "https://alertmanager.example.com/#/alerts?receiver=mattermost",
+        "text": "*Alert:* API error rate above 5% - `critical`\n*Description:* 7.2% of requests to api failed in the last 5 minutes",
+        "fields": [
+          {
+            "title": "severity",
+            "value": "critical",
+            "short": true
+          },
+          {
+            "title": "service",
+            "value": "api",
+            "short": true
+          },
+          {
+            "title": "replicas",
+            "value": "3",
+            "short": true
+          }
+        ],
+        "image_url": "",
+        "thumb_url": "",
+        "footer": "Alertmanager",
+        "footer_icon": "",
+        "ts": null
+      }
+    ],
+    "from_webhook": "true",
+    "webhook_display_name": "Alertmanager"
+  },
+  "hashtags": "",
+  "file_ids": [],
+  "pending_post_id": "",
+  "reply_count": 0,
+  "last_reply_at": 0,
+  "participants": null,
+  "metadata": {
+    "embeds": [
+      {
+        "type": "message_attachment"
+      }
+    ]
+  }
+}

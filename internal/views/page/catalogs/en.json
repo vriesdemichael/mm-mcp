@@ -35,6 +35,10 @@
     "one": "This message is longer: {count} character.",
     "other": "This message is longer: {count} characters."
   },
+  "post.cut_attachments": {
+    "one": "Its attachments are longer: {count} character.",
+    "other": "Its attachments are longer: {count} characters."
+  },
   "post.edited": "Edited",
   "post.edited_at": "Edited {time}",
   "post.open": "Open the post in Mattermost, written {time}",
