@@ -1,0 +1,54 @@
+{
+  "started": {
+    "id": "c4ll5t4rt3dpo5tx9k2m7qwe1a",
+    "create_at": 1793877000100,
+    "update_at": 1793877000100,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "k1a7m3cz5tgn8qxbdwpse9hjzo",
+    "channel_id": "ch4nn3l1dx9k2m7qwe1ab3c5d7",
+    "root_id": "",
+    "original_id": "",
+    "message": "alice started a call",
+    "type": "custom_calls",
+    "props": {
+      "attachments": [{"id": 0, "fallback": "alice started a call", "color": "", "pretext": "", "author_name": "", "author_link": "", "author_icon": "", "title": "alice started a call", "title_link": "", "text": "alice started a call", "fields": null, "image_url": "", "thumb_url": "", "footer": "", "footer_icon": "", "ts": null}],
+      "start_at": 1793877000000,
+      "title": "Release go/no-go"
+    },
+    "hashtags": "",
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  },
+  "ended": {
+    "id": "c4ll3nd3dpo5tx9k2m7qwe1ab3",
+    "create_at": 1793877000100,
+    "update_at": 1793878800050,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "k1a7m3cz5tgn8qxbdwpse9hjzo",
+    "channel_id": "ch4nn3l1dx9k2m7qwe1ab3c5d7",
+    "root_id": "",
+    "original_id": "",
+    "message": "Call ended",
+    "type": "custom_calls",
+    "props": {
+      "attachments": [{"id": 0, "fallback": "Call ended", "color": "", "pretext": "", "author_name": "", "author_link": "", "author_icon": "", "title": "Call ended", "title_link": "", "text": "Call ended", "fields": null, "image_url": "", "thumb_url": "", "footer": "", "footer_icon": "", "ts": null}],
+      "start_at": 1793877000000,
+      "end_at": 1793878800000,
+      "participants": ["k1a7m3cz5tgn8qxbdwpse9hjzo", "y6d8b4ebgbfjjenyatq36utqgy", "not an id"],
+      "title": ""
+    },
+    "hashtags": "",
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  }
+}

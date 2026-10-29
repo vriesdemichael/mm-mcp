@@ -102,7 +102,10 @@ reaches nothing outside Mattermost. A post marked Important or
 Urgent carries its label, and one that asks to be acknowledged says how many
 did, with who when you point at it. A burn-on-read message you have not
 opened stays concealed, as in Mattermost: **View message in Mattermost**
-takes you there to open it. A long thread loads more as you ask.
+takes you there to open it. A call shows as the Calls plugin's card: when it
+started and by whom, or when it ended, how long it lasted and who was in it.
+A card's bar takes the integration's color, in the view's own color nearest
+it. A long thread loads more as you ask.
 
 <div class="mm-view" data-view="thread" data-title="A thread"></div>
 

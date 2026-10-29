@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"slices"
 	"unicode/utf8"
 
@@ -20,7 +19,7 @@ import (
 
 // MessageAttachment is one of a post's message attachments.
 type MessageAttachment struct {
-	Color      string                   `json:"color,omitempty" jsonschema:"the color of the bar beside it, which the integration chose: good, warning, danger or a hex color"`
+	Color      string                   `json:"color,omitempty" jsonschema:"the color of the bar beside it, which the integration chose: good, warning, danger or a hex color, and where Mattermost draws blocks, any CSS color, such as red"`
 	Pretext    string                   `json:"pretext,omitempty" jsonschema:"the text above it, in Mattermost Markdown"`
 	AuthorName string                   `json:"author_name,omitempty" jsonschema:"the name it shows at its top, which the integration chose"`
 	AuthorLink string                   `json:"author_link,omitempty" jsonschema:"where its author's name links to"`
@@ -41,13 +40,9 @@ type MessageAttachmentField struct {
 	Short bool   `json:"short,omitempty" jsonschema:"whether Mattermost shows it beside the next field rather than on a row of its own"`
 }
 
-// attachmentColor is a color Mattermost draws the bar of an attachment in: a
-// hex color, or one of the three it names.
-var attachmentColor = regexp.MustCompile(`^(#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|good|warning|danger)$`)
-
 // messageAttachments are a post's message attachments, each with what
 // Mattermost shows of it. One that only holds buttons or menus is left out.
-func messageAttachments(post *model.Post) []MessageAttachment {
+func (d display) messageAttachments(post *model.Post) []MessageAttachment {
 	var out []MessageAttachment
 	for _, attachment := range post.Attachments() {
 		if attachment == nil {
@@ -65,10 +60,7 @@ func messageAttachments(post *model.Post) []MessageAttachment {
 			Footer:     attachment.Footer,
 			Fallback:   attachment.Fallback,
 		}
-		// Mattermost draws no bar for a color it does not know.
-		if attachmentColor.MatchString(attachment.Color) {
-			shaped.Color = attachment.Color
-		}
+		shaped.Color = attachmentColor(attachment.Color, d.blocks)
 		for _, field := range attachment.Fields {
 			if field != nil {
 				shaped.Fields = append(shaped.Fields, MessageAttachmentField{Title: field.Title, Value: fieldValue(field.Value), Short: bool(field.Short)})

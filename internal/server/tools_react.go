@@ -208,9 +208,9 @@ func addReactionSpec() Spec {
 					}
 					emoji = joinedName(p.post, emoji)
 					return confirmation{
-						Message: fmt.Sprintf("React as @%s with :%s: to @%s's post in %s:\n“%s”",
-							p.self.Username, emoji, p.author, p.in, excerpt(p.post.Message)),
-						Label: fmt.Sprintf("Add :%s: to @%s's post", emoji, p.author),
+						Message: fmt.Sprintf("React as @%s with :%s: to the post by %s in %s:\n%s",
+							p.self.Username, emoji, p.by, p.in, p.quote),
+						Label: fmt.Sprintf("Add :%s: to the post by %s", emoji, p.by),
 					}, nil
 				}),
 				func(ctx context.Context, request *mcp.CallToolRequest, input reactionInput) (*mcp.CallToolResult, Reaction, error) {
@@ -263,8 +263,8 @@ func removeReactionSpec() Spec {
 						return confirmation{}, fmt.Errorf("@%s has not reacted with :%s: to that post", p.self.Username, emoji)
 					}
 					return confirmation{
-						Message: fmt.Sprintf("Take back your :%s: on @%s's post in %s:\n“%s”", made, p.author, p.in, excerpt(p.post.Message)),
-						Label:   fmt.Sprintf("Remove your :%s: from @%s's post", made, p.author),
+						Message: fmt.Sprintf("Take back your :%s: on the post by %s in %s:\n%s", made, p.by, p.in, p.quote),
+						Label:   fmt.Sprintf("Remove your :%s: from the post by %s", made, p.by),
 					}, nil
 				}),
 				func(ctx context.Context, request *mcp.CallToolRequest, input reactionInput) (*mcp.CallToolResult, Reaction, error) {

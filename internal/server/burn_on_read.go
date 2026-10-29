@@ -36,8 +36,13 @@ func burnsAt(post *model.Post) int64 {
 	if post.Metadata != nil && post.Metadata.ExpireAt != 0 {
 		return post.Metadata.ExpireAt
 	}
+	return propMillis(post, model.PostPropsExpireAt)
+}
+
+// propMillis is a time a post's props hold, in milliseconds, or zero.
+func propMillis(post *model.Post, key string) int64 {
 	// The props come as JSON: a number, or one written as text.
-	switch at := post.GetProp(model.PostPropsExpireAt).(type) {
+	switch at := post.GetProp(key).(type) {
 	case float64:
 		return int64(at)
 	case int64:

@@ -49,3 +49,4 @@ own apps do.
 | What | Setting | On the Extended Support Release |
 |---|---|---|
 | Blocks and cards integrations post, in Mattermost's own blocks, Slack's Block Kit or Adaptive Cards | The feature flag `MmBlocksEnabled`, on by default from 11.11 | Not shown: 11.7 has no such flag, and a post shows its message and message attachments alone, as Mattermost shows it there. Where the flag is on, a post's blocks take the place of its message attachments and of the preview of its link, as they do in Mattermost. |
+| The color of a message attachment's bar | The feature flag `MmBlocksEnabled`, which draws attachments as blocks | `good`, `warning`, `danger` or a hex color alone, which 11.7 draws; any other is left out, as 11.7 draws no bar for it. Where the flag is on, any CSS color, such as `red`, is kept as the integration wrote it. |

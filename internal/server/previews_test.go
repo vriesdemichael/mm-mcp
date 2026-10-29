@@ -93,7 +93,7 @@ func TestALinkToAPageOrAPictureCarriesWhatMattermostShowsOfIt(t *testing.T) {
 func TestAnAttachmentCarriesItsPicturesAndLinksButNotItsIcons(t *testing.T) {
 	t.Parallel()
 	alert := previewPosts(t)["grafana"]
-	got := messageAttachments(alert)
+	got := (display{}).messageAttachments(alert)
 	if len(got) != 1 || got[0].ImageURL != "https://grafana.example.com/render/d-solo/api?panelId=4" ||
 		got[0].ThumbURL != "https://grafana.example.com/public/img/thumb.png" || got[0].AuthorLink != "https://grafana.example.com/" {
 		t.Fatalf("the alert's attachment is %+v", got)
@@ -108,7 +108,7 @@ func TestAnAttachmentCarriesItsPicturesAndLinksButNotItsIcons(t *testing.T) {
 	// An attachment of a picture alone, as a chart is posted, is shown.
 	chart := &model.Post{}
 	chart.AddProp(model.PostPropsAttachments, []*model.MessageAttachment{{ImageURL: "https://grafana.example.com/render/1"}})
-	if got := messageAttachments(chart); len(got) != 1 {
+	if got := (display{}).messageAttachments(chart); len(got) != 1 {
 		t.Errorf("a chart alone is %+v", got)
 	}
 	// A list leaves out a link that does not fit rather than cut it.

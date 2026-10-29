@@ -123,8 +123,14 @@ function renderPost(post, options) {
   const blocks = !concealed && Array.isArray(post.blocks) ? post.blocks : [];
   if (concealed) {
     body.append(concealedPlaceholder(post));
+  } else if (isObject(post.call)) {
+    body.append(renderCall(post, post.call));
   } else if (isSystem(post)) {
     body.append(el("p", { class: "system-message muted" }, post.message));
+  } else if (post.type === "me" && typeof post.message === "string") {
+    // Mattermost stores a /me message between asterisks, and shows it
+    // without them.
+    body.append(renderMarkdown(post.message.replace(/^\*|\*$/g, ""), markdown));
   } else if (post.message || (cards.length === 0 && blocks.length === 0)) {
     body.append(renderMarkdown(post.message, markdown));
   }
@@ -151,6 +157,7 @@ function renderPost(post, options) {
   if (!concealed && isObject(post.quoted_post)) body.append(renderQuote(post.quoted_post, markdown));
   if (!concealed && isObject(post.link_preview)) body.append(renderLinkPreview(post.link_preview, markdown));
   if (!concealed && Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
+  if (!concealed && Number(post.withheld_files) > 0) body.append(withheldFiles());
   const acknowledgements = post.requested_ack === true ? renderAcknowledgements(post) : null;
   const reactions = !concealed && post.reactions && typeof post.reactions === "object" ? renderReactions(post.reactions) : null;
   if (acknowledgements || reactions) body.append(el("div", { class: "responses" }, acknowledgements, reactions));
@@ -306,6 +313,53 @@ function concealedPlaceholder(post) {
     linkButton(post.url, [t("post.view_message")], { class: "link concealed-open" }));
 }
 
+// renderCall is a call the Calls plugin started, as its card draws it in
+// place of the post's message: its title, and whether it goes on, with when
+// it started and by whom, or when it ended and how long it lasted, and once it
+// ended, who was in it. Joining one is the person's to do, in Mattermost.
+function renderCall(post, call) {
+  const text = (value) => typeof value === "string" ? value : "";
+  const ended = text(call.ended_at) !== "";
+  const starter = post.author_name || post.author;
+  const people = Array.isArray(call.participants) ? call.participants.filter((name) => typeof name === "string") : [];
+  let detail;
+  if (ended) {
+    const minutes = minutesBetween(call.started_at, call.ended_at);
+    detail = [t("call.ended_at", { time: formatTime(call.ended_at) }),
+      minutes === null ? null : el("span", { class: "call-divider", "aria-hidden": "true" }, " • "),
+      minutes === null ? null : minutes < 1 ? t("call.lasted_moment") : t("call.lasted", { duration: formatMinutes(minutes) })];
+  } else {
+    detail = text(call.started_at) ? t("call.started_by", { time: formatTime(call.started_at), name: starter }) : t("call.by", { name: starter });
+  }
+  return el("div", { class: "call" },
+    text(call.title) ? el("h3", { class: "call-title" }, call.title) : null,
+    el("div", { class: "call-card", dataset: { ended: ended ? "true" : "false" } },
+      el("span", { class: "call-icon" }, icon("phone")),
+      el("div", { class: "call-text" },
+        el("strong", {}, ended ? t("call.ended") : t("call.started")),
+        el("span", { class: "muted call-detail" }, detail),
+        people.length > 0 ? el("span", { class: "muted call-people" }, t("call.participants", { count: people.length, names: people.map((name) => "@" + name).join(", ") })) : null),
+      ended ? null : linkButton(post.url, [t("call.join")], { class: "link call-join" })));
+}
+
+// minutesBetween is how many whole minutes passed between two times, or null
+// when either is missing or the second comes first.
+function minutesBetween(from, to) {
+  const start = wallTime(from);
+  const end = wallTime(to);
+  if (!start || !end || end < start) return null;
+  return Math.floor((end - start) / 60000);
+}
+
+// formatMinutes is a length of time in hours and minutes, as Mattermost says
+// how long a call lasted.
+function formatMinutes(minutes) {
+  const unit = (count, name) => new Intl.NumberFormat(language, { style: "unit", unit: name, unitDisplay: "long" }).format(count);
+  const hours = Math.floor(minutes / 60);
+  if (hours === 0) return unit(minutes, "minute");
+  return minutes % 60 === 0 ? unit(hours, "hour") : unit(hours, "hour") + ", " + unit(minutes % 60, "minute");
+}
+
 // messageAttachment is a card an integration posted, as Mattermost draws it:
 // its pretext above it, and in it, beside a colored bar, its author, its title,
 // each linking where the integration says, its thumbnail, its text, its
@@ -356,19 +410,50 @@ function attachmentFields(fields, markdown) {
 const ATTACHMENT_BARS = { good: "green", warning: "yellow", danger: "red" };
 
 const HEX_COLOR = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGBA_COLOR = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/;
+
+// hexRGB is a hex color's red, green, blue and opacity, from 0 to 1.
+function hexRGB(color) {
+  const hex = HEX_COLOR.exec(color);
+  if (!hex) return null;
+  let digits = hex[1];
+  if (digits.length <= 4) digits = digits.split("").map((digit) => digit + digit).join("");
+  return [0, 2, 4, 6].map((at) => at < digits.length ? parseInt(digits.slice(at, at + 2), 16) / 255 : 1);
+}
+
+let colorReader;
+
+// cssRGB is any other color CSS takes, such as red or rgb(220, 0, 0), which
+// Mattermost draws where it draws blocks, read as the browser reads it: set on
+// a canvas that is never drawn on or shown, which answers in hex or rgba(). A
+// value it does not take leaves the color set before it, so it is set after
+// two and must read the same.
+function cssRGB(color) {
+  if (colorReader === undefined) colorReader = document.createElement("canvas").getContext("2d");
+  if (!colorReader) return null;
+  const read = (before) => {
+    colorReader.fillStyle = before;
+    colorReader.fillStyle = color;
+    return colorReader.fillStyle;
+  };
+  const read1 = read("#000000");
+  if (read1 !== read("#ffffff")) return null;
+  const rgba = RGBA_COLOR.exec(read1);
+  if (!rgba) return hexRGB(read1);
+  return [rgba[1] / 255, rgba[2] / 255, rgba[3] / 255, rgba[4] === undefined ? 1 : Number(rgba[4])];
+}
 
 // barOf is the view's color for a card's bar. Colors never come from
-// Mattermost content, so a hex color an integration chose is drawn in the
-// view's color nearest its hue, which keeps red apart from green, firing from
-// resolved: gray when it has little color, and none when it is no color.
+// Mattermost content, so a color an integration chose is drawn in the view's
+// color nearest its hue, which keeps red apart from green, firing from
+// resolved: gray when it has little color, and none when it is no color or
+// cannot be seen.
 function barOf(color) {
   if (typeof color !== "string") return "none";
   if (Object.hasOwn(ATTACHMENT_BARS, color)) return ATTACHMENT_BARS[color];
-  const hex = HEX_COLOR.exec(color);
-  if (!hex) return "none";
-  let digits = hex[1];
-  if (digits.length <= 4) digits = digits.split("").map((digit) => digit + digit).join("");
-  const [r, g, b] = [0, 2, 4].map((at) => parseInt(digits.slice(at, at + 2), 16) / 255);
+  const rgb = hexRGB(color) ?? cssRGB(color);
+  if (!rgb || rgb[3] === 0) return "none";
+  const [r, g, b] = rgb;
   const high = Math.max(r, g, b);
   const low = Math.min(r, g, b);
   if (high - low < 0.15) return "gray";
@@ -445,6 +530,16 @@ function fileCard(file, post) {
       el("span", { class: "file-name ellipsis" }, file.name || t("file.unnamed")),
       el("span", { class: "muted file-meta" }, [file.mime_type, file.size > 0 ? formatSize(file.size) : ""].filter(Boolean).join(" · "))),
     linkButton(post.url, [icon("open", t("file.open"))], { class: "link icon-button", "aria-label": t("file.open") }));
+}
+
+// withheldFiles stands in for the files an access policy withholds from the
+// person, as Mattermost's placeholder does, however many there are.
+function withheldFiles() {
+  return el("div", { class: "file-card withheld" },
+    icon("file"),
+    el("span", { class: "file-text" },
+      el("span", { class: "file-name" }, t("file.withheld")),
+      el("span", { class: "muted file-meta" }, t("file.withheld_why"))));
 }
 
 // renderAcknowledgements is the count of people who acknowledged a post that
