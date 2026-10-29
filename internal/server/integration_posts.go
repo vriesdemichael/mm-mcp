@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"slices"
 
 	"github.com/mattermost/mattermost/server/public/model"
 
@@ -29,12 +28,10 @@ func fromIntegration(post *model.Post) bool {
 	return post.GetProp(model.PostPropsFromWebhook) == "true"
 }
 
-// readOverrides reads what the server lets the integrations among posts show,
-// only when an integration posted one of them. GetClientConfig.
-func readOverrides(ctx context.Context, client *mattermost.Client, posts []*model.Post) (overrides, error) {
-	if !slices.ContainsFunc(posts, fromIntegration) {
-		return overrides{}, nil
-	}
+// readOverrides reads what the server lets an integration's post show. It is
+// read with every page of posts, an integration's or not, so that every tool
+// that describes posts is seen to read it (ADR-028). GetClientConfig.
+func readOverrides(ctx context.Context, client *mattermost.Client) (overrides, error) {
 	config, err := client.ClientConfig(ctx)
 	if err != nil {
 		return overrides{}, err

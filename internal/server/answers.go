@@ -190,7 +190,7 @@ func readSurroundings(ctx context.Context, client *mattermost.Client, posts []*m
 	}
 	around.people = people
 	around.people[self.Id] = self
-	if around.overrides, err = readOverrides(ctx, client, posts); err != nil {
+	if around.overrides, err = readOverrides(ctx, client); err != nil {
 		return surroundings{}, err
 	}
 	return around, nil
