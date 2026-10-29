@@ -191,10 +191,11 @@ without the application asking again
   are theirs to send. It checks the message again as it posts. A message that
   alerts as many people as Mattermost has its sender confirm is posted only on
   a second press, after the view asks Mattermost's own question with counts
-  read at the press. A post is bound to the draft it came from, so presses on
-  one draft at once post it once, and posting deletes the draft, so a later
-  press posts nothing; a Post that got no answer is not offered again. A post
-  from a view is marked as written with AI. A proposal that starts with `/` is
+  read at the press. Presses on one draft take turns, and posting deletes the
+  draft, so a press after the first posts nothing; a new proposal waits its
+  turn too, so it is not deleted with the draft a press posts. A Post that got
+  no answer is not offered again. A post from a view is marked as written with
+  AI. A proposal that starts with `/` is
   refused, since Mattermost would run it as a slash command when the person
   sent it.
 - **What it cannot guarantee.** mm-mcp cannot tell a click from a script. An
@@ -225,7 +226,7 @@ Each mitigation is held by a test that fails when the mitigation is removed
 | A view drawn again from a stored conversation, pressing by itself | The page acts only on a click | `TestTheViewDoesNothingUntilThePersonDoesAndNeverSpeaksForThem`, `TestAProposalIsShownAsItWillBePostedHidingNothing` |
 | A press sending text the person did not see, changed by the model or in Mattermost | A press names the text the view shows, and acts only while the draft holds it and nothing added | `TestAPressActsOnlyOnTheDraftTheViewShows` |
 | A press posting or deleting words the person wrote in Mattermost | A press acts only on what a view put in the draft, unchanged | `TestAPressActsOnlyOnTheDraftTheViewShows` |
-| A press posting twice | A post is bound to its draft, so presses at once post once; posting deletes the draft; a Post that got no answer is not offered again | `TestPressesOnOneDraftAtOncePostItOnce`, `TestAProposalIsShownAndPostedOnThePersonsPress`, `TestAPostThatGetsNoAnswerIsNotOfferedAgain` |
+| A press posting twice | Presses on one draft take turns, and posting deletes the draft; a Post that got no answer is not offered again | `TestPressesOnOneDraftAtOncePostItOnce`, `TestAProposalDuringAPressIsNotDeletedWithTheDraftItPosts`, `TestAProposalIsShownAndPostedOnThePersonsPress`, `TestAPostThatGetsNoAnswerIsNotOfferedAgain` |
 | A whole channel alerted without Mattermost's question | The first press answers with Mattermost's counts; only a confirmed press posts | `TestAPostThatAlertsAWholeChannelIsConfirmedAtThePress`, `TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks` |
 | A message that no longer holds at the press, such as a mention of someone gone | The message is checked again at the press | `TestAPressIsCheckedAgainAndPostsOnlyWhereTheServerPostsFromViews` |
 | A proposal that runs a slash command when the person sends it | A proposal that starts with `/` is refused | `TestWhatAProposalOrAPressCannotReachIsRefused` |
