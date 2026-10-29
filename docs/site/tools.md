@@ -239,7 +239,8 @@ The tools that write are offered only once you allow writes, with
 
     - Kind `thread` shows a thread: who wrote each post, with their profile
       picture, when, the Markdown drawn, `@mentions` and `~channels`, the
-      cards a webhook or bot posted beside their colored bars, the post a
+      cards a webhook or bot posted beside their colored bars, the blocks
+      an integration posted with their columns and folded sections, the post a
       link quotes and the card of a page it leads to, reactions with
       who reacted, the Important and Urgent labels and how many acknowledged
       a post that asks for it, images you can open whole and file cards, the
@@ -567,6 +568,18 @@ states before it acts ([below](#how-a-write-is-checked)).
   pictures, `image_url`, such as a chart Grafana drew, and `thumb_url`. Their
   buttons and menus are left out: pressing one is a change, and it calls the
   integration.
+- **A post from an integration carries its blocks.** From Mattermost 11.11 on,
+  integrations can post their content as blocks, in Mattermost's own format,
+  Slack's Block Kit or Microsoft's Adaptive Cards, often with no message
+  beside them. Where your server shows them, each post gives them as `blocks`,
+  in one shape whichever format they came in, as Mattermost draws them: text,
+  images by address, dividers, containers with the color of their bar,
+  collapsible sections and columns, as an outline in which a block holds the
+  deeper blocks after it. Mattermost draws a post's blocks in place of its
+  message attachments, and so does mm-mcp. Buttons and menus are left out,
+  as they are of message attachments. A server on an older release does not
+  show blocks, and neither does mm-mcp
+  ([Supported releases](mattermost-releases.md#differences-in-what-a-release-shows)).
 - **A post carries what its first link leads to, as Mattermost shows it below
   the message.** A link to another post gives `quoted_post`: its author,
   channel, time, link, message, label and files, so "is this still true?"
@@ -602,9 +615,9 @@ states before it acts ([below](#how-a-write-is-checked)).
   `url` takes you to it. `expire_at` is when it is gone for you: once opened,
   when its timer runs out, and until then, the latest it is kept.
 - **A list cuts a long post short.** A list shows at most 4,000 characters of
-  a post: its message first, then the text of its message attachments. What
-  is cut says its whole length, `message_length` or
-  `message_attachments_length`; `read_post` reads it whole.
+  a post: its message first, then the text of its message attachments or
+  blocks. What is cut says its whole length, `message_length`,
+  `message_attachments_length` or `blocks_length`; `read_post` reads it whole.
 - **Times are your own.** A time in an answer is in the timezone you set in
   Mattermost, with its offset, such as `2026-10-09T09:30:00+02:00`, and a time
   you give without an offset is read in it too. With no timezone set, UTC.

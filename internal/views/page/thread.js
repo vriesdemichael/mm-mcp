@@ -120,11 +120,12 @@ function renderPost(post, options) {
   // A burn-on-read post the person has not revealed shows nothing it holds.
   const concealed = post.concealed === true;
   const cards = !concealed && Array.isArray(post.message_attachments) ? post.message_attachments : [];
+  const blocks = !concealed && Array.isArray(post.blocks) ? post.blocks : [];
   if (concealed) {
     body.append(concealedPlaceholder(post));
   } else if (isSystem(post)) {
     body.append(el("p", { class: "system-message muted" }, post.message));
-  } else if (post.message || cards.length === 0) {
+  } else if (post.message || (cards.length === 0 && blocks.length === 0)) {
     body.append(renderMarkdown(post.message, markdown));
   }
   if (post.edited_at) {
@@ -139,6 +140,12 @@ function renderPost(post, options) {
   if (post.message_attachments_length) {
     body.append(el("p", { class: "muted cut" },
       t("post.cut_attachments", { count: post.message_attachments_length }), " ",
+      linkButton(post.url, [t("post.read_whole")])));
+  }
+  if (blocks.length > 0) body.append(renderBlocks(blocks, markdown));
+  if (post.blocks_length) {
+    body.append(el("p", { class: "muted cut" },
+      t("post.cut_blocks", { count: post.blocks_length }), " ",
       linkButton(post.url, [t("post.read_whole")])));
   }
   if (!concealed && isObject(post.quoted_post)) body.append(renderQuote(post.quoted_post, markdown));
@@ -221,16 +228,72 @@ function renderLinkPreview(preview, markdown) {
     text(preview.description) ? el("p", { class: "link-description" }, preview.description) : null);
 }
 
-// namedImage is a picture an address leads to, named after its file, which
-// opens through the host on a click, as an image in a message does.
-function namedImage(url, markdown) {
-  let name = "";
+// namedImage is a picture an address leads to, named as given or after its
+// file, which opens through the host on a click, as an image in a message
+// does.
+function namedImage(url, markdown, given) {
+  let name = typeof given === "string" ? given : "";
   try {
-    name = decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
+    name = name || decodeURIComponent(new URL(url).pathname.split("/").pop() || "");
   } catch {
-    name = "";
+    name = name || "";
   }
   return markdownImage(name, url, { base: markdown.base });
+}
+
+// BLOCKS_DRAWN is the most blocks the view draws of a post, as many as
+// Mattermost keeps.
+const BLOCKS_DRAWN = 100;
+
+// renderBlocks draws what an integration posted as blocks or cards, as
+// Mattermost draws them. They come as an outline: a container, collapsible,
+// column set or column holds the blocks after it that are deeper.
+function renderBlocks(blocks, markdown) {
+  const root = el("div", { class: "blocks" });
+  const open = [{ depth: -1, holder: root }];
+  for (const block of blocks.slice(0, BLOCKS_DRAWN)) {
+    if (!isObject(block)) continue;
+    const depth = Number.isInteger(block.depth) && block.depth > 0 ? block.depth : 0;
+    while (open.length > 1 && open[open.length - 1].depth >= depth) open.pop();
+    const drawn = drawBlock(block, markdown);
+    if (!drawn) continue;
+    open[open.length - 1].holder.append(drawn.node);
+    if (drawn.holds) open.push({ depth, holder: drawn.node });
+  }
+  return root;
+}
+
+// drawBlock is one block, and whether it holds the blocks after it. A
+// container's bar is the view's color nearest the one the integration chose,
+// a collapsible is folded where Mattermost folds it, and an image is named
+// rather than drawn.
+function drawBlock(block, markdown) {
+  const text = (value) => typeof value === "string" ? value : "";
+  switch (block.type) {
+  case "text":
+    return { node: el("div", { class: block.subtle === true ? "block-text muted" : "block-text" }, renderMarkdown(text(block.text), markdown)) };
+  case "image":
+    return { node: el("div", { class: "block-image", title: text(block.title) || null }, namedImage(text(block.url), markdown, text(block.alt_text))) };
+  case "divider":
+    return { node: el("hr", { class: "block-divider" }) };
+  case "container":
+    return { node: el("div", { class: "block-container", dataset: { bar: blockBar(block.accent_color), border: block.border === true ? "true" : "false" } }), holds: true };
+  case "collapsible":
+    return { node: el("details", { class: "block-collapsible", open: block.collapsed !== true }, el("summary", {}, renderMarkdown(text(block.text), markdown))), holds: true };
+  case "column_set":
+    return { node: el("div", { class: "block-columns" }), holds: true };
+  case "column":
+    return { node: el("div", { class: "block-column" }), holds: true };
+  }
+  return null;
+}
+
+// blockBar is the view's color for a container's bar: the two Mattermost
+// names for blocks alone, and otherwise as a card's.
+function blockBar(color) {
+  if (color === "primary") return "blue";
+  if (color === "default") return "gray";
+  return barOf(color);
 }
 
 // concealedPlaceholder stands in for a burn-on-read post the person has not

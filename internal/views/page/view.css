@@ -283,13 +283,13 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   border-inline-start: 4px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-sm);
 }
-.attachment-card[data-bar="green"] { border-inline-start-color: #00c100; }
-.attachment-card[data-bar="yellow"] { border-inline-start-color: #dede01; }
-.attachment-card[data-bar="red"] { border-inline-start-color: #e40303; }
-.attachment-card[data-bar="orange"] { border-inline-start-color: #f08c00; }
-.attachment-card[data-bar="blue"] { border-inline-start-color: #2f81b7; }
-.attachment-card[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
-.attachment-card[data-bar="gray"] { border-inline-start-color: #8b8f99; }
+.attachment-card[data-bar="green"], .block-container[data-bar="green"] { border-inline-start-color: #00c100; }
+.attachment-card[data-bar="yellow"], .block-container[data-bar="yellow"] { border-inline-start-color: #dede01; }
+.attachment-card[data-bar="red"], .block-container[data-bar="red"] { border-inline-start-color: #e40303; }
+.attachment-card[data-bar="orange"], .block-container[data-bar="orange"] { border-inline-start-color: #f08c00; }
+.attachment-card[data-bar="blue"], .block-container[data-bar="blue"] { border-inline-start-color: #2f81b7; }
+.attachment-card[data-bar="purple"], .block-container[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
+.attachment-card[data-bar="gray"], .block-container[data-bar="gray"] { border-inline-start-color: #8b8f99; }
 .attachment-author { font-size: var(--mm-text-xs); font-weight: 600; overflow-wrap: anywhere; }
 .attachment-title { margin: 0; font-size: var(--mm-heading); overflow-wrap: anywhere; }
 .attachment-title .link { font-weight: 600; }
@@ -299,6 +299,28 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .attachment-row td { padding: 0; vertical-align: top; }
 .attachment-footer { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
 .attachment-author .link { font-weight: 600; }
+
+/* Blocks and cards an integration posts, as Mattermost draws them: containers
+   beside a bar in the view's own colors, columns, folded sections and rules. */
+.blocks, .block-container, .block-column, .block-collapsible { display: grid; gap: 4px; min-width: 0; }
+.blocks { margin-block-start: 4px; }
+.block-container[data-bar]:not([data-bar="none"]) {
+  padding-inline-start: 10px;
+  border-inline-start-width: 4px;
+  border-inline-start-style: solid;
+}
+.block-container[data-border="true"] {
+  padding: 8px 12px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+}
+.block-container[data-border="true"][data-bar]:not([data-bar="none"]) { border-inline-start-width: 4px; }
+.block-columns { display: flex; flex-wrap: wrap; gap: 4px 16px; min-width: 0; }
+.block-column { flex: 1 1 10em; }
+.block-text.muted { color: var(--mm-text-muted); }
+.block-divider { inline-size: 100%; margin: 4px 0; border: 0; border-block-start: 1px solid var(--mm-border); }
+.block-collapsible > summary { cursor: pointer; }
+.block-collapsible > summary > .markdown { display: inline-block; }
 
 /* What a post's first link leads to, below its message: a quoted post, as
    Mattermost quotes one, and a web page's card. */
