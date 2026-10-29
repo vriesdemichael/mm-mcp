@@ -63,13 +63,13 @@ your agent proposes again, your next press shows you the new text first.
 ### A message to the whole channel
 
 Mattermost asks before a message with `@channel`, `@all` or `@here` notifies
-more than five people. The view asks the same question, in Mattermost's own
-words, with the number of people it will notify.
+more than five people. The view asks too, with the number of people it will
+notify, counted as Mattermost counts them.
 
 <div class="mm-view" data-view="confirm" data-title="A draft that notifies the whole channel"></div>
 
 <p class="mm-try">Try it: press <strong>Post</strong>, then
-<strong>Cancel</strong> or <strong>Confirm</strong>.</p>
+<strong>Cancel</strong> or <strong>Post anyway</strong>.</p>
 
 ## When you already started a message there
 
@@ -142,7 +142,7 @@ Every app still works. A post your agent drafts waits in Mattermost's message
 box in every Mattermost app you use, and your agent's answer links to
 the place where it waits. Send it, change it or clear it there.
 
-<div class="mm-box" role="img" aria-label="Mattermost's message box in ~release-planning, with the drafted reply waiting in it, under Sam's post it replies to.">
+<div class="mm-box" role="img" aria-label="A sketch of the message box in Mattermost, in ~release-planning, with the drafted reply waiting in it, under Sam's post it replies to.">
 <div class="mm-box__head">~release-planning</div>
 <div class="mm-box__post"><strong>Sam Okafor</strong> The 2.4 release moves to Thursday. Anything blocking, say so here.</div>
 <div class="mm-box__input">Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).<span class="mm-box__send">Send</span></div>

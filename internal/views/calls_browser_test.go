@@ -51,8 +51,8 @@ func TestACallIsDrawnAsTheCallsPluginDrawsIt(t *testing.T) {
 		Pwned: w.parent.pwned === undefined ? null : w.parent.pwned,
 	};`, &drawn)
 	want := []string{
-		"Release go/no-go | Call started | Started at 9:30 AM by Alice Example | Join it in Mattermost",
-		"<img src=x onerror=\"window.parent.pwned=1\"> | Call ended | Ended at 11:05 AM • Lasted 1 hour, 5 minutes | 2 people were in it: @bob, @alice",
+		"Release go/no-go | Call in progress | Started at 9:30 AM by Alice Example | Join it in Mattermost",
+		"<img src=x onerror=\"window.parent.pwned=1\"> | Call over | Finished at 11:05 AM · 1 hour, 5 minutes long | 2 people were in it: @bob, @alice",
 	}
 	if strings.Join(drawn.Calls, "\n") != strings.Join(want, "\n") {
 		t.Errorf("the calls are drawn as\n%s\nwant\n%s", strings.Join(drawn.Calls, "\n"), strings.Join(want, "\n"))

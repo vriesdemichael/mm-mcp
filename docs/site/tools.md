@@ -462,8 +462,8 @@ states before it acts ([below](#how-a-write-is-checked)).
     while your draft still holds it as the view put it there: a draft you typed
     on in Mattermost is yours to send from there, and a newer proposal is drawn
     again as it is now. Post marks the post as written with AI, and asks
-    first, in Mattermost's own words, where Mattermost would ask before an
-    `@channel` or `@here` reaches more than five people. A link shows where it
+    first where Mattermost would ask: before an `@channel` or `@here`
+    reaches more than five people. A link shows where it
     leads, a character you cannot see or that turns the text's direction is
     flagged, and the text as written is a click away. Where a draft of yours is
     in the way, the view shows yours beside the proposal, or the proposal as a

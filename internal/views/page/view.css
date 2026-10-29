@@ -12,17 +12,17 @@
   --mm-bg: var(--color-background-primary, light-dark(#ffffff, #1f1f1e));
   --mm-bg-subtle: var(--color-background-secondary, light-dark(#f4f5f6, #262624));
   --mm-bg-hover: var(--color-background-tertiary, light-dark(#f0f1f3, #2c2c2a));
-  --mm-text: var(--color-text-primary, light-dark(#3f4350, #f1f1ef));
+  --mm-text: var(--color-text-primary, light-dark(#2f3542, #f1f1ef));
   --mm-text-muted: var(--color-text-secondary, light-dark(#6b6e78, #c2c0b6));
   --mm-border: var(--color-border-tertiary, light-dark(#e3e4e8, #3a3a38));
   --mm-border-strong: var(--color-border-secondary, light-dark(#c9cbd1, #4a4a47));
-  --mm-link: var(--color-text-info, light-dark(#1c58d9, #85b8ff));
+  --mm-link: var(--color-text-info, light-dark(#4263b8, #85b8ff));
   --mm-highlight: var(--color-background-info, light-dark(#e8effd, #1c2b41));
-  --mm-mention: var(--color-text-info, light-dark(#1c58d9, #85b8ff));
+  --mm-mention: var(--color-text-info, light-dark(#4263b8, #85b8ff));
   --mm-warning-bg: var(--color-background-warning, light-dark(#fff8e6, #38291e));
-  --mm-danger: var(--color-text-danger, light-dark(#d24b4e, #fd9891));
+  --mm-danger: var(--color-text-danger, light-dark(#c53030, #fd9891));
 
-  --mm-font: var(--font-sans, "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif);
+  --mm-font: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
   --mm-mono: var(--font-mono, ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace);
   --mm-radius: var(--border-radius-md, 8px);
   --mm-radius-sm: var(--border-radius-sm, 4px);
@@ -153,17 +153,17 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .post-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .author { font-weight: 600; }
 .username { font-size: var(--mm-text-xs); }
-/* Mattermost's BOT tag, on a bot's post and an integration's: its extra
-   small Tag, in capitals. */
+/* The BOT mark on a bot's post and an integration's, a small pill in
+   capitals. */
 .bot-tag {
   align-self: center;
-  padding: 1px 4px;
-  border-radius: var(--mm-radius-sm);
-  background: color-mix(in srgb, var(--mm-text) 8%, transparent);
-  font-size: 10px;
+  padding: 0 6px;
+  border-radius: var(--mm-radius-full);
+  background: color-mix(in srgb, var(--mm-text) 10%, transparent);
+  font-size: 11px;
   font-weight: 600;
-  line-height: 12px;
-  letter-spacing: 0.02em;
+  line-height: 14px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .time { font-size: var(--mm-text-xs); color: var(--mm-text-muted); }
@@ -171,24 +171,24 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .post:hover .post-side .time, .post-side .time:focus-visible { opacity: 1; }
 .mark { display: inline-flex; align-items: center; gap: 2px; font-size: var(--mm-text-xs); }
 .mark.pinned { color: var(--mm-link); }
-/* Mattermost's priority label: its Tag, in capitals, red for urgent and blue
-   for important, in the view's own colors. */
+/* A post's priority label, a pill in capitals, red for urgent and blue for
+   important. */
 .priority-tag {
   align-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 4px;
-  border-radius: var(--mm-radius-sm);
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: var(--mm-radius-full);
   color: #ffffff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 12px;
-  letter-spacing: 0.02em;
+  line-height: 14px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.priority-tag[data-priority="urgent"] { background: #d24b4e; }
-.priority-tag[data-priority="important"] { background: #1c58d9; }
+.priority-tag[data-priority="urgent"] { background: #c53030; }
+.priority-tag[data-priority="important"] { background: #4263b8; }
 .priority-tag .icon { inline-size: 10px; block-size: 10px; }
 .mark.burn { color: var(--mm-danger); }
 .system-message { margin: 0; font-style: italic; }
@@ -216,7 +216,7 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  max-inline-size: 600px;
+  max-inline-size: 560px;
   padding: 12px;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius);
@@ -229,7 +229,7 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   inline-size: 32px;
   block-size: 32px;
   border-radius: 50%;
-  background: #06d6a0;
+  background: #177a58;
   color: #fff;
 }
 .call-card[data-ended="true"] .call-icon { background: var(--mm-bg-subtle); color: var(--mm-text-muted); }
@@ -295,7 +295,8 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 /*
  * Message attachments: the cards an integration posts, each beside a bar in
  * the color the integration chose, drawn as the view's own nearest one.
- * Mattermost's own good, warning and danger are its own colors.
+ * good, warning and danger, the three Mattermost names, are the view's green,
+ * yellow and red.
  */
 
 .attachments { display: grid; gap: 6px; margin-block-start: 4px; }
@@ -311,11 +312,11 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   border-inline-start: 4px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-sm);
 }
-.attachment-card[data-bar="green"], .block-container[data-bar="green"] { border-inline-start-color: #00c100; }
-.attachment-card[data-bar="yellow"], .block-container[data-bar="yellow"] { border-inline-start-color: #dede01; }
-.attachment-card[data-bar="red"], .block-container[data-bar="red"] { border-inline-start-color: #e40303; }
+.attachment-card[data-bar="green"], .block-container[data-bar="green"] { border-inline-start-color: #2f9e4f; }
+.attachment-card[data-bar="yellow"], .block-container[data-bar="yellow"] { border-inline-start-color: #d6a21e; }
+.attachment-card[data-bar="red"], .block-container[data-bar="red"] { border-inline-start-color: #c62f36; }
 .attachment-card[data-bar="orange"], .block-container[data-bar="orange"] { border-inline-start-color: #f08c00; }
-.attachment-card[data-bar="blue"], .block-container[data-bar="blue"] { border-inline-start-color: #2f81b7; }
+.attachment-card[data-bar="blue"], .block-container[data-bar="blue"] { border-inline-start-color: #3a6fc2; }
 .attachment-card[data-bar="purple"], .block-container[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
 .attachment-card[data-bar="gray"], .block-container[data-bar="gray"] { border-inline-start-color: #8b8f99; }
 .attachment-author { font-size: var(--mm-text-xs); font-weight: 600; overflow-wrap: anywhere; }

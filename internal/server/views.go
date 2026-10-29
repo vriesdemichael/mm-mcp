@@ -101,7 +101,7 @@ func registerView(server *mcp.Server, cfg config.Config) {
 	server.AddResource(&mcp.Resource{
 		URI:         views.URI,
 		Name:        "view",
-		Title:       "Mattermost view",
+		Title:       "mm-mcp view",
 		Description: "The page mm-mcp's MCP Apps views are drawn in.",
 		MIMEType:    views.MIMEType,
 		Meta:        pageMeta(),
