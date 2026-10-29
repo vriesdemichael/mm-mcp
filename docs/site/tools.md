@@ -562,6 +562,16 @@ states before it acts ([below](#how-a-write-is-checked)).
   title and its link, text, fields, footer and fallback, and the color the
   integration chose for the bar beside them. Their buttons and
   menus are left out: pressing one is a change, and it calls the integration.
+- **A post from an integration says so, under the name Mattermost shows.**
+  An integration posts under an account, a person's or a bot's, through an
+  incoming webhook or as a slash command's answer. Such a post has
+  `from_integration`, and a bot's post has `author_is_bot`: Mattermost tags
+  both BOT. Where your server lets integrations choose their name, `shown_as`
+  is the name Mattermost shows in place of the account's, and `author` still
+  names the account. Anyone who can call the integration can choose any name,
+  so the account is the one to trust.
+  [`show`](#show) draws such a post as Mattermost does: the name, the BOT tag,
+  and no run with the posts around it.
 - **A list cuts a long post short.** A list shows at most 4,000 characters of
   a post: its message first, then the text of its message attachments. What
   is cut says its whole length, `message_length` or

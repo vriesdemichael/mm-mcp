@@ -153,6 +153,19 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .post-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
 .author { font-weight: 600; }
 .username { font-size: var(--mm-text-xs); }
+/* Mattermost's BOT tag, on a bot's post and an integration's: its extra
+   small Tag, in capitals. */
+.bot-tag {
+  align-self: center;
+  padding: 1px 4px;
+  border-radius: var(--mm-radius-sm);
+  background: color-mix(in srgb, var(--mm-text) 8%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
 .time { font-size: var(--mm-text-xs); color: var(--mm-text-muted); }
 .post-side .time { display: block; padding-block-start: 2px; font-size: 10px; text-align: center; opacity: 0; }
 .post:hover .post-side .time, .post-side .time:focus-visible { opacity: 1; }

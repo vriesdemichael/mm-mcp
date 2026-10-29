@@ -206,6 +206,7 @@ Each mitigation is held by a test that fails when the mitigation is removed
 | Threat | Mitigation | Held by |
 |---|---|---|
 | A post's text running as script in the view | Elements only, built through the DOM; Markdown parsed into elements, never HTML from strings | `TestThePageBuildsNoHTMLFromStrings`, `TestTextFromMattermostIsNeverParsedAsHTML` |
+| An integration posting under a colleague's name | Only an integration's post shows a name of its own, where the server allows it, tagged BOT, with the account it posted under in its title; the post names that account to the model | `TestAnIntegrationsPostIsHeadedAsMattermostHeadsIt`, `TestOnlyAnIntegrationsPostShowsANameOrIconOfItsOwn` |
 | A link that runs script, or takes the view elsewhere | A link opens only through the application, only to `http` or `https` | `TestTextFromMattermostIsNeverParsedAsHTML`, `TestLinksOpenThroughTheHostAndARefusedOneIsShownToCopy` |
 | The view reaching the network | No network domains, everything inline, the sandbox's policy | `TestThePageIsOneSelfContainedDocument`, `TestThePageRunsIsolatedAsAClientRunsIt` |
 | A page other than the application handing the view something to draw | The view takes messages from the application's window alone | `TestOnlyTheHostSpeaksToTheView` |
