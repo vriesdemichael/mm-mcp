@@ -171,6 +171,25 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .post:hover .post-side .time, .post-side .time:focus-visible { opacity: 1; }
 .mark { display: inline-flex; align-items: center; gap: 2px; font-size: var(--mm-text-xs); }
 .mark.pinned { color: var(--mm-link); }
+/* Mattermost's priority label: its Tag, in capitals, red for urgent and blue
+   for important, in the view's own colors. */
+.priority-tag {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: var(--mm-radius-sm);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.priority-tag[data-priority="urgent"] { background: #d24b4e; }
+.priority-tag[data-priority="important"] { background: #1c58d9; }
+.priority-tag .icon { inline-size: 10px; block-size: 10px; }
 .system-message { margin: 0; font-style: italic; }
 .edited { display: block; font-size: var(--mm-text-xs); }
 .cut { margin-block: 4px 0; font-size: var(--mm-text-xs); }
@@ -317,7 +336,23 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 
 /* Reactions and more. */
 
-.reactions { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 6px 0 0; padding: 0; }
+.responses { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-block-start: 6px; }
+.reactions { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0; padding: 0; }
+/* Who acknowledged a post that asks for it, as Mattermost's Acknowledge
+   button counts them, filled once the person has. */
+.acknowledgements {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-block: 1px;
+  padding-inline: 6px;
+  border: 1px solid var(--mm-border);
+  border-radius: var(--mm-radius-sm);
+  background: var(--mm-bg-subtle);
+  font-size: var(--mm-text-xs);
+}
+.acknowledgements[data-acknowledged="true"] { border-color: var(--mm-link); background: var(--mm-highlight); color: var(--mm-link); }
+.acknowledgement-count { font-weight: 600; }
 .reaction {
   display: inline-flex;
   align-items: center;

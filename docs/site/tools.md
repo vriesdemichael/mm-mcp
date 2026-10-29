@@ -240,8 +240,9 @@ The tools that write are offered only once you allow writes, with
     - Kind `thread` shows a thread: who wrote each post, with their profile
       picture, when, the Markdown drawn, `@mentions` and `~channels`, the
       cards a webhook or bot posted beside their colored bars, reactions with
-      who reacted, images you can open whole and file cards, and the edited
-      and pinned marks. It shows the first 30 posts, says how
+      who reacted, the Important and Urgent labels and how many acknowledged
+      a post that asks for it, images you can open whole and file cards, and
+      the edited and pinned marks. It shows the first 30 posts, says how
       many more the thread has, and loads more as you ask.
     - Kind `unreads` shows what is waiting for you: up to 20 channels with
       something unread, grouped by team, with their unread and mention
@@ -572,6 +573,14 @@ states before it acts ([below](#how-a-write-is-checked)).
   so the account is the one to trust.
   [`show`](#show) draws such a post as Mattermost does: the name, the BOT tag,
   and no run with the posts around it.
+- **A post marked Important or Urgent says so.** Its `priority` is
+  `important` or `urgent`, the label Mattermost shows beside its author's
+  name, and `persistent_notifications` says Mattermost keeps notifying the
+  people it mentions until they read it. On a licensed server a post can ask
+  everyone to acknowledge it: it has `requested_ack`, `acknowledgements` says
+  who did and when, and `acknowledged` that you did. Each is there only where
+  your server shows it, as Mattermost's settings for message priority and
+  acknowledgements say.
 - **A list cuts a long post short.** A list shows at most 4,000 characters of
   a post: its message first, then the text of its message attachments. What
   is cut says its whole length, `message_length` or

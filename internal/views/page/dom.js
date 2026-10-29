@@ -61,6 +61,9 @@ const ICON_SHAPES = {
   edited: [["path", "M10.5 2.5l3 3-8 8H2.5v-3z"]],
   open: [["path", "M9 2h5v5"], ["path", "M14 2L7.5 8.5"], ["path", "M12 9.5V14H2V4h4.5"]],
   more: [["path", "M4 6l4 4 4-4"]],
+  check: [["path", "M3 8.5l3 3 7-7"]],
+  alert: [["path", "M8 2l6.5 11.5h-13z"], ["path", "M8 6.5v3"], ["disc", 8, 11.5, 0.7]],
+  "alert-circle": [["path", "M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z"], ["path", "M8 4.5v4"], ["disc", 8, 11, 0.7]],
 };
 
 function icon(name, label) {

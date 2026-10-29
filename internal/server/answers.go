@@ -85,11 +85,19 @@ type Post struct {
 	MessageAttachmentsLength int    `json:"message_attachments_length,omitempty" jsonschema:"set when the message attachments are cut short or left out here, to the whole length of their text in characters; read_post reads them whole"`
 	RootID                   string `json:"root_id,omitempty" jsonschema:"the post this one replies to, which starts its thread; empty for a post that starts one"`
 	// ReplyCount is the number of replies in the post's thread.
-	ReplyCount  int64               `json:"reply_count"`
-	LastReplyAt string              `json:"last_reply_at,omitempty" jsonschema:"when the thread was last replied to, if it has replies"`
-	Pinned      bool                `json:"pinned,omitempty" jsonschema:"whether the post is pinned to its channel"`
-	AIGenerated bool                `json:"ai_generated,omitempty" jsonschema:"whether the post is marked as written with AI, as Mattermost shows it"`
-	Reactions   map[string][]string `json:"reactions,omitempty" jsonschema:"each emoji name with the usernames of the people who reacted with it"`
+	ReplyCount  int64  `json:"reply_count"`
+	LastReplyAt string `json:"last_reply_at,omitempty" jsonschema:"when the thread was last replied to, if it has replies"`
+	Pinned      bool   `json:"pinned,omitempty" jsonschema:"whether the post is pinned to its channel"`
+	AIGenerated bool   `json:"ai_generated,omitempty" jsonschema:"whether the post is marked as written with AI, as Mattermost shows it"`
+	// Priority, PersistentNotifications, RequestedAck, Acknowledgements and
+	// Acknowledged are what Mattermost shows of a post its author marked
+	// Important or Urgent.
+	Priority                string              `json:"priority,omitempty" jsonschema:"important or urgent, as its author marked it and Mattermost labels it beside their name; left out for a post of standard priority"`
+	PersistentNotifications bool                `json:"persistent_notifications,omitempty" jsonschema:"set when Mattermost keeps notifying the people the post mentions until they read it"`
+	RequestedAck            bool                `json:"requested_ack,omitempty" jsonschema:"set when its author asked everyone to acknowledge it"`
+	Acknowledgements        []Acknowledgement   `json:"acknowledgements,omitempty" jsonschema:"for a post that asks for them, who acknowledged it and when"`
+	Acknowledged            bool                `json:"acknowledged,omitempty" jsonschema:"set when the person acknowledged it"`
+	Reactions               map[string][]string `json:"reactions,omitempty" jsonschema:"each emoji name with the usernames of the people who reacted with it"`
 	// Responses is how many reactions and, for a post that starts a thread,
 	// replies it has.
 	Responses int64        `json:"responses,omitempty" jsonschema:"how many reactions and, for a post that starts a thread, replies it has: what update_post states to edit it"`
@@ -110,8 +118,8 @@ type surroundings struct {
 	people map[string]*model.User
 	// groups names each group message, as groupNames does.
 	groups map[string]string
-	// overrides is what an integration's post shows in place of its author's.
-	overrides overrides
+	// display is what the server lets its clients show of a post.
+	display display
 }
 
 // describePosts is posts as the tools return them.
@@ -158,6 +166,11 @@ func readSurroundings(ctx context.Context, client *mattermost.Client, posts []*m
 			for _, reaction := range post.Metadata.Reactions {
 				wanted = append(wanted, reaction.UserId)
 			}
+			for _, given := range post.Metadata.Acknowledgements {
+				if given != nil {
+					wanted = append(wanted, given.UserId)
+				}
+			}
 		}
 		if _, ok := around.channels[post.ChannelId]; ok {
 			continue
@@ -190,7 +203,7 @@ func readSurroundings(ctx context.Context, client *mattermost.Client, posts []*m
 	}
 	around.people = people
 	around.people[self.Id] = self
-	if around.overrides, err = readOverrides(ctx, client); err != nil {
+	if around.display, err = readDisplay(ctx, client); err != nil {
 		return surroundings{}, err
 	}
 	return around, nil
@@ -213,8 +226,8 @@ func (s surroundings) post(post *model.Post) Post {
 		Author:             post.UserId,
 		AuthorID:           post.UserId,
 		FromIntegration:    fromIntegration(post),
-		ShownAs:            s.overrides.shownAs(post),
-		IntegrationIcon:    s.overrides.integrationIcon(post),
+		ShownAs:            s.display.shownAs(post),
+		IntegrationIcon:    s.display.integrationIcon(post),
 		CreatedAt:          timestamp(post.CreateAt, s.zone),
 		EditedAt:           timestamp(post.EditAt, s.zone),
 		Message:            post.Message,
@@ -245,6 +258,7 @@ func (s surroundings) post(post *model.Post) Post {
 		}
 		out.URL = postLink(s.client, post.Id, team)
 	}
+	s.priority(post, &out)
 	out.Responses = postAnswers{reactions: reactionsOf(post), replies: repliesTo(post)}.count()
 	if post.Metadata != nil && len(post.Metadata.Reactions) > 0 {
 		out.Reactions = map[string][]string{}
@@ -376,7 +390,8 @@ func describeUses(inTeams bool) []Use {
 			Operation: "GetUsersByIds",
 			Params:    map[string]Coverage{"since": Omitted("the tool reads each author and reactor, whenever they changed")},
 		},
-		// Whether an integration's post shows a name and icon of its own.
+		// What the server lets a post show: an integration's name and icon of
+		// its own, and priorities and acknowledgements.
 		{Operation: "GetClientConfig", Params: map[string]Coverage{}},
 	}
 	if inTeams {

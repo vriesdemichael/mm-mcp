@@ -1,0 +1,51 @@
+{
+  "id": "rzqyttxotbfaim9fs1dffg4r9c",
+  "create_at": 1793273204936,
+  "update_at": 1793273204936,
+  "edit_at": 0,
+  "delete_at": 0,
+  "is_pinned": false,
+  "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+  "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+  "root_id": "",
+  "original_id": "",
+  "message": "The payment API is down for every customer. @here please hold deploys.",
+  "type": "",
+  "props": {},
+  "hashtags": "",
+  "file_ids": [],
+  "pending_post_id": "",
+  "remote_id": "",
+  "reply_count": 0,
+  "last_reply_at": 0,
+  "participants": null,
+  "metadata": {
+    "priority": {
+      "priority": "urgent",
+      "requested_ack": true,
+      "persistent_notifications": true,
+      "PostId": "rzqyttxotbfaim9fs1dffg4r9c",
+      "ChannelId": "zkicjyjqqbg58cnmqfmzr89dqh"
+    },
+    "acknowledgements": [
+      {
+        "user_id": "8sgr1qo5n7fkdf5dw4b6dqcxoc",
+        "post_id": "rzqyttxotbfaim9fs1dffg4r9c",
+        "acknowledged_at": 1793273264936,
+        "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh"
+      },
+      {
+        "user_id": "x4mnb6ec1fgo8yp7n9b5skjtsa",
+        "post_id": "rzqyttxotbfaim9fs1dffg4r9c",
+        "acknowledged_at": 0,
+        "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh"
+      },
+      {
+        "user_id": "k1a7m3cz5tgn8qxbdwpse9hjzo",
+        "post_id": "rzqyttxotbfaim9fs1dffg4r9c",
+        "acknowledged_at": 1793273299936,
+        "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh"
+      }
+    ]
+  }
+}
