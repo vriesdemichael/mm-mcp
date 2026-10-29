@@ -280,6 +280,34 @@ func TestALocalToolOnlyReadsMattermost(t *testing.T) {
 	}
 }
 
+// neverCalled are the operations no tool or resource calls, with why: each ends
+// a burn-on-read post for a person who never saw it (mm-mcp#78).
+var neverCalled = map[string]string{
+	"RevealPost": "revealing a burn-on-read post starts the timer after which it is gone for the person, though it is a GET",
+	"BurnPost":   "burning a burn-on-read post ends it now, for the person, or for everyone when they wrote it",
+}
+
+// TestNoToolRevealsOrBurnsAPost holds every tool and resource to never
+// revealing or burning a burn-on-read post: the person opens one in
+// Mattermost when they choose. The live suite fails any call to an operation
+// a tool does not declare, so declaring is calling.
+func TestNoToolRevealsOrBurnsAPost(t *testing.T) {
+	t.Parallel()
+	s := loadSurface(t)
+	for operation := range neverCalled {
+		if _, ok := s.latest.Operation(operation); !ok {
+			t.Fatalf("the %s specification has no %s; the check has nothing to hold", s.latest.Release, operation)
+		}
+	}
+	for _, spec := range callers(t) {
+		for _, use := range spec.uses {
+			if why, ok := neverCalled[use.Operation]; ok {
+				t.Errorf("%s calls %s: %s", spec.name, use.Operation, why)
+			}
+		}
+	}
+}
+
 // readingPosts are the operations that take a POST and change nothing: searches,
 // and lookups that take their list of ids or names as a body.
 var readingPosts = map[string]bool{

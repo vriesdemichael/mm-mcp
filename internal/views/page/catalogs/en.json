@@ -37,6 +37,9 @@
   "post.ai": "AI",
   "post.avatar": "{name}'s profile picture",
   "post.bot": "Bot",
+  "post.burn_on_read": "Burn-on-read",
+  "post.burns_at": "Gone {time}",
+  "post.concealed": "A burn-on-read message. Viewing it in Mattermost reveals it, and a while after, it is gone for you.",
   "post.cut": {
     "one": "This message is longer: {count} character.",
     "other": "This message is longer: {count} characters."
@@ -54,6 +57,7 @@
   "post.priority_urgent": "Urgent",
   "post.read_whole": "Read it in Mattermost",
   "post.replied": "Replied in a thread",
+  "post.view_message": "View message in Mattermost",
   "proposal.apply": "Apply",
   "proposal.as_posted": "Show it as it will be posted",
   "proposal.as_written": "Show the text as written",
