@@ -44,6 +44,10 @@
     "one": "This message is longer: {count} character.",
     "other": "This message is longer: {count} characters."
   },
+  "post.cut_blocks": {
+    "one": "Its blocks are longer: {count} character.",
+    "other": "Its blocks are longer: {count} characters."
+  },
   "post.cut_attachments": {
     "one": "Its attachments are longer: {count} character.",
     "other": "Its attachments are longer: {count} characters."

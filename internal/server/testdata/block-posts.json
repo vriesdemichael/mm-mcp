@@ -1,0 +1,338 @@
+{
+  "mm_blocks": {
+    "id": "115pt9wiyjb3ucn7fxj3y4ctpe",
+    "create_at": 1793274587729,
+    "update_at": 1793274587729,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "",
+    "type": "",
+    "props": {
+      "from_webhook": "true",
+      "mm_blocks": [
+        {
+          "accent_color": "danger",
+          "border": true,
+          "content": [
+            {
+              "text": "**Deploy 4821 failed** on `api`",
+              "type": "text"
+            },
+            {
+              "columns": [
+                {
+                  "items": [
+                    {
+                      "is_subtle": true,
+                      "text": "Stage",
+                      "type": "text"
+                    },
+                    {
+                      "text": "migrate",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "column"
+                },
+                {
+                  "items": [
+                    {
+                      "is_subtle": true,
+                      "text": "Duration",
+                      "type": "text"
+                    },
+                    {
+                      "text": "4m 12s",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "column"
+                }
+              ],
+              "type": "column_set"
+            },
+            {
+              "type": "divider"
+            },
+            {
+              "collapsed": true,
+              "content": [
+                {
+                  "text": "```\nERROR: relation \"users\" already exists\n```",
+                  "type": "text"
+                }
+              ],
+              "header": [
+                {
+                  "text": "Log tail",
+                  "type": "text"
+                }
+              ],
+              "type": "collapsible"
+            },
+            {
+              "alt_text": "Build time graph",
+              "type": "image",
+              "url": "https://ci.example.com/graphs/4821.png"
+            }
+          ],
+          "type": "container"
+        }
+      ],
+      "override_username": "Deploy bot",
+      "webhook_display_name": "Deploys"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  },
+  "blocks": {
+    "id": "ewx7ydjastrzbpbz3zoc6inn8a",
+    "create_at": 1793274604004,
+    "update_at": 1793274604004,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "",
+    "type": "",
+    "props": {
+      "blocks": [
+        {
+          "text": {
+            "text": "Incident 312",
+            "type": "plain_text"
+          },
+          "type": "header"
+        },
+        {
+          "fields": [
+            {
+              "text": "*Severity*\nSEV-2",
+              "type": "mrkdwn"
+            },
+            {
+              "text": "*Owner*\n@oncall",
+              "type": "mrkdwn"
+            },
+            {
+              "text": "*Started*\n09:12",
+              "type": "mrkdwn"
+            }
+          ],
+          "text": {
+            "text": "*Payments* are degraded",
+            "type": "mrkdwn"
+          },
+          "type": "section"
+        },
+        {
+          "elements": [
+            {
+              "text": "not drawn",
+              "type": "mrkdwn"
+            }
+          ],
+          "type": "context"
+        },
+        {
+          "type": "divider"
+        },
+        {
+          "elements": [
+            {
+              "action_id": "ack",
+              "text": {
+                "text": "Acknowledge",
+                "type": "plain_text"
+              },
+              "type": "button"
+            }
+          ],
+          "type": "actions"
+        }
+      ],
+      "from_webhook": "true",
+      "override_username": "Slack app",
+      "webhook_display_name": "Integrations"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  },
+  "cards": {
+    "id": "wpzujzycstgbfng87uyz48g9no",
+    "create_at": 1793274604043,
+    "update_at": 1793274604043,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "",
+    "type": "",
+    "props": {
+      "cards": [
+        {
+          "actions": [
+            {
+              "id": "revert",
+              "title": "Revert",
+              "type": "Action.Submit"
+            }
+          ],
+          "body": [
+            {
+              "size": "Medium",
+              "text": "Pull request #88 merged",
+              "type": "TextBlock",
+              "weight": "Bolder"
+            },
+            {
+              "isSubtle": true,
+              "text": "by alice into main",
+              "type": "TextBlock"
+            },
+            {
+              "facts": [
+                {
+                  "title": "Not",
+                  "value": "drawn"
+                }
+              ],
+              "type": "FactSet"
+            },
+            {
+              "columns": [
+                {
+                  "items": [
+                    {
+                      "text": "Checks: 42 passed",
+                      "type": "TextBlock"
+                    }
+                  ],
+                  "type": "Column",
+                  "width": "stretch"
+                },
+                {
+                  "items": [
+                    {
+                      "altText": "passing",
+                      "type": "Image",
+                      "url": "https://ci.example.com/badge.png"
+                    }
+                  ],
+                  "type": "Column"
+                }
+              ],
+              "type": "ColumnSet"
+            },
+            {
+              "items": [
+                {
+                  "text": "Deployed to staging",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Container"
+            }
+          ],
+          "type": "AdaptiveCard",
+          "version": "1.4"
+        }
+      ],
+      "from_webhook": "true",
+      "override_username": "Teams connector",
+      "webhook_display_name": "Integrations"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  },
+  "both": {
+    "id": "zdre5r4o97fh7e7ap1eub1mqca",
+    "create_at": 1793274617265,
+    "update_at": 1793274617265,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "Nightly report https://github.com/mattermost/mattermost/releases",
+    "type": "slack_attachment",
+    "props": {
+      "attachments": [
+        {
+          "id": 0,
+          "fallback": "",
+          "color": "good",
+          "pretext": "",
+          "author_name": "",
+          "author_link": "",
+          "author_icon": "",
+          "title": "Nightly: all green",
+          "title_link": "",
+          "text": "Shown where Mattermost draws no blocks",
+          "fields": null,
+          "image_url": "",
+          "thumb_url": "",
+          "footer": "",
+          "footer_icon": "",
+          "ts": null
+        }
+      ],
+      "from_webhook": "true",
+      "mm_blocks": [
+        {
+          "accent_color": "good",
+          "content": [
+            {
+              "text": "**Nightly**: all green",
+              "type": "text"
+            }
+          ],
+          "type": "container"
+        }
+      ],
+      "override_username": "webhook",
+      "webhook_display_name": "Both"
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "embeds": [
+        {
+          "type": "message_attachment"
+        }
+      ]
+    }
+  }
+}

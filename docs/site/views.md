@@ -93,7 +93,9 @@ Nothing is changed until you press.
 Ask to see a thread and your agent shows it with
 [`show`](tools.md#show). You get pictures, formatting, reactions, custom
 emoji, images you can open full size, and the cards a webhook or bot posts,
-such as an alert with its red or green bar. A link to another post shows that
+such as an alert with its red or green bar, and the blocks an integration
+posts on Mattermost 11.11 and later, with their columns and the sections you
+unfold. A link to another post shows that
 post quoted below it, and a link to a web page the page's card. A picture a
 link or a card leads to is named, and opens in your browser: the view itself
 reaches nothing outside Mattermost. A post marked Important or

@@ -38,3 +38,14 @@ release's own route table and specification
 | `UpsertDraft` | `propose_post` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
 | `GetTeamByName` | `get_team_info` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
 | `SearchPostsInAllTeams` | `search_posts` | Served, as 11.7's router shows, but missing from its specification. Nothing differs in use. |
+
+## Differences in what a release shows
+
+Some releases show more of a post with the same operations. A post carries
+what the release it was read on shows of it, and mm-mcp reads which from the
+client configuration Mattermost gives every logged-in client, as Mattermost's
+own apps do.
+
+| What | Setting | On the Extended Support Release |
+|---|---|---|
+| Blocks and cards integrations post, in Mattermost's own blocks, Slack's Block Kit or Adaptive Cards | The feature flag `MmBlocksEnabled`, on by default from 11.11 | Not shown: 11.7 has no such flag, and a post shows its message and message attachments alone, as Mattermost shows it there. Where the flag is on, a post's blocks take the place of its message attachments and of the preview of its link, as they do in Mattermost. |

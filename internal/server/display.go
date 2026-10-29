@@ -18,6 +18,9 @@ type display struct {
 	// priority is whether a post shows the label its author marked it with,
 	// and acknowledgements whether one that asks for them shows who gave them.
 	priority, acknowledgements bool
+	// blocks is whether a post shows the blocks and cards integrations post,
+	// the feature flag the newest releases turn on and the ESR does not have.
+	blocks bool
 }
 
 // readDisplay reads what the server lets its clients show of a post. It is
@@ -33,5 +36,6 @@ func readDisplay(ctx context.Context, client *mattermost.Client) (display, error
 		icons:            config["EnablePostIconOverride"] == "true",
 		priority:         config["PostPriority"] == "true",
 		acknowledgements: config["PostAcknowledgements"] == "true",
+		blocks:           config["FeatureFlagMmBlocksEnabled"] == "true",
 	}, nil
 }
