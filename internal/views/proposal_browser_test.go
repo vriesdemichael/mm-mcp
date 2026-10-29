@@ -160,10 +160,10 @@ func TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks(t *testing.T
 		map[string]any{"tools": map[string]any{"view_change": []any{confirm, confirm, answered(map[string]any{"status": "posted", "post": posted})}}}))
 	h.press(i, "Post")
 	h.untilIn(i, "d.querySelector('.confirm')")
-	if got := h.text(i, ".confirm-title"); got != "Confirm sending notifications to entire channel" {
+	if got := h.text(i, ".confirm-title"); got != "Notify the whole channel?" {
 		t.Errorf("the confirmation is titled %q", got)
 	}
-	if got := h.text(i, ".confirm-question"); got != "By using @all or @channel you are about to send notifications to 12 people in 3 timezones. Are you sure you want to do this?" {
+	if got := h.text(i, ".confirm-question"); got != "@all or @channel in this message notifies 12 people, across 3 time zones. Post it anyway?" {
 		t.Errorf("the confirmation asks %q", got)
 	}
 	h.press(i, "Cancel")
@@ -173,7 +173,7 @@ func TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks(t *testing.T
 	}
 	h.press(i, "Post")
 	h.untilIn(i, "d.querySelector('.confirm')")
-	h.press(i, "Confirm")
+	h.press(i, "Post anyway")
 	h.untilIn(i, "d.querySelector('.posted-label')")
 	calls := h.calls(i)
 	last, _ := calls[len(calls)-1]["arguments"].(map[string]any)
@@ -187,7 +187,7 @@ func TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks(t *testing.T
 	}}}))
 	h.press(here, "Post")
 	h.untilIn(here, "d.querySelector('.confirm')")
-	if got := h.text(here, ".confirm-question"); got != "By using @here you are about to send notifications to at least 7 other people. Are you sure you want to do this?" {
+	if got := h.text(here, ".confirm-question"); got != "@here in this message notifies at least 7 other people. Post it anyway?" {
 		t.Errorf("the confirmation for @here asks %q", got)
 	}
 }

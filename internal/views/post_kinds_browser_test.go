@@ -37,7 +37,7 @@ func TestAMePostAndWithheldFilesAreDrawnAsMattermostDrawsThem(t *testing.T) {
 	if strings.TrimSpace(drawn.Me) != "waves at everyone" || drawn.Bold != "everyone" || drawn.Emphasis != 0 {
 		t.Errorf("a /me post is drawn as %+v", drawn)
 	}
-	if drawn.Withheld != "Files not available | Access to files is restricted based on attributes" || drawn.Cards != 1 {
+	if drawn.Withheld != "Files withheld | An access policy on this server keeps them from you" || drawn.Cards != 1 {
 		t.Errorf("withheld files are drawn as %+v", drawn)
 	}
 }

@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.vriesdemichael/mm-mcp",
-  "title": "Mattermost",
+  "title": "mm-mcp for Mattermost",
   "description": "Read, search and post in Mattermost as yourself or a bot.",
   "repository": {
     "url": "https://github.com/vriesdemichael/mm-mcp",

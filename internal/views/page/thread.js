@@ -324,7 +324,7 @@ function renderCall(post, call) {
   if (ended) {
     const minutes = minutesBetween(call.started_at, call.ended_at);
     detail = [t("call.ended_at", { time: formatTime(call.ended_at) }),
-      minutes === null ? null : el("span", { class: "call-divider", "aria-hidden": "true" }, " • "),
+      minutes === null ? null : el("span", { class: "call-divider", "aria-hidden": "true" }, " · "),
       minutes === null ? null : minutes < 1 ? t("call.lasted_moment") : t("call.lasted", { duration: formatMinutes(minutes) })];
   } else {
     detail = text(call.started_at) ? t("call.started_by", { time: formatTime(call.started_at), name: starter }) : t("call.by", { name: starter });

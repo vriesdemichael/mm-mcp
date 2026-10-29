@@ -190,7 +190,7 @@ without the application asking again
   that text and nothing they added in Mattermost; words the person wrote there
   are theirs to send. It checks the message again as it posts. A message that
   alerts as many people as Mattermost has its sender confirm is posted only on
-  a second press, after the view asks Mattermost's own question with counts
+  a second press, after the view asks, as Mattermost would, with counts
   read at the press. Presses on one draft take turns, and posting deletes the
   draft, so a press after the first posts nothing; a new proposal waits its
   turn too, so it is not deleted with the draft a press posts. A Post that got
@@ -227,7 +227,7 @@ Each mitigation is held by a test that fails when the mitigation is removed
 | A press sending text the person did not see, changed by the model or in Mattermost | A press names the text the view shows, and acts only while the draft holds it and nothing added | `TestAPressActsOnlyOnTheDraftTheViewShows` |
 | A press posting or deleting words the person wrote in Mattermost | A press acts only on what a view put in the draft, unchanged | `TestAPressActsOnlyOnTheDraftTheViewShows` |
 | A press posting twice | Presses on one draft take turns, and posting deletes the draft; a Post that got no answer is not offered again | `TestPressesOnOneDraftAtOncePostItOnce`, `TestAProposalDuringAPressIsNotDeletedWithTheDraftItPosts`, `TestAProposalIsShownAndPostedOnThePersonsPress`, `TestAPostThatGetsNoAnswerIsNotOfferedAgain` |
-| A whole channel alerted without Mattermost's question | The first press answers with Mattermost's counts; only a confirmed press posts | `TestAPostThatAlertsAWholeChannelIsConfirmedAtThePress`, `TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks` |
+| A whole channel alerted without being asked | The first press answers with Mattermost's counts; only a confirmed press posts | `TestAPostThatAlertsAWholeChannelIsConfirmedAtThePress`, `TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks` |
 | A message that no longer holds at the press, such as a mention of someone gone | The message is checked again at the press | `TestAPressIsCheckedAgainAndPostsOnlyWhereTheServerPostsFromViews` |
 | A proposal that runs a slash command when the person sends it | A proposal that starts with `/` is refused | `TestWhatAProposalOrAPressCannotReachIsRefused` |
 | The person's draft overwritten | `propose_post` never replaces a draft the person wrote, typed in or added to; only their own press does | `TestProposePostReplacesItsOwnProposalButNeverThePersonsDraft`, `TestProposePostLeavesADraftWithFilesAsItIs` |

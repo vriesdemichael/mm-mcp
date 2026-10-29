@@ -222,8 +222,8 @@ function ended(draft, text, url) {
     el("div", { class: "proposal-actions" }, linkButton(url, [t("notice.open")], { class: "link muted" })));
 }
 
-// confirmation is Mattermost's own question before a message that alerts a
-// whole channel, or a user group, in its words.
+// confirmation asks before a message that alerts a whole channel, or a user
+// group, where Mattermost would ask.
 function confirmation(draft, notifies) {
   const mentions = Array.isArray(notifies.mentions) ? notifies.mentions.map((mention) => String(mention).toLowerCase()) : [];
   const whole = mentions.some((mention) => WHOLE_CHANNEL.includes(mention));
