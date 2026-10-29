@@ -31,6 +31,7 @@
   "notice.open": "Open in Mattermost",
   "post.ai": "AI",
   "post.avatar": "{name}'s profile picture",
+  "post.bot": "Bot",
   "post.cut": {
     "one": "This message is longer: {count} character.",
     "other": "This message is longer: {count} characters."

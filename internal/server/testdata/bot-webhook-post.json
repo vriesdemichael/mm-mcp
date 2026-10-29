@@ -1,0 +1,65 @@
+{
+  "id": "pq1xtetnrpbyfmhypwkmk9ekcc",
+  "create_at": 1793270361876,
+  "update_at": 1793270361876,
+  "edit_at": 0,
+  "delete_at": 0,
+  "is_pinned": false,
+  "user_id": "gw3h791tkb8jxram5udpaojrpe",
+  "channel_id": "o51b54mu8fy57jqsh5pq37c9fy",
+  "root_id": "",
+  "original_id": "",
+  "message": "",
+  "type": "slack_attachment",
+  "props": {
+    "attachments": [
+      {
+        "id": 0,
+        "fallback": "Build 4821 failed",
+        "color": "#db3b21",
+        "pretext": "",
+        "author_name": "",
+        "author_link": "",
+        "author_icon": "",
+        "title": "Build 4821 failed",
+        "title_link": "https://ci.example.com/builds/4821",
+        "text": "3 tests failed in `test:unit`",
+        "fields": [
+          {
+            "title": "Branch",
+            "value": "main",
+            "short": true
+          },
+          {
+            "title": "Commit",
+            "value": "a1b2c3d",
+            "short": true
+          }
+        ],
+        "image_url": "",
+        "thumb_url": "",
+        "footer": "Build server",
+        "footer_icon": "",
+        "ts": null
+      }
+    ],
+    "from_bot": "true",
+    "from_webhook": "true",
+    "override_icon_url": "https://ci.example.com/icon.png",
+    "override_username": "Build server",
+    "webhook_display_name": "Build server"
+  },
+  "hashtags": "",
+  "file_ids": [],
+  "pending_post_id": "",
+  "reply_count": 0,
+  "last_reply_at": 0,
+  "participants": null,
+  "metadata": {
+    "embeds": [
+      {
+        "type": "message_attachment"
+      }
+    ]
+  }
+}

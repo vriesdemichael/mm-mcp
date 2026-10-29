@@ -74,8 +74,12 @@ function isSystem(post) {
   return typeof post.type === "string" && post.type.startsWith("system_");
 }
 
+// continues says whether a post runs on from the one before it, under one
+// header, as Mattermost runs them: by one author within minutes, and never a
+// post an integration made, nor one written with AI.
 function continues(previous, post) {
   if (!previous || previous.author_id !== post.author_id || isSystem(previous) || isSystem(post)) return false;
+  if (previous.from_integration || post.from_integration || previous.ai_generated || post.ai_generated) return false;
   const before = wallTime(previous.created_at);
   const now = wallTime(post.created_at);
   return Boolean(before && now && now - before < SAME_RUN_MS);
@@ -86,7 +90,13 @@ function renderPost(post, options) {
   if (options.asked) classes.push("asked");
   if (options.continued) classes.push("continued");
   if (isSystem(post)) classes.push("system");
-  const person = { id: post.author_id, username: post.author, name: post.author_name || post.author };
+  // An integration's post shows the name it chose, and its own icon where
+  // Mattermost shows one, which the view has no picture of.
+  const person = {
+    id: post.integration_icon ? "" : post.author_id,
+    username: post.author,
+    name: post.shown_as || post.author_name || post.author,
+  };
   const time = el("button", {
     type: "button",
     class: "link time",
@@ -98,8 +108,9 @@ function renderPost(post, options) {
   const body = el("div", { class: "post-body" });
   if (!options.continued) {
     body.append(el("div", { class: "post-header" },
-      el("span", { class: "author" }, person.name),
-      post.author_name && post.author ? el("span", { class: "muted username" }, "@" + post.author) : null,
+      el("span", { class: "author", title: post.shown_as && post.author ? "@" + post.author : null }, person.name),
+      !post.shown_as && post.author_name && post.author ? el("span", { class: "muted username" }, "@" + post.author) : null,
+      post.from_integration || post.author_is_bot ? el("span", { class: "bot-tag" }, t("post.bot")) : null,
       time,
       marks(post)));
   } else if (marks(post).length > 0) {

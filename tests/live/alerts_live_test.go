@@ -3,11 +3,7 @@
 package live
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -20,33 +16,6 @@ import (
 
 // Posts an integration made of message attachments, as Alertmanager posts to
 // a channel through an incoming webhook (mm-mcp#71).
-
-// seedWebhook creates an incoming webhook that posts to a channel, as an
-// integration is set up, and deletes it when the test ends. It answers with
-// the address the integration posts to.
-func seedWebhook(t *testing.T, admin *model.Client4, channel *model.Channel) string {
-	t.Helper()
-	hook, _, err := admin.CreateIncomingWebhook(t.Context(), &model.IncomingWebhook{ChannelId: channel.Id, DisplayName: "Alertmanager"})
-	check(t, err)
-	t.Cleanup(func() { _, _ = admin.DeleteIncomingWebhook(context.Background(), hook.Id) })
-	return liveURL + "/hooks/" + hook.Id
-}
-
-// postToWebhook posts what an integration sends an incoming webhook.
-func postToWebhook(t *testing.T, address string, payload map[string]any) {
-	t.Helper()
-	body, err := json.Marshal(payload)
-	check(t, err)
-	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, address, bytes.NewReader(body))
-	check(t, err)
-	request.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(request)
-	check(t, err)
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		t.Fatalf("posting to the webhook: %s", response.Status)
-	}
-}
 
 // alertPayload is what Alertmanager sends a Slack-compatible webhook about
 // one alert: its state in the title, the bar's color and a field.
@@ -90,7 +59,7 @@ func TestEveryReadToolCarriesTheMessageAttachmentsOfAWebhookPost(t *testing.T) {
 	user := seedUser(t, admin)
 	team := seedTeam(t, admin, user)
 	channel := seedChannel(t, admin, team, user)
-	hook := seedWebhook(t, admin, channel)
+	hook := seedWebhook(t, admin, channel, "")
 	marker := word(t)
 	mention := "@" + user.Username + " " + marker
 	postToWebhook(t, hook, alertPayload(mention, "FIRING", "#e40303", "*Description:* /var on db-1 is 97% full"))
