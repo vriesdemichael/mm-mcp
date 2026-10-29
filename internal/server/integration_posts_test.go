@@ -34,7 +34,7 @@ func TestAnIntegrationsPostShowsTheNameItChoseWhereTheServerLetsIt(t *testing.T)
 	bot := &model.User{Id: post.UserId, Username: "hookbot", FirstName: "Hook", LastName: "Bot", IsBot: true}
 	around := surroundings{client: clientAt("https://chat.example.com"), zone: time.UTC, people: map[string]*model.User{post.UserId: bot}}
 
-	around.overrides = overrides{names: true, icons: true}
+	around.display = display{names: true, icons: true}
 	got := around.post(post)
 	if got.Author != "hookbot" || got.AuthorName != "Hook Bot" || !got.AuthorIsBot || !got.FromIntegration || got.ShownAs != "Build server" || !got.IntegrationIcon {
 		t.Errorf("a bot's webhook post is described as %+v", got)
@@ -46,7 +46,7 @@ func TestAnIntegrationsPostShowsTheNameItChoseWhereTheServerLetsIt(t *testing.T)
 
 	// A server that lets no integration choose shows the account it posted
 	// under, still tagged BOT.
-	around.overrides = overrides{}
+	around.display = display{}
 	got = around.post(post)
 	if got.ShownAs != "" || got.IntegrationIcon || !got.FromIntegration || !got.AuthorIsBot {
 		t.Errorf("on a server without overrides, a bot's webhook post is described as %+v", got)
@@ -56,7 +56,7 @@ func TestAnIntegrationsPostShowsTheNameItChoseWhereTheServerLetsIt(t *testing.T)
 func TestOnlyAnIntegrationsPostShowsANameOrIconOfItsOwn(t *testing.T) {
 	person := &model.User{Id: "u1", Username: "alice", FirstName: "Alice"}
 	around := surroundings{client: clientAt("https://chat.example.com"), zone: time.UTC,
-		people: map[string]*model.User{"u1": person}, overrides: overrides{names: true, icons: true}}
+		people: map[string]*model.User{"u1": person}, display: display{names: true, icons: true}}
 
 	// The names an integration sets mean nothing on a post it did not make.
 	post := &model.Post{Id: "p1", UserId: "u1", Message: "hello"}

@@ -1,4 +1,9 @@
 {
+  "acknowledgements.none": "Its author asks everyone to acknowledge it. No one has yet.",
+  "acknowledgements.who": {
+    "one": "Acknowledged by {who}",
+    "other": "Acknowledged by {who}"
+  },
   "confirm.all": "By using @all or @channel you are about to send notifications to {people} people. Are you sure you want to do this?",
   "confirm.all_timezones": {
     "one": "By using @all or @channel you are about to send notifications to {people} people in {count} timezone. Are you sure you want to do this?",
@@ -45,6 +50,8 @@
   "post.open": "Open the post in Mattermost, written {time}",
   "post.pinned": "Pinned",
   "post.posted": "Posted",
+  "post.priority_important": "Important",
+  "post.priority_urgent": "Urgent",
   "post.read_whole": "Read it in Mattermost",
   "post.replied": "Replied in a thread",
   "proposal.apply": "Apply",

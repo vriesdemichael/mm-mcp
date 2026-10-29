@@ -1,0 +1,31 @@
+{
+  "id": "rzqyttxotbfaim9fs1dffg4r9c",
+  "create_at": 1793273204936,
+  "update_at": 1793273204936,
+  "edit_at": 0,
+  "delete_at": 0,
+  "is_pinned": false,
+  "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+  "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+  "root_id": "",
+  "original_id": "",
+  "message": "The payment API is down for every customer. @here please hold deploys.",
+  "type": "",
+  "props": {},
+  "hashtags": "",
+  "file_ids": [],
+  "pending_post_id": "",
+  "remote_id": "",
+  "reply_count": 0,
+  "last_reply_at": 0,
+  "participants": null,
+  "metadata": {
+    "priority": {
+      "priority": "urgent",
+      "requested_ack": null,
+      "persistent_notifications": null,
+      "PostId": "rzqyttxotbfaim9fs1dffg4r9c",
+      "ChannelId": "zkicjyjqqbg58cnmqfmzr89dqh"
+    }
+  }
+}

@@ -138,7 +138,9 @@ function renderPost(post, options) {
       linkButton(post.url, [t("post.read_whole")])));
   }
   if (Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
-  if (post.reactions && typeof post.reactions === "object") body.append(renderReactions(post.reactions));
+  const acknowledgements = post.requested_ack === true ? renderAcknowledgements(post) : null;
+  const reactions = post.reactions && typeof post.reactions === "object" ? renderReactions(post.reactions) : null;
+  if (acknowledgements || reactions) body.append(el("div", { class: "responses" }, acknowledgements, reactions));
 
   return el("li", { class: classes.join(" "), dataset: { post: post.id } },
     // A post that carries on a run shows its time where the picture would be,
@@ -147,8 +149,18 @@ function renderPost(post, options) {
     body);
 }
 
+// priorityLabel is the label Mattermost shows after the time of a post its
+// author marked Important or Urgent, with its icon.
+function priorityLabel(priority) {
+  if (priority === "urgent") return [icon("alert"), t("post.priority_urgent")];
+  if (priority === "important") return [icon("alert-circle"), t("post.priority_important")];
+  return null;
+}
+
 function marks(post) {
   const found = [];
+  const priority = priorityLabel(post.priority);
+  if (priority) found.push(el("span", { class: "priority-tag", dataset: { priority: post.priority } }, priority));
   if (post.pinned) found.push(el("span", { class: "mark pinned" }, icon("pin"), t("post.pinned")));
   if (post.ai_generated) found.push(el("span", { class: "mark muted" }, t("post.ai")));
   return found;
@@ -290,6 +302,19 @@ function fileCard(file, post) {
       el("span", { class: "file-name ellipsis" }, file.name || t("file.unnamed")),
       el("span", { class: "muted file-meta" }, [file.mime_type, file.size > 0 ? formatSize(file.size) : ""].filter(Boolean).join(" · "))),
     linkButton(post.url, [icon("open", t("file.open"))], { class: "link icon-button", "aria-label": t("file.open") }));
+}
+
+// renderAcknowledgements is the count of people who acknowledged a post that
+// asks for it, with who in its title, as reactions name who reacted. Pressing
+// it in Mattermost acknowledges the post, which here is not the view's to do.
+function renderAcknowledgements(post) {
+  const given = Array.isArray(post.acknowledgements) ? post.acknowledgements.filter((ack) => ack && typeof ack.user === "string") : [];
+  const who = given.map((ack) => "@" + ack.user).join(", ");
+  return el("span", {
+    class: "acknowledgements",
+    dataset: { acknowledged: post.acknowledged === true ? "true" : "false" },
+    title: given.length > 0 ? t("acknowledgements.who", { count: given.length, who }) : t("acknowledgements.none"),
+  }, icon("check"), el("span", { class: "acknowledgement-count" }, formatNumber(given.length)));
 }
 
 function renderReactions(reactions) {
