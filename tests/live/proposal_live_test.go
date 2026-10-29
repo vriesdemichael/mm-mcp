@@ -4,6 +4,7 @@ package live
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -351,8 +352,12 @@ func TestAPressInAChannelArchivedSincePostsNothing(t *testing.T) {
 	}
 }
 
-// Presses on one draft at once, as from two views of the same proposal, post
-// it once: Mattermost answers every post after the first with it.
+// Presses on one draft at once, as from views of the same proposal, post it
+// once, and every press after the first finds it gone. Mattermost's own
+// deduplication by a post's pending id does not hold for presses that reach it
+// together: deduplicateCreatePost reads the id and records it in two steps, so
+// each can find it unseen. Presses meet there now and then, so one proposal
+// after another is pressed in every view at once.
 func TestPressesOnOneDraftAtOncePostItOnce(t *testing.T) {
 	t.Parallel()
 	admin := admin(t)
@@ -363,33 +368,81 @@ func TestPressesOnOneDraftAtOncePostItOnce(t *testing.T) {
 	for i := range sessions {
 		sessions[i] = proposingSession(t, admin, user, true)
 	}
-	// Each view shows the proposal: the first saves it, and the rest find it
-	// there already.
-	for _, session := range sessions {
-		proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": "once only"})
-	}
-	var wait sync.WaitGroup
-	answers := make([]*mcp.CallToolResult, len(sessions))
-	for i, session := range sessions {
-		wait.Go(func() {
-			// A press that meets another still posting is refused, which posts
-			// nothing; it is read below with the rest.
-			answers[i], _ = tryTool(t, session, &mcp.CallToolParams{Name: "view_change", Arguments: map[string]any{"action": "post", "channel_id": channel.Id, "shown": "once only"}})
-		})
-	}
-	wait.Wait()
-	if posts := messagesIn(t, admin, channel.Id); len(posts) != 1 {
-		t.Fatalf("presses at once on one draft posted %d messages", len(posts))
-	}
-	posted := messagesIn(t, admin, channel.Id)[0].Id
-	for _, answer := range answers {
-		if answer == nil || answer.IsError {
-			continue
+	for round := range 10 {
+		message := fmt.Sprintf("once only, %d", round+1)
+		// Each view shows the proposal: the first saves it, and the rest find
+		// it there already.
+		for _, session := range sessions {
+			proposePost(t, session, map[string]any{"channel_id": channel.Id, "message": message})
 		}
-		var change server.DraftChange
-		structured(t, answer, &change)
-		if change.Status == "posted" && change.Post.ID != posted {
-			t.Errorf("a press answered with post %s, not the one posted, %s", change.Post.ID, posted)
+		var wait sync.WaitGroup
+		answers := make([]*mcp.CallToolResult, len(sessions))
+		for i, session := range sessions {
+			wait.Go(func() {
+				answers[i], _ = tryTool(t, session, &mcp.CallToolParams{Name: "view_change", Arguments: map[string]any{"action": "post", "channel_id": channel.Id, "shown": message}})
+			})
+		}
+		wait.Wait()
+		var posted []string
+		for _, post := range messagesIn(t, admin, channel.Id) {
+			if post.Message == message {
+				posted = append(posted, post.Id)
+			}
+		}
+		if len(posted) != 1 {
+			t.Fatalf("presses at once on proposal %d of 10 posted it %d times", round+1, len(posted))
+		}
+		var said []string
+		for _, answer := range answers {
+			if answer == nil || answer.IsError {
+				t.Fatalf("a press on proposal %d of 10 was refused: %v", round+1, answer)
+			}
+			var change server.DraftChange
+			structured(t, answer, &change)
+			switch {
+			case change.Status == "posted" && change.Post.ID == posted[0]:
+				said = append(said, "posted")
+			case change.Status == "gone":
+				said = append(said, "gone")
+			default:
+				t.Errorf("a press on proposal %d of 10 answered %s with post %s, not the one posted, %s", round+1, change.Status, change.Post.ID, posted[0])
+			}
+		}
+		if slices.Sort(said); strings.Join(said, " ") != "gone gone gone gone gone posted" {
+			t.Errorf("the presses on proposal %d of 10 answered %v; want one posted, and the draft gone for the rest", round+1, said)
+		}
+	}
+}
+
+// A proposal that comes while a press posts the draft before it is not
+// deleted with that draft: it waits for the press. Whatever the order, a
+// proposal the model is told was saved waits in Mattermost.
+func TestAProposalDuringAPressIsNotDeletedWithTheDraftItPosts(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user := seedUser(t, admin)
+	team := seedTeam(t, admin, user)
+	channel := seedChannel(t, admin, team, user)
+	view, proposing := proposingSession(t, admin, user, true), proposingSession(t, admin, user, true)
+	for round := range 10 {
+		shown, next := fmt.Sprintf("shown, %d", round+1), fmt.Sprintf("next, %d", round+1)
+		proposePost(t, view, map[string]any{"channel_id": channel.Id, "message": shown})
+		var wait sync.WaitGroup
+		var press, proposal *mcp.CallToolResult
+		wait.Go(func() {
+			press, _ = tryTool(t, view, &mcp.CallToolParams{Name: "view_change", Arguments: map[string]any{"action": "post", "channel_id": channel.Id, "shown": shown}})
+		})
+		wait.Go(func() {
+			proposal, _ = tryTool(t, proposing, &mcp.CallToolParams{Name: "propose_post", Arguments: map[string]any{"channel_id": channel.Id, "message": next}})
+		})
+		wait.Wait()
+		if press == nil || press.IsError || proposal == nil || proposal.IsError {
+			t.Fatalf("on proposal %d of 10, the press answered %v and the proposal %v", round+1, press, proposal)
+		}
+		var saved server.Proposal
+		structured(t, proposal, &saved)
+		if got := draftsOf(t, user, team.Id)[channel.Id+"/"]; saved.Saved && got != next {
+			t.Fatalf("proposal %d of 10 was answered as saved, but the draft holds %q", round+1, got)
 		}
 	}
 }

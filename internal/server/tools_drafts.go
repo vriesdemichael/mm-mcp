@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"github.com/mattermost/mattermost/server/public/model"
@@ -330,7 +331,14 @@ func proposePostSpec() Spec {
 				// replace. The same text is there already, and is left as it is
 				// rather than written again, which would drop its files; where
 				// the person wrote it, the view asks them, since its presses
-				// reach only what a view put there.
+				// reach only what a view put there. It takes its turn with the
+				// presses on the draft, so that one posting the draft before it
+				// does not delete it.
+				release, err := holdDraft(ctx, self.Id, channelID, rootID)
+				if err != nil {
+					return nil, Proposal{}, err
+				}
+				defer release()
 				there, err := existingDraft(ctx, client, self.Id, teamID, channelID, rootID)
 				if err != nil {
 					return nil, Proposal{}, err
@@ -666,7 +674,7 @@ type DraftChange struct {
 // the message again; one that alerts as many people as Mattermost has its
 // sender confirm is posted only on a press that confirmed it, counted as the
 // press is made. It marks the post as written with AI, and deletes the draft,
-// so a second press finds nothing to post.
+// so a second press finds nothing to post. Presses on one draft take turns.
 func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Config, input viewChangeInput) (DraftChange, error) {
 	if input.Action == "post" && !cfg.PostFromViews {
 		return DraftChange{}, fmt.Errorf("this server does not post from a view (%s=false): the person sends the draft from Mattermost", config.EnvPostFromViews)
@@ -688,6 +696,11 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 	if err != nil {
 		return DraftChange{}, err
 	}
+	release, err := holdDraft(ctx, self.Id, input.ChannelID, input.RootID)
+	if err != nil {
+		return DraftChange{}, err
+	}
+	defer release()
 	teamID, err := teamOf(ctx, client, input.ChannelID)
 	if err != nil {
 		return DraftChange{}, err
@@ -762,8 +775,8 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 			}
 		}
 		// Bound to the draft as it was read, as Mattermost's own client binds
-		// a post to its pending id: presses on it at once, from two views of
-		// it, post it once.
+		// a post to its pending id: a press after this one, which finds the
+		// draft still there if deleting it failed, is answered with this post.
 		created, err := client.CreatePost(ctx, mattermost.NewPost{
 			ChannelID: input.ChannelID, RootID: input.RootID, Message: there.Message,
 			Props:     aiMarker(cfg.MarkAIGenerated, self.Id),
@@ -805,6 +818,58 @@ func pressDraft(ctx context.Context, client *mattermost.Client, cfg config.Confi
 	return now(saved, "saved")
 }
 
+// presses are the presses on each draft this server holds to one at a time,
+// by user, channel and thread. A press posts a draft bound to a pending id,
+// which Mattermost answers a second post with, but it reads and records the id
+// in two steps (deduplicateCreatePost in server/channels/app/post.go, on both
+// supported releases), so presses that reach it together each post: views of
+// one proposal pressed at once would post it more than once. Taking turns, a
+// press after the first finds the draft gone. A proposal takes its turn too:
+// one saved while a press posts the draft before it would be deleted with that
+// draft. A server over HTTP may act for several users (ADR-020).
+var presses = struct {
+	sync.Mutex
+	held map[string]*pressTurns
+}{held: map[string]*pressTurns{}}
+
+// pressTurns is one draft's turn, and how many presses hold it or wait.
+type pressTurns struct {
+	turn    chan struct{}
+	waiting int
+}
+
+// holdDraft waits for the presses on the user's draft in a channel, or in a
+// thread of it, that came before, and answers with the release that lets the
+// next one go.
+func holdDraft(ctx context.Context, userID, channelID, rootID string) (func(), error) {
+	key := userID + "/" + channelID + "/" + rootID
+	presses.Lock()
+	turns := presses.held[key]
+	if turns == nil {
+		turns = &pressTurns{turn: make(chan struct{}, 1)}
+		presses.held[key] = turns
+	}
+	turns.waiting++
+	presses.Unlock()
+	leave := func() {
+		presses.Lock()
+		defer presses.Unlock()
+		if turns.waiting--; turns.waiting == 0 {
+			delete(presses.held, key)
+		}
+	}
+	select {
+	case turns.turn <- struct{}{}:
+		return func() {
+			<-turns.turn
+			leave()
+		}, nil
+	case <-ctx.Done():
+		leave()
+		return nil, ctx.Err()
+	}
+}
+
 // pressUses are the operations pressDraft calls.
 func pressUses() []Use {
 	return uses([]Use{
@@ -834,7 +899,8 @@ func pressUses() []Use {
 				"set_online":    Omitted("Mattermost's default marks the user online when they post, as its own client does"),
 				"silent":        Omitted("a silent post notifies nobody it mentions, unlike a post from Mattermost's own message box"),
 				"body.pending_post_id": Undocumented("", "createPost in server/channels/app/post.go deduplicates by it on both supported releases: "+
-					"a second post with the same id within 30 seconds answers with the first; set to the user and the draft's update time, so presses on one draft post once"),
+					"a second post with the same id within 30 seconds answers with the first, though not one that reaches it together with the first, which it reads and records in two steps; "+
+					"set to the user and the draft's update time, so a press after the first, which presses take turns for, posts nothing new"),
 			},
 			Releases: "11.7 has no silent parameter, which the tool never sends",
 		},
