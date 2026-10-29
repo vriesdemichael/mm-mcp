@@ -241,8 +241,9 @@ The tools that write are offered only once you allow writes, with
       picture, when, the Markdown drawn, `@mentions` and `~channels`, the
       cards a webhook or bot posted beside their colored bars, reactions with
       who reacted, the Important and Urgent labels and how many acknowledged
-      a post that asks for it, images you can open whole and file cards, and
-      the edited and pinned marks. It shows the first 30 posts, says how
+      a post that asks for it, images you can open whole and file cards, the
+      edited and pinned marks, and a burn-on-read post you have not opened as
+      a placeholder that opens it in Mattermost. It shows the first 30 posts, says how
       many more the thread has, and loads more as you ask.
     - Kind `unreads` shows what is waiting for you: up to 20 channels with
       something unread, grouped by team, with their unread and mention
@@ -581,6 +582,13 @@ states before it acts ([below](#how-a-write-is-checked)).
   who did and when, and `acknowledged` that you did. Each is there only where
   your server shows it, as Mattermost's settings for message priority and
   acknowledgements say.
+- **A burn-on-read post stays concealed.** On a server with an Enterprise
+  Advanced license, someone can send a post of `type` `burn_on_read`, which
+  Mattermost conceals from you until you open it there; a while after, it is
+  gone for you. Until you open it, the post has `concealed` and nothing of
+  what it holds. No tool opens one: your agent can tell you it waits, and its
+  `url` takes you to it. `expire_at` is when it is gone for you: once opened,
+  when its timer runs out, and until then, the latest it is kept.
 - **A list cuts a long post short.** A list shows at most 4,000 characters of
   a post: its message first, then the text of its message attachments. What
   is cut says its whole length, `message_length` or

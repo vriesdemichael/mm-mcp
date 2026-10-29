@@ -44,6 +44,13 @@ disclosure only to what the agent asks to read.
   channels it belongs to. mm-mcp offers no list of channels or teams to restrict
   it to. To restrict it, give it a bot account that belongs only to the channels
   it needs.
+- **Never open a burn-on-read post.** Opening one in Mattermost reveals it and
+  starts the timer after which it is gone for the person, and revealing is a
+  read, a GET. No tool reveals or burns a post, which
+  `TestNoToolRevealsOrBurnsAPost` holds, and a post concealed from the person
+  reaches the agent as `concealed`, with nothing of what it holds, though
+  Mattermost leaves some of it in the answer. The person opens it in
+  Mattermost when they choose.
 - **Write nothing until writes are allowed.** The tools that post or change
   anything are not offered while `MM_MCP_ALLOW_WRITES` is false, its default.
 - **Check every change others see, and leave approving it to the AI
@@ -207,6 +214,7 @@ Each mitigation is held by a test that fails when the mitigation is removed
 |---|---|---|
 | A post's text running as script in the view | Elements only, built through the DOM; Markdown parsed into elements, never HTML from strings | `TestThePageBuildsNoHTMLFromStrings`, `TestTextFromMattermostIsNeverParsedAsHTML` |
 | An integration posting under a colleague's name | Only an integration's post shows a name of its own, where the server allows it, tagged BOT, with the account it posted under in its title; the post names that account to the model | `TestAnIntegrationsPostIsHeadedAsMattermostHeadsIt`, `TestOnlyAnIntegrationsPostShowsANameOrIconOfItsOwn` |
+| A burn-on-read post revealed, or shown, for a person who did not open it | A concealed post is drawn as a placeholder that opens it in Mattermost, with nothing it holds; the view calls no tool for it | `TestAConcealedPostIsDrawnAsAPlaceholderThatOpensMattermost`, `TestAConcealedPostSaysSoAndNothingOfWhatItHolds`, `TestNoToolRevealsOrBurnsAPost` |
 | A link that runs script, or takes the view elsewhere | A link opens only through the application, only to `http` or `https` | `TestTextFromMattermostIsNeverParsedAsHTML`, `TestLinksOpenThroughTheHostAndARefusedOneIsShownToCopy` |
 | The view reaching the network | No network domains, everything inline, the sandbox's policy | `TestThePageIsOneSelfContainedDocument`, `TestThePageRunsIsolatedAsAClientRunsIt` |
 | A page other than the application handing the view something to draw | The view takes messages from the application's window alone | `TestOnlyTheHostSpeaksToTheView` |

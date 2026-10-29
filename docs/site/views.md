@@ -95,7 +95,9 @@ Ask to see a thread and your agent shows it with
 emoji, images you can open full size, and the cards a webhook or bot posts,
 such as an alert with its red or green bar. A post marked Important or
 Urgent carries its label, and one that asks to be acknowledged says how many
-did, with who when you point at it. A long thread loads more as you ask.
+did, with who when you point at it. A burn-on-read message you have not
+opened stays concealed, as in Mattermost: **View message in Mattermost**
+takes you there to open it. A long thread loads more as you ask.
 
 <div class="mm-view" data-view="thread" data-title="A thread"></div>
 

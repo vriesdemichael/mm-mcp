@@ -1,0 +1,104 @@
+{
+  "concealed": {
+    "id": "bq4e8sxnd3fy7jhu5c9ktw2rma",
+    "create_at": 1793273204936,
+    "update_at": 1793273204936,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "",
+    "type": "burn_on_read",
+    "props": {
+      "expire_at": 1793878004936,
+      "read_duration": 600000,
+      "attachments": [
+        {
+          "title": "The vault code",
+          "text": "4512 8890"
+        }
+      ]
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {}
+  },
+  "revealed": {
+    "id": "bq4e8sxnd3fy7jhu5c9ktw2rma",
+    "create_at": 1793273204936,
+    "update_at": 1793273204936,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "The vault code is in the attachment.",
+    "type": "burn_on_read",
+    "props": {
+      "expire_at": 1793878004936,
+      "read_duration": 600000,
+      "attachments": [
+        {
+          "title": "The vault code",
+          "text": "4512 8890"
+        }
+      ]
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "expire_at": 1793273864936
+    }
+  },
+  "author": {
+    "id": "bq4e8sxnd3fy7jhu5c9ktw2rma",
+    "create_at": 1793273204936,
+    "update_at": 1793273204936,
+    "edit_at": 0,
+    "delete_at": 0,
+    "is_pinned": false,
+    "user_id": "y6d8b4ebgbfjjenyatq36utqgy",
+    "channel_id": "zkicjyjqqbg58cnmqfmzr89dqh",
+    "root_id": "",
+    "original_id": "",
+    "message": "The vault code is in the attachment.",
+    "type": "burn_on_read",
+    "props": {
+      "expire_at": 1793878004936,
+      "read_duration": 600000,
+      "attachments": [
+        {
+          "title": "The vault code",
+          "text": "4512 8890"
+        }
+      ]
+    },
+    "hashtags": "",
+    "file_ids": [],
+    "pending_post_id": "",
+    "remote_id": "",
+    "reply_count": 0,
+    "last_reply_at": 0,
+    "participants": null,
+    "metadata": {
+      "recipients": [
+        "k1a7m3cz5tgn8qxbdwpse9hjzo"
+      ]
+    }
+  }
+}

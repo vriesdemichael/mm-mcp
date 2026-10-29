@@ -190,7 +190,23 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .priority-tag[data-priority="urgent"] { background: #d24b4e; }
 .priority-tag[data-priority="important"] { background: #1c58d9; }
 .priority-tag .icon { inline-size: 10px; block-size: 10px; }
+.mark.burn { color: var(--mm-danger); }
 .system-message { margin: 0; font-style: italic; }
+/* A burn-on-read post the person has not revealed, as Mattermost conceals
+   it: a box that says what it is, and the way to it in Mattermost. */
+.concealed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-block: 2px;
+  padding: 8px 10px;
+  border: 1px dashed var(--mm-border-strong);
+  border-radius: var(--mm-radius);
+  background: var(--mm-bg-subtle);
+}
+.concealed .icon { color: var(--mm-danger); }
+.concealed-text { flex: 1 1 16em; }
 .edited { display: block; font-size: var(--mm-text-xs); }
 .cut { margin-block: 4px 0; font-size: var(--mm-text-xs); }
 

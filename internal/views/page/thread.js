@@ -117,8 +117,12 @@ function renderPost(post, options) {
     body.append(el("div", { class: "post-header" }, marks(post)));
   }
   const markdown = { base: options.place.base, team: options.place.teamURL };
-  const cards = Array.isArray(post.message_attachments) ? post.message_attachments : [];
-  if (isSystem(post)) {
+  // A burn-on-read post the person has not revealed shows nothing it holds.
+  const concealed = post.concealed === true;
+  const cards = !concealed && Array.isArray(post.message_attachments) ? post.message_attachments : [];
+  if (concealed) {
+    body.append(concealedPlaceholder(post));
+  } else if (isSystem(post)) {
     body.append(el("p", { class: "system-message muted" }, post.message));
   } else if (post.message || cards.length === 0) {
     body.append(renderMarkdown(post.message, markdown));
@@ -137,9 +141,9 @@ function renderPost(post, options) {
       t("post.cut_attachments", { count: post.message_attachments_length }), " ",
       linkButton(post.url, [t("post.read_whole")])));
   }
-  if (Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
+  if (!concealed && Array.isArray(post.files) && post.files.length > 0) body.append(renderFiles(post));
   const acknowledgements = post.requested_ack === true ? renderAcknowledgements(post) : null;
-  const reactions = post.reactions && typeof post.reactions === "object" ? renderReactions(post.reactions) : null;
+  const reactions = !concealed && post.reactions && typeof post.reactions === "object" ? renderReactions(post.reactions) : null;
   if (acknowledgements || reactions) body.append(el("div", { class: "responses" }, acknowledgements, reactions));
 
   return el("li", { class: classes.join(" "), dataset: { post: post.id } },
@@ -161,9 +165,25 @@ function marks(post) {
   const found = [];
   const priority = priorityLabel(post.priority);
   if (priority) found.push(el("span", { class: "priority-tag", dataset: { priority: post.priority } }, priority));
+  // A burn-on-read post is marked, with when it burns for the person in its
+  // title, as Mattermost's badge and timer show it.
+  if (post.type === "burn_on_read") {
+    found.push(el("span", { class: "mark burn", title: post.expire_at ? t("post.burns_at", { time: formatMoment(post.expire_at) }) : null },
+      icon("flame"), t("post.burn_on_read")));
+  }
   if (post.pinned) found.push(el("span", { class: "mark pinned" }, icon("pin"), t("post.pinned")));
   if (post.ai_generated) found.push(el("span", { class: "mark muted" }, t("post.ai")));
   return found;
+}
+
+// concealedPlaceholder stands in for a burn-on-read post the person has not
+// revealed, as Mattermost conceals it. Revealing it is theirs to do, in
+// Mattermost: it starts the timer after which the post is gone for them.
+function concealedPlaceholder(post) {
+  return el("div", { class: "concealed", role: "note" },
+    icon("flame"),
+    el("span", { class: "concealed-text" }, t("post.concealed")),
+    linkButton(post.url, [t("post.view_message")], { class: "link concealed-open" }));
 }
 
 // messageAttachment is a card an integration posted, as Mattermost draws it:
