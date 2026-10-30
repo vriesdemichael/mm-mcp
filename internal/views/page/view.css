@@ -312,13 +312,6 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   border-inline-start: 4px solid var(--mm-border-strong);
   border-radius: var(--mm-radius-sm);
 }
-.attachment-card[data-bar="green"], .block-container[data-bar="green"] { border-inline-start-color: #2f9e4f; }
-.attachment-card[data-bar="yellow"], .block-container[data-bar="yellow"] { border-inline-start-color: #d6a21e; }
-.attachment-card[data-bar="red"], .block-container[data-bar="red"] { border-inline-start-color: #c62f36; }
-.attachment-card[data-bar="orange"], .block-container[data-bar="orange"] { border-inline-start-color: #f08c00; }
-.attachment-card[data-bar="blue"], .block-container[data-bar="blue"] { border-inline-start-color: #3a6fc2; }
-.attachment-card[data-bar="purple"], .block-container[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
-.attachment-card[data-bar="gray"], .block-container[data-bar="gray"] { border-inline-start-color: #8b8f99; }
 .attachment-author { font-size: var(--mm-text-xs); font-weight: 600; overflow-wrap: anywhere; }
 .attachment-title { margin: 0; font-size: var(--mm-heading); overflow-wrap: anywhere; }
 .attachment-title .link { font-weight: 600; }
@@ -344,6 +337,14 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   border-radius: var(--mm-radius-sm);
 }
 .block-container[data-border="true"][data-bar]:not([data-bar="none"]) { border-inline-start-width: 4px; }
+/* After the border above, which would otherwise take the bar's color. */
+.attachment-card[data-bar="green"], .block-container[data-bar="green"] { border-inline-start-color: #2f9e4f; }
+.attachment-card[data-bar="yellow"], .block-container[data-bar="yellow"] { border-inline-start-color: #d6a21e; }
+.attachment-card[data-bar="red"], .block-container[data-bar="red"] { border-inline-start-color: #c62f36; }
+.attachment-card[data-bar="orange"], .block-container[data-bar="orange"] { border-inline-start-color: #f08c00; }
+.attachment-card[data-bar="blue"], .block-container[data-bar="blue"] { border-inline-start-color: #3a6fc2; }
+.attachment-card[data-bar="purple"], .block-container[data-bar="purple"] { border-inline-start-color: #8e4fd6; }
+.attachment-card[data-bar="gray"], .block-container[data-bar="gray"] { border-inline-start-color: #8b8f99; }
 .block-columns { display: flex; flex-wrap: wrap; gap: 4px 16px; min-width: 0; }
 .block-column { flex: 1 1 10em; }
 .block-text.muted { color: var(--mm-text-muted); }

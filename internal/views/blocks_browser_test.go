@@ -75,14 +75,15 @@ func TestBlocksAreDrawnAsMattermostDrawsThem(t *testing.T) {
 	h := openHost(t)
 	i := h.mount(showDeploys())
 	var drawn struct {
-		Bars, Borders, Columns []string
-		Subtle, Folded, Image  string
-		Open, Dividers         int
-		Message, Cut, Rolled   string
+		Bars, Colors, Borders, Columns []string
+		Subtle, Folded, Image          string
+		Open, Dividers                 int
+		Message, Cut, Rolled           string
 	}
 	h.in(i, `const p = d.querySelector('[data-post="d1"]');
 	return {
 		Bars: [...p.querySelectorAll('.block-container')].map((c) => c.dataset.bar),
+		Colors: [...p.querySelectorAll('.block-container')].map((c) => getComputedStyle(c).borderInlineStartColor),
 		Borders: [...p.querySelectorAll('.block-container')].map((c) => c.dataset.border),
 		Columns: [...p.querySelectorAll('.block-columns > .block-column')].map((c) => [...c.querySelectorAll('.block-text')].map((x) => x.textContent + (x.classList.contains('muted') ? '~' : '')).join('+')),
 		Subtle: getComputedStyle(p.querySelector('.block-text.muted')).color === getComputedStyle(p.querySelector('.block-text:not(.muted)')).color ? 'same' : 'muted',
@@ -96,6 +97,10 @@ func TestBlocksAreDrawnAsMattermostDrawsThem(t *testing.T) {
 	};`, &drawn)
 	if strings.Join(drawn.Bars, " ") != "red blue" || strings.Join(drawn.Borders, " ") != "true false" {
 		t.Errorf("the containers are drawn with bars %q, borders %q", drawn.Bars, drawn.Borders)
+	}
+	// A border around a container leaves its bar the color it was given.
+	if strings.Join(drawn.Colors, " ") != "rgb(198, 47, 54) rgb(58, 111, 194)" {
+		t.Errorf("the bars are drawn in %q; want the view's red and blue", drawn.Colors)
 	}
 	if strings.Join(drawn.Columns, " | ") != "Stage~+migrate | Duration~+4m 12s" || drawn.Subtle != "muted" {
 		t.Errorf("the columns are drawn as %q, subtle %s", drawn.Columns, drawn.Subtle)
