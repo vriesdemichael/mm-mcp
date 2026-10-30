@@ -23,7 +23,7 @@ The unread view lists at most 20 channels, 10 mentions and 10 followed threads, 
 
 One page draws every view: plain JavaScript and CSS embedded in the binary with go:embed, with no build step and no third-party code, declaring no network domains. Text from Mattermost is never parsed as HTML: the page builds elements through the DOM, renders Markdown with a parser of its own that produces elements, and opens a link only through the host. It takes the host's theme and Mattermost's own wording. A count in a view is Mattermost's, and a view that lists fewer says so.
 
-The page declares fullscreen beside inline, which is what makes a host offer it: Claude Code draws a button of its own beside each view, and VS Code has inline alone. The host gives and takes it. The page fills the frame it is given, and an opened image is alone in that frame, fitted to it, since an image is what cannot wrap to use the room inline and is often why a person opened the post. The page has no button of its own and never asks, since the host's reaches the same frame without taking room from every view.
+The page declares fullscreen beside inline, which is what makes a host offer it: Claude Code draws a button of its own beside each view, which opens it in a pane of its own, and VS Code has inline alone. The host gives and takes it. The page fills the frame it is given, and an opened image is alone in that frame, fitted to it, since an image is what cannot wrap to use the room inline and is often why a person opened the post. The page has no button of its own and never asks, since the host's reaches the same frame without taking room from every view.
 
 Add a view only to a tool whose every call the person should see. Build elements, never HTML from strings; the browser tests under the `views` tag hold the page. Draw a view from the data tool's output, unchanged, and have the view fetch what serves the eye alone as resources. Send what a view does through the tools only views call, and an action that changes something through one annotated as writing.
 
@@ -41,6 +41,6 @@ A person takes in a thread faster laid out as Mattermost lays it out than from a
 - **A channel's first unread lines in the unread view**: Every channel listed would cost a request in every client, for lines the view opens in place on a click.
 - **Whether writes are allowed, in the result**: Goose replaces a result's `_meta`, and the structured output holds only the data tools' answers; the page, which the server serves, is where its server's settings go.
 - **A Mark read that a read-only server refuses**: Read-only is the default, so most views would offer a button that never works.
-- **An opened image asking for fullscreen**: In Claude Code the image stayed in the view, and VS Code has inline alone.
+- **An opened image asking for fullscreen**: Claude Code lists fullscreen but answers a view's request with inline, and VS Code has inline alone.
 - **A component library rendered on the server**: A thread and a composer need control over layout and Markdown rendering that a library constrains.
 - **React bundled with a build step**: Node in every build, and a large bundle in every view, for pages a few hundred lines of plain JavaScript draw.
