@@ -22,6 +22,8 @@ const view = {
   // What the view draws: the call's arguments, and its result.
   input: null,
   result: null,
+  // The results a quote was opened from, latest last, for the way back.
+  trail: [],
   error: "",
   waited: false,
   standalone: false,
@@ -36,6 +38,7 @@ bridge.on("ui/notifications/tool-input", (params) => {
 
 bridge.on("ui/notifications/tool-result", (result) => {
   view.result = null;
+  view.trail = [];
   view.error = "";
   if (!result || typeof result !== "object") {
     view.error = t("view.nothing");

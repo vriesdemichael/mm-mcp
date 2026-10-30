@@ -364,6 +364,11 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   border-radius: var(--mm-radius);
   background: var(--mm-bg);
 }
+.quote[data-opens="true"] { cursor: pointer; }
+.quote[data-opens="true"]:hover { border-color: var(--mm-border-strong); }
+/* A long quote is cut to a height, faded where it is cut; opening it reads the rest. */
+.quote-text { max-block-size: 12em; overflow: hidden; }
+.quote-text[data-clamped="true"] { mask-image: linear-gradient(to bottom, #000 70%, transparent); }
 .quote .post-header { gap: 2px 8px; }
 .quote-files { display: flex; align-items: center; gap: 4px; font-size: var(--mm-text-xs); }
 .quote-channel { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
@@ -472,6 +477,7 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
   cursor: pointer;
 }
 .more:disabled { opacity: 0.6; cursor: progress; }
+.back { margin-block-end: 8px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .skeleton-line { animation: pulse 1.4s ease-in-out infinite; }

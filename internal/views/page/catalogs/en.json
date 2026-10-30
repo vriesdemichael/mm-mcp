@@ -106,7 +106,8 @@
     "one": "{count} file",
     "other": "{count} files"
   },
-  "quote.open": "Open the quoted post in Mattermost",
+  "quote.open": "Open the quoted post",
+  "quote.open_refused": "This app does not open the quoted post here.",
   "reactions.label": "Reactions",
   "reactions.who": {
     "one": "{who} reacted with {emoji}",
@@ -116,6 +117,7 @@
     "one": "{count} byte",
     "other": "{count} bytes"
   },
+  "thread.back": "Back",
   "thread.empty": "There is no post to show.",
   "thread.more": {
     "one": "{count} more reply",
