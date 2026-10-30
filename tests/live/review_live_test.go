@@ -178,7 +178,7 @@ func TestAMentionEndingASentenceIsAMentionOfEveryone(t *testing.T) {
 
 	createPost(t, session, map[string]any{"channel_id": channel.Id, "message": "Deploy is done, thanks @here. Code says `@nobody`; and @" + other.Username + "."})
 	question := questions.only(t).Message
-	mustContain(t, "question", question, "@here notifies everyone in the channel who is online")
+	mustContain(t, "question", question, "@here notifies everyone else in the channel who is online: up to")
 	// The question puts what the post does before the message itself.
 	if strings.Index(question, "notifies") > strings.Index(question, "Deploy is done") {
 		t.Errorf("the question shows the message before what it does:\n%s", question)

@@ -13,30 +13,30 @@
       "channels": {
         "channels": [
           {
-            "address": "mattermost://chat.example.com/acme/channels/design",
-            "display_name": "Design",
-            "id": "hgjkti7c6pdebja738zxw54o9c",
-            "last_post_at": "2026-10-20T21:51:32Z",
-            "mentions": 0,
-            "name": "design",
-            "team": "Acme",
-            "team_id": "1dpo3gq4s3fh8xi5xsprhjn3jc",
-            "type": "public",
-            "unread_messages": 3,
-            "url": "https://chat.example.com/acme/channels/design"
-          },
-          {
             "address": "mattermost://chat.example.com/acme/channels/release-planning",
             "display_name": "Release planning",
-            "id": "ui4n6t936igybr76ofq1i9anho",
-            "last_post_at": "2026-10-20T21:51:32Z",
+            "id": "fw9gey4ssib8pjo7tqxrtakszc",
+            "last_post_at": "2026-10-30T11:37:20Z",
             "mentions": 1,
             "name": "release-planning",
             "team": "Acme",
-            "team_id": "1dpo3gq4s3fh8xi5xsprhjn3jc",
+            "team_id": "8dibqexdbtrh9c8hk9y4t7eo6h",
             "type": "public",
             "unread_messages": 5,
             "url": "https://chat.example.com/acme/channels/release-planning"
+          },
+          {
+            "address": "mattermost://chat.example.com/acme/channels/design",
+            "display_name": "Design",
+            "id": "qo9xf11arbdp3y3qwi9itas9pc",
+            "last_post_at": "2026-10-30T11:37:20Z",
+            "mentions": 0,
+            "name": "design",
+            "team": "Acme",
+            "team_id": "8dibqexdbtrh9c8hk9y4t7eo6h",
+            "type": "public",
+            "unread_messages": 3,
+            "url": "https://chat.example.com/acme/channels/design"
           }
         ]
       },
@@ -49,55 +49,55 @@
         ],
         "posts": [
           {
-            "address": "mattermost://chat.example.com/acme/channels/release-planning/h43fkoax6tf9mktcsypwbzhysr",
+            "address": "mattermost://chat.example.com/acme/channels/release-planning/dptp7ukepiby7qpfpb7hn1fcbo",
             "author": "jordan",
-            "author_id": "rfcqamre1fftidtcu8n48baksh",
+            "author_id": "zwkyk87c7prfibg376qcdxao5r",
             "author_name": "Jordan Lee",
             "channel": "Release planning",
             "channel_address": "mattermost://chat.example.com/acme/channels/release-planning",
-            "channel_id": "ui4n6t936igybr76ofq1i9anho",
+            "channel_id": "fw9gey4ssib8pjo7tqxrtakszc",
             "channel_url": "https://chat.example.com/acme/channels/release-planning",
-            "created_at": "2026-10-20T21:51:32Z",
-            "id": "h43fkoax6tf9mktcsypwbzhysr",
+            "created_at": "2026-10-30T11:37:20Z",
+            "id": "dptp7ukepiby7qpfpb7hn1fcbo",
             "message": "Looks good to me. @riley, is the migration done?",
             "reply_count": 4,
-            "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+            "root_id": "xr57xiy6wf8tmygfgqf39uk38o",
             "team": "Acme",
-            "url": "https://chat.example.com/acme/pl/h43fkoax6tf9mktcsypwbzhysr"
+            "url": "https://chat.example.com/acme/pl/dptp7ukepiby7qpfpb7hn1fcbo"
           }
         ]
       },
       "threads": {
         "threads": [
           {
-            "last_reply_at": "2026-10-20T21:51:32Z",
+            "last_reply_at": "2026-10-30T11:37:20Z",
             "participants": [
               "casey"
             ],
             "reply_count": 1,
-            "root_id": "fupadmn39iyebkkcxah87h4ozw",
+            "root_id": "xw5rtauhrbgg8p16az6975ou4r",
             "started": {
-              "address": "mattermost://chat.example.com/acme/channels/design/fupadmn39iyebkkcxah87h4ozw",
+              "address": "mattermost://chat.example.com/acme/channels/design/xw5rtauhrbgg8p16az6975ou4r",
               "author": "riley",
-              "author_id": "n7ejzsmsc7r13g67k4ccg4z8bo",
+              "author_id": "byjpwu5oztgp5jocwcfjmug7da",
               "author_name": "Riley Chen",
               "channel": "Design",
               "channel_address": "mattermost://chat.example.com/acme/channels/design",
-              "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+              "channel_id": "qo9xf11arbdp3y3qwi9itas9pc",
               "channel_url": "https://chat.example.com/acme/channels/design",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "fupadmn39iyebkkcxah87h4ozw",
-              "last_reply_at": "2026-10-20T21:51:32Z",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "xw5rtauhrbgg8p16az6975ou4r",
+              "last_reply_at": "2026-10-30T11:37:20Z",
               "message": "Should the 2.4 banner still say beta?",
               "reply_count": 1,
               "team": "Acme",
-              "url": "https://chat.example.com/acme/pl/fupadmn39iyebkkcxah87h4ozw"
+              "url": "https://chat.example.com/acme/pl/xw5rtauhrbgg8p16az6975ou4r"
             },
             "unread_mentions": 0,
             "unread_replies": 1
           },
           {
-            "last_reply_at": "2026-10-20T21:51:32Z",
+            "last_reply_at": "2026-10-30T11:37:20Z",
             "participants": [
               "alex",
               "jordan",
@@ -105,24 +105,24 @@
               "sam"
             ],
             "reply_count": 4,
-            "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+            "root_id": "xr57xiy6wf8tmygfgqf39uk38o",
             "started": {
-              "address": "mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r",
+              "address": "mattermost://chat.example.com/acme/channels/release-planning/xr57xiy6wf8tmygfgqf39uk38o",
               "author": "sam",
-              "author_id": "hphrq4ud4trj5qbod1bra87pec",
+              "author_id": "i5rum9mmgjyqtecb5pk9cxadfy",
               "author_name": "Sam Okafor",
               "channel": "Release planning",
               "channel_address": "mattermost://chat.example.com/acme/channels/release-planning",
-              "channel_id": "ui4n6t936igybr76ofq1i9anho",
+              "channel_id": "fw9gey4ssib8pjo7tqxrtakszc",
               "channel_url": "https://chat.example.com/acme/channels/release-planning",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "bp6tuzfr3tf1xpjjihcbm47m3r",
-              "last_reply_at": "2026-10-20T21:51:32Z",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "xr57xiy6wf8tmygfgqf39uk38o",
+              "last_reply_at": "2026-10-30T11:37:20Z",
               "message": "The **2.4 release** moves to Thursday :tada: The notes are in [the release doc](https://docs.example.com/release-2.4). Anything blocking, say so here.",
               "pinned": true,
               "reply_count": 4,
               "team": "Acme",
-              "url": "https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r"
+              "url": "https://chat.example.com/acme/pl/xr57xiy6wf8tmygfgqf39uk38o"
             },
             "unread_mentions": 1,
             "unread_replies": 4
@@ -132,28 +132,28 @@
     }
   },
   "resources": {
-    "mattermost://chat.example.com/users/5ksumwsch7be3ght9tntbghiqe/image": {
-      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACGElEQVR42uzc3WkcQRDEcdNMHg7AOV0aB87A4Cic0+Vj0IEeJBCCG7Zrt3/1qC9m6j9dPaO92fXz998f1KdiAQAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEABvetxvpx7/uoDdn7/4688/ADqX+fvP55NY106Y568nY6gJ+Z7cJ2pId41lsOZsbDLjqKZtK9NKwUEMgMOXZ1QR1MwzbQ6DGvsfhRAGegAAfYsxoQhUAAAAzMyfkBRSASIIAAIAAJoJIOEo1DuGZgAJj0d6xyCC9AAACAAAaCyA3k1I+zZMBYggAMamUMIxUAUA0LQYQz4kGlQBRzqS8xHdrAg6xpeoD0jrAQAcuzzT7gckXtB4erT9OUnmTbHcCNrrV+w9vegesMu15FuS6ddUX4wj94Q3l8I3Sbgpf1woPe63E9l9wXPAqd13EAMAABYAAAABAAABAAABAAABAAABAMBZ5N3R/S5/8V2PJJvX9Ye/E8hjjcqTwJd6r5lRnvMW3TW5iyZgWDYwvRiWvWMvhsX6XgzF/d5xFvd7R7tY3xtHxf3e8Rf3e2dR3O+dS3G/d0bF/d55eSLWrLL8e2dX3O+dY3G/d6Z6wFV6wJzlv3e+xf3eWYug80fQzOW/a+4q4HIHMToUwOT82eKACjhzBVj+r/ugAjRhAOiUADSALW6oABEEADXqfwAAAP//aA/ALvbjO/kAAAAASUVORK5CYII=",
-      "mimeType": "image/png"
-    },
-    "mattermost://chat.example.com/users/hphrq4ud4trj5qbod1bra87pec/image": {
-      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACB0lEQVR42uzc0W0cMRCD4WSQavKYClJBOkh1bsRwAa7JgCswYJ1InT5WsOI/w5FuV/fr7d/vH5TTsAAAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAiAT/15eT36+X+e9Xn6F+1+//8XgIoy7yfRDmBJwjRjmBvyvXlOzCXTtZZBYwQ91Ky2OJrbtpVtreAgBsD28qxqgrnzTNvDYK79RaGEgRkAQK4YG5pABwAAwJ35U5JCOkAEAUAAAEB3Amg4CmWfIQyg4fVI9hlEkBkAAAEAAF0LILsJiW/DdIAIAuDaFGo4BuoAAELFWPKRaFEH7HSk5xPdrgja40vVB9JmAAB7y7PtfkDvHbHl70k6b4r1RtBav2rv6VXPgFWuNd+SdE8YgAeQcFN+K5KD7H5CAM4BBAAABAAABAAABAAABAAABAAABAAAG+S/o6td9kqyq64LeXQB2JYnPSRaAESivAFDHkB8imYxJAFUbWBSGDIAaveO+zHsBnDEtn0nhuF+9jmH+9mn3RFBR/9a8Og4Gu5nn3+4n13FcD+7luF+dkXD/ey6vBELa5R/dnXD/ewah/vZlZoBzzID7in/tesd7mdXLYLOj6A7y3/V2nXA0x3EaCuAm/NniQM64OQOUP7f90EHGMIA0JEADIAlbugAEQQABfURAAD//1zMtwmJojq0AAAAAElFTkSuQmCC",
-      "mimeType": "image/png"
-    },
-    "mattermost://chat.example.com/users/mkzhwxnu8ir88qwnswcbo3hjyw/image": {
-      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACGUlEQVR42uzc3W0bMRDE8WDBt1SRPtSR+kgH6SUFpA+1EsAC/GADhgERt3O3v3n0F8j5c2dJn3jr7++fP6hPxQIAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAA3nS7P049/nUBuz9/8d+fXwB0LvP3n88nsa6dMM9fT8ZQE/I9uU/UkO4ay2DN2dhkxlFN21amlYKDGACHL8+oIqiZZ9ocBjX2PwohDPQAAPoWY0IRqAAAAJiZPyEppAJEEAAEAAA0E0DCUah3DM0AEh6P9I5BBOkBABAAANBYAL2bkPZtmAoQQQCMTaGEY6AKAKBpMYZ8SDSoAo50JOcjulkRdIwvUR+Q1gMAOHZ5pt0PSLyg8fRo+3OSzJtiuRG016/Ye3rRPWCXa8m3JNOvqb4YR+4Jby6Fb5JwU/64ULrdHyey+4LngFO77yAGAAAsAAAAAgAAAgAAAgAAAgAAAgCAs8i7o/td/uK7Hkk2r+sPfyeQxxqVJ4Ev9V4zozznLbprchdNwLBsYHoxLHvHXgyL9b0Yivu94yzu9452sb43jor7veMv7vfOorjfO5fifu+Mivu98/JErFll+ffOrrjfO8fifu9M9YCr9IA5y3/vfIv7vbMWQeePoJnLf9fcVcDlDmJ0KIDJ+bPFARVw5gqw/F/3QQVowgDQKQFoAFvcUAEiCABq1P8AAAD//yinumpUvMN4AAAAAElFTkSuQmCC",
-      "mimeType": "image/png"
-    },
-    "mattermost://chat.example.com/users/n7ejzsmsc7r13g67k4ccg4z8bo/image": {
+    "mattermost://chat.example.com/users/byjpwu5oztgp5jocwcfjmug7da/image": {
       "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACCElEQVR42uzcUXEcMRCE4WQqJIIiAAIqDPJgbgZgFKbhKiNwlXXq1ulrBKv+Z3qk29X9+vPv7QflNCwAAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAAC4FOvL7+Pfv6fZ32e/kW7//5/B6CizPtJtANYkjDNGOaGfG+eE3PJdK1l0BhBDzWrLY7mtm1lWys4iAGwvTyrmmDuPNP2MJhrf1EoYWAGAJArxoYm0AEAAHBn/pSkkA4QQQAQAADQnQAajkLZZwgDaHg9kn0GEWQGAEAAAEDXAshuQuLbMB0gggC4NoUajoE6AIBQMZZ8JFrUATsd6flEtyuC9vhS9YG0GQDA3vJsux/Qe0ds+XuSzptivRG01q/ae3rVM2CVa823JN0TBuABJNyU34rkILufEIBzAAEAAAEAAAEAAAEAAAEAAAEAAAEAwAb57+hql72S7KrrQh5dALblSQ+JFgCRKG/AkAcQn6JZDEkAVRuYFIYMgNq9434MuwEcsW3fiWG4n33O4X72aXdE0NG/Fjw6job72ecf7mdXMdzPrmW4n13RcD+7Lm/Ewhrln13dcD+7xuF+dqVmwLPMgHvKf+16h/vZVYug8yPozvJftXYd8HQHMdoK4Ob8WeKADji5A5T/933QAYYwAHQkAANgiRs6QAQBQEF9BAAA//8rRbPuY3xqDwAAAABJRU5ErkJggg==",
       "mimeType": "image/png"
     },
-    "mattermost://chat.example.com/users/rfcqamre1fftidtcu8n48baksh/image": {
-      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACF0lEQVR42uzc3WkkMRDE8aNRIhvRZXCBbAAXyGZzUVwqBi/4wQZjWDFdM/2rR38h1V9dLXlWs+6///2iPhULAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAHjX/XE79fjXBez++sW/f/4D0LnMP34+n8S6dsI8fz0ZQ03I9+Q+UUO6ayyDNWdjkxlHNW1bmVYKDmIAHL48o4qgZp5pcxjU2P8ohDDQAwDoW4wJRaACAABgZv6EpJAKEEEAEAAA0EwACUeh3jE0A0h4PNI7BhGkBwBAAABAYwH0bkLat2EqQAQBMDaFEo6BKgCApsUY8iHRoAo40pGcj+hmRdAxvkR9QFoPAODY5Zl2PyDxgsbTo+3PSTJviuVG0F6/Yu/pRfeAXa4l35JMv6b6Yhy5J7y5FH5Iwk3540Lp/ridyO4LngNO7b6DGAAAsAAAAAgAAAgAAAgAAAgAAAgAAM4i747ud/mb73ok2byuP/2dQB5rVJ4EvtR7zYzynLforsldNAHDsoHpxbDsHXsxLNb3Yiju946zuN872sX63jgq7veOv7jfO4vifu9civu9Myru987LE7FmleXfO7vifu8ci/u9M9UDrtID5iz/vfMt7vfOWgSdP4JmLv9dc1cBlzuI0aEAJufPFgdUwJkrwPJ/3QcVoAkDQKcEoAFscUMFiCAAqFFvAQAA///k3q651KWe0gAAAABJRU5ErkJggg==",
+    "mattermost://chat.example.com/users/i5rum9mmgjyqtecb5pk9cxadfy/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACB0lEQVR42uzc0W0cMRCD4WSQavKYClJBOkh1bsRwAa7JgCswYJ1InT5WsOI/w5FuV/fr7d/vH5TTsAAAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAgAAAiAT/15eT36+X+e9Xn6F+1+//8XgIoy7yfRDmBJwjRjmBvyvXlOzCXTtZZBYwQ91Ky2OJrbtpVtreAgBsD28qxqgrnzTNvDYK79RaGEgRkAQK4YG5pABwAAwJ35U5JCOkAEAUAAAEB3Amg4CmWfIQyg4fVI9hlEkBkAAAEAAF0LILsJiW/DdIAIAuDaFGo4BuoAAELFWPKRaFEH7HSk5xPdrgja40vVB9JmAAB7y7PtfkDvHbHl70k6b4r1RtBav2rv6VXPgFWuNd+SdE8YgAeQcFN+K5KD7H5CAM4BBAAABAAABAAABAAABAAABAAABAAAG+S/o6td9kqyq64LeXQB2JYnPSRaAESivAFDHkB8imYxJAFUbWBSGDIAaveO+zHsBnDEtn0nhuF+9jmH+9mn3RFBR/9a8Og4Gu5nn3+4n13FcD+7luF+dkXD/ey6vBELa5R/dnXD/ewah/vZlZoBzzID7in/tesd7mdXLYLOj6A7y3/V2nXA0x3EaCuAm/NniQM64OQOUP7f90EHGMIA0JEADIAlbugAEQQABfURAAD//1zMtwmJojq0AAAAAElFTkSuQmCC",
       "mimeType": "image/png"
     },
-    "mattermost://chat.example.com/users/y314st613pga9y5zo9ysr8dfua/image": {
+    "mattermost://chat.example.com/users/ou5egbzcijga9khid41ryhrwqy/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACGUlEQVR42uzc3W0bMRDE8WDBt1SRPtSR+kgH6SUFpA+1EsAC/GADhgERt3O3v3n0F8j5c2dJn3jr7++fP6hPxQIAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAA3nS7P049/nUBuz9/8d+fXwB0LvP3n88nsa6dMM9fT8ZQE/I9uU/UkO4ay2DN2dhkxlFN21amlYKDGACHL8+oIqiZZ9ocBjX2PwohDPQAAPoWY0IRqAAAAJiZPyEppAJEEAAEAAA0E0DCUah3DM0AEh6P9I5BBOkBABAAANBYAL2bkPZtmAoQQQCMTaGEY6AKAKBpMYZ8SDSoAo50JOcjulkRdIwvUR+Q1gMAOHZ5pt0PSLyg8fRo+3OSzJtiuRG016/Ye3rRPWCXa8m3JNOvqb4YR+4Jby6Fb5JwU/64ULrdHyey+4LngFO77yAGAAAsAAAAAgAAAgAAAgAAAgAAAgCAs8i7o/td/uK7Hkk2r+sPfyeQxxqVJ4Ev9V4zozznLbprchdNwLBsYHoxLHvHXgyL9b0Yivu94yzu9452sb43jor7veMv7vfOorjfO5fifu+Mivu98/JErFll+ffOrrjfO8fifu9M9YCr9IA5y3/vfIv7vbMWQeePoJnLf9fcVcDlDmJ0KIDJ+bPFARVw5gqw/F/3QQVowgDQKQFoAFvcUAEiCABq1P8AAAD//yinumpUvMN4AAAAAElFTkSuQmCC",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/q1pw7n1oxpftu8apqmgahm19to/image": {
       "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACB0lEQVR42uzc0W0cMRCD4WSQqtJBgNSSCvLoYlyAAbdnwBUYsE6kTh8rWPGf4Ui3q/v1+vvfD8ppWAAAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAAQAAATAp/6+/z/6+X+e9Xn6F+1++/MCQEWZ95NoB7AkYZoxzA353jwn5pLpWsugMYIealZbHM1t28q2VnAQA2B7eVY1wdx5pu1hMNf+olDCwAwAIFeMDU2gAwAA4M78KUkhHSCCACAAAKA7ATQchbLPEAbQ8Hok+wwiyAwAgAAAgK4FkN2ExLdhOkAEAXBtCjUcA3UAAKFiLPlItKgDdjrS84luVwTt8aXqA2kzAIC95dl2P6D3jtjy9ySdN8V6I2itX7X39KpnwCrXmm9JuicMwANIuCm/FclBdj8hAOcAAgAAAgAAAgAAAgAAAgAAAgAAAgCADfLf0dUueyXZVdeFPLoAbMuTHhItACJR3oAhDyA+RbMYkgCqNjApDBkAtXvH/Rh2Azhi274Tw3A/+5zD/ezT7oigo38teHQcDfezzz/cz65iuJ9dy3A/u6LhfnZd3oiFNco/u7rhfnaNw/3sSs2AZ5kB95T/2vUO97OrFkHnR9Cd5b9q7Trg6Q5itBXAzfmzxAEdcHIHKP/v+6ADDGEA6EgABsASN3SACAKAgvoIAAD///jJtb9bhUlJAAAAAElFTkSuQmCC",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/xh5xgcgimp8mzjw3asg63t9j6a/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACGElEQVR42uzc3WkcQRDEcdNMHg7AOV0aB87A4Cic0+Vj0IEeJBCCG7Zrt3/1qC9m6j9dPaO92fXz998f1KdiAQAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEAAAEABvetxvpx7/uoDdn7/4688/ADqX+fvP55NY106Y568nY6gJ+Z7cJ2pId41lsOZsbDLjqKZtK9NKwUEMgMOXZ1QR1MwzbQ6DGvsfhRAGegAAfYsxoQhUAAAAzMyfkBRSASIIAAIAAJoJIOEo1DuGZgAJj0d6xyCC9AAACAAAaCyA3k1I+zZMBYggAMamUMIxUAUA0LQYQz4kGlQBRzqS8xHdrAg6xpeoD0jrAQAcuzzT7gckXtB4erT9OUnmTbHcCNrrV+w9vegesMu15FuS6ddUX4wj94Q3l8I3Sbgpf1woPe63E9l9wXPAqd13EAMAABYAAAABAAABAAABAAABAAABAMBZ5N3R/S5/8V2PJJvX9Ye/E8hjjcqTwJd6r5lRnvMW3TW5iyZgWDYwvRiWvWMvhsX6XgzF/d5xFvd7R7tY3xtHxf3e8Rf3e2dR3O+dS3G/d0bF/d55eSLWrLL8e2dX3O+dY3G/d6Z6wFV6wJzlv3e+xf3eWYug80fQzOW/a+4q4HIHMToUwOT82eKACjhzBVj+r/ugAjRhAOiUADSALW6oABEEADXqfwAAAP//aA/ALvbjO/kAAAAASUVORK5CYII=",
+      "mimeType": "image/png"
+    },
+    "mattermost://chat.example.com/users/zwkyk87c7prfibg376qcdxao5r/image": {
+      "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACF0lEQVR42uzc3WkkMRDE8aNRIhvRZXCBbAAXyGZzUVwqBi/4wQZjWDFdM/2rR38h1V9dLXlWs+6///2iPhULAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAHjX/XE79fjXBez++sW/f/4D0LnMP34+n8S6dsI8fz0ZQ03I9+Q+UUO6ayyDNWdjkxlHNW1bmVYKDmIAHL48o4qgZp5pcxjU2P8ohDDQAwDoW4wJRaACAABgZv6EpJAKEEEAEAAA0EwACUeh3jE0A0h4PNI7BhGkBwBAAABAYwH0bkLat2EqQAQBMDaFEo6BKgCApsUY8iHRoAo40pGcj+hmRdAxvkR9QFoPAODY5Zl2PyDxgsbTo+3PSTJviuVG0F6/Yu/pRfeAXa4l35JMv6b6Yhy5J7y5FH5Iwk3540Lp/ridyO4LngNO7b6DGAAAsAAAAAgAAAgAAAgAAAgAAAgAAM4i747ud/mb73ok2byuP/2dQB5rVJ4EvtR7zYzynLforsldNAHDsoHpxbDsHXsxLNb3Yiju946zuN872sX63jgq7veOv7jfO4vifu9civu9Myru987LE7FmleXfO7vifu8ci/u9M9UDrtID5iz/vfMt7vfOWgSdP4JmLv9dc1cBlzuI0aEAJufPFgdUwJkrwPJ/3QcVoAkDQKcEoAFscUMFiCAAqFFvAQAA///k3q651KWe0gAAAABJRU5ErkJggg==",
       "mimeType": "image/png"
     }
   },
@@ -162,62 +162,62 @@
       {
         "content": [
           {
-            "text": "{\"channel\":\"Design\",\"channel_address\":\"mattermost://chat.example.com/acme/channels/design\",\"channel_id\":\"hgjkti7c6pdebja738zxw54o9c\",\"channel_url\":\"https://chat.example.com/acme/channels/design\",\"first_unread_id\":\"hepwkd7hf7ywfk3smsamp9qn7e\",\"posts\":[{\"address\":\"mattermost://chat.example.com/acme/channels/design/fupadmn39iyebkkcxah87h4ozw\",\"author\":\"riley\",\"author_id\":\"n7ejzsmsc7r13g67k4ccg4z8bo\",\"author_name\":\"Riley Chen\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"fupadmn39iyebkkcxah87h4ozw\",\"message\":\"Should the 2.4 banner still say beta?\",\"reply_count\":1,\"responses\":1,\"url\":\"https://chat.example.com/acme/pl/fupadmn39iyebkkcxah87h4ozw\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/hepwkd7hf7ywfk3smsamp9qn7e\",\"author\":\"priya\",\"author_id\":\"mkzhwxnu8ir88qwnswcbo3hjyw\",\"author_name\":\"Priya Natarajan\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"hepwkd7hf7ywfk3smsamp9qn7e\",\"message\":\"New screenshots for 2.4 are up :frame_with_picture:\",\"reply_count\":0,\"url\":\"https://chat.example.com/acme/pl/hepwkd7hf7ywfk3smsamp9qn7e\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/qnr6xqqy178umy6nmtrr7c6her\",\"author\":\"morgan\",\"author_id\":\"5ksumwsch7be3ght9tntbghiqe\",\"author_name\":\"Morgan Blake\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"qnr6xqqy178umy6nmtrr7c6her\",\"message\":\"Love the dark mode ones.\",\"reply_count\":0,\"url\":\"https://chat.example.com/acme/pl/qnr6xqqy178umy6nmtrr7c6her\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/hcxagnmefbb6bywacnk1sw591e\",\"author\":\"casey\",\"author_id\":\"y314st613pga9y5zo9ysr8dfua\",\"author_name\":\"Casey Nguyen\",\"created_at\":\"2026-10-20T21:51:32Z\",\"id\":\"hcxagnmefbb6bywacnk1sw591e\",\"message\":\"Yes, until the docs land on Thursday.\",\"reply_count\":0,\"root_id\":\"fupadmn39iyebkkcxah87h4ozw\",\"url\":\"https://chat.example.com/acme/pl/hcxagnmefbb6bywacnk1sw591e\"}],\"team\":\"Acme\",\"unread\":3}",
+            "text": "{\"channel\":\"Design\",\"channel_address\":\"mattermost://chat.example.com/acme/channels/design\",\"channel_id\":\"qo9xf11arbdp3y3qwi9itas9pc\",\"channel_url\":\"https://chat.example.com/acme/channels/design\",\"first_unread_id\":\"91frgpty4jg7xmmnbu9jocexiy\",\"posts\":[{\"address\":\"mattermost://chat.example.com/acme/channels/design/xw5rtauhrbgg8p16az6975ou4r\",\"author\":\"riley\",\"author_id\":\"byjpwu5oztgp5jocwcfjmug7da\",\"author_name\":\"Riley Chen\",\"created_at\":\"2026-10-30T11:37:20Z\",\"id\":\"xw5rtauhrbgg8p16az6975ou4r\",\"message\":\"Should the 2.4 banner still say beta?\",\"reply_count\":1,\"responses\":1,\"url\":\"https://chat.example.com/acme/pl/xw5rtauhrbgg8p16az6975ou4r\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/91frgpty4jg7xmmnbu9jocexiy\",\"author\":\"priya\",\"author_id\":\"ou5egbzcijga9khid41ryhrwqy\",\"author_name\":\"Priya Natarajan\",\"created_at\":\"2026-10-30T11:37:20Z\",\"id\":\"91frgpty4jg7xmmnbu9jocexiy\",\"message\":\"New screenshots for 2.4 are up :frame_with_picture:\",\"reply_count\":0,\"url\":\"https://chat.example.com/acme/pl/91frgpty4jg7xmmnbu9jocexiy\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/awtrayt3eiy9frb4mttejzhrdo\",\"author\":\"morgan\",\"author_id\":\"xh5xgcgimp8mzjw3asg63t9j6a\",\"author_name\":\"Morgan Blake\",\"created_at\":\"2026-10-30T11:37:20Z\",\"id\":\"awtrayt3eiy9frb4mttejzhrdo\",\"message\":\"Love the dark mode ones.\",\"reply_count\":0,\"url\":\"https://chat.example.com/acme/pl/awtrayt3eiy9frb4mttejzhrdo\"},{\"address\":\"mattermost://chat.example.com/acme/channels/design/k6zc33ozf7rdzqhnxddrifwfbw\",\"author\":\"casey\",\"author_id\":\"q1pw7n1oxpftu8apqmgahm19to\",\"author_name\":\"Casey Nguyen\",\"created_at\":\"2026-10-30T11:37:20Z\",\"id\":\"k6zc33ozf7rdzqhnxddrifwfbw\",\"message\":\"Yes, until the docs land on Thursday.\",\"reply_count\":0,\"root_id\":\"xw5rtauhrbgg8p16az6975ou4r\",\"url\":\"https://chat.example.com/acme/pl/k6zc33ozf7rdzqhnxddrifwfbw\"}],\"team\":\"Acme\",\"unread\":3}",
             "type": "text"
           }
         ],
         "structuredContent": {
           "channel": "Design",
           "channel_address": "mattermost://chat.example.com/acme/channels/design",
-          "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+          "channel_id": "qo9xf11arbdp3y3qwi9itas9pc",
           "channel_url": "https://chat.example.com/acme/channels/design",
-          "first_unread_id": "hepwkd7hf7ywfk3smsamp9qn7e",
+          "first_unread_id": "91frgpty4jg7xmmnbu9jocexiy",
           "posts": [
             {
-              "address": "mattermost://chat.example.com/acme/channels/design/fupadmn39iyebkkcxah87h4ozw",
+              "address": "mattermost://chat.example.com/acme/channels/design/xw5rtauhrbgg8p16az6975ou4r",
               "author": "riley",
-              "author_id": "n7ejzsmsc7r13g67k4ccg4z8bo",
+              "author_id": "byjpwu5oztgp5jocwcfjmug7da",
               "author_name": "Riley Chen",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "fupadmn39iyebkkcxah87h4ozw",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "xw5rtauhrbgg8p16az6975ou4r",
               "message": "Should the 2.4 banner still say beta?",
               "reply_count": 1,
               "responses": 1,
-              "url": "https://chat.example.com/acme/pl/fupadmn39iyebkkcxah87h4ozw"
+              "url": "https://chat.example.com/acme/pl/xw5rtauhrbgg8p16az6975ou4r"
             },
             {
-              "address": "mattermost://chat.example.com/acme/channels/design/hepwkd7hf7ywfk3smsamp9qn7e",
+              "address": "mattermost://chat.example.com/acme/channels/design/91frgpty4jg7xmmnbu9jocexiy",
               "author": "priya",
-              "author_id": "mkzhwxnu8ir88qwnswcbo3hjyw",
+              "author_id": "ou5egbzcijga9khid41ryhrwqy",
               "author_name": "Priya Natarajan",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "hepwkd7hf7ywfk3smsamp9qn7e",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "91frgpty4jg7xmmnbu9jocexiy",
               "message": "New screenshots for 2.4 are up :frame_with_picture:",
               "reply_count": 0,
-              "url": "https://chat.example.com/acme/pl/hepwkd7hf7ywfk3smsamp9qn7e"
+              "url": "https://chat.example.com/acme/pl/91frgpty4jg7xmmnbu9jocexiy"
             },
             {
-              "address": "mattermost://chat.example.com/acme/channels/design/qnr6xqqy178umy6nmtrr7c6her",
+              "address": "mattermost://chat.example.com/acme/channels/design/awtrayt3eiy9frb4mttejzhrdo",
               "author": "morgan",
-              "author_id": "5ksumwsch7be3ght9tntbghiqe",
+              "author_id": "xh5xgcgimp8mzjw3asg63t9j6a",
               "author_name": "Morgan Blake",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "qnr6xqqy178umy6nmtrr7c6her",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "awtrayt3eiy9frb4mttejzhrdo",
               "message": "Love the dark mode ones.",
               "reply_count": 0,
-              "url": "https://chat.example.com/acme/pl/qnr6xqqy178umy6nmtrr7c6her"
+              "url": "https://chat.example.com/acme/pl/awtrayt3eiy9frb4mttejzhrdo"
             },
             {
-              "address": "mattermost://chat.example.com/acme/channels/design/hcxagnmefbb6bywacnk1sw591e",
+              "address": "mattermost://chat.example.com/acme/channels/design/k6zc33ozf7rdzqhnxddrifwfbw",
               "author": "casey",
-              "author_id": "y314st613pga9y5zo9ysr8dfua",
+              "author_id": "q1pw7n1oxpftu8apqmgahm19to",
               "author_name": "Casey Nguyen",
-              "created_at": "2026-10-20T21:51:32Z",
-              "id": "hcxagnmefbb6bywacnk1sw591e",
+              "created_at": "2026-10-30T11:37:20Z",
+              "id": "k6zc33ozf7rdzqhnxddrifwfbw",
               "message": "Yes, until the docs land on Thursday.",
               "reply_count": 0,
-              "root_id": "fupadmn39iyebkkcxah87h4ozw",
-              "url": "https://chat.example.com/acme/pl/hcxagnmefbb6bywacnk1sw591e"
+              "root_id": "xw5rtauhrbgg8p16az6975ou4r",
+              "url": "https://chat.example.com/acme/pl/k6zc33ozf7rdzqhnxddrifwfbw"
             }
           ],
           "team": "Acme",
@@ -229,12 +229,12 @@
       {
         "content": [
           {
-            "text": "{\"channel_id\":\"hgjkti7c6pdebja738zxw54o9c\",\"read\":true}",
+            "text": "{\"channel_id\":\"qo9xf11arbdp3y3qwi9itas9pc\",\"read\":true}",
             "type": "text"
           }
         ],
         "structuredContent": {
-          "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+          "channel_id": "qo9xf11arbdp3y3qwi9itas9pc",
           "read": true
         }
       }

@@ -139,7 +139,7 @@ func TestAMessageToEveryoneSaysHowManyItReachesAndADeactivatedMentionIsNoted(t *
 		"message":    "@here the build is green, thanks @" + other.Username + " and @" + gone.Username + ". `@nobody` is code.",
 	})
 	mustContain(t, "question", questions.only(t).Message,
-		"@here notifies everyone in the channel who is online", "people in ~"+channel.DisplayName,
+		"@here notifies everyone else in the channel who is online: up to", "people in ~"+channel.DisplayName,
 		"@"+gone.Username+" is deactivated")
 }
 
