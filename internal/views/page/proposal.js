@@ -233,7 +233,7 @@ function confirmation(draft, notifies) {
   let question;
   if (!whole) {
     question = t("confirm.group", { mention: notifies.mentions[0] || "", people });
-  } else if (zones > 0) {
+  } else if (zones > 1) {
     question = here ? t("confirm.here_timezones", { people, count: zones }) : t("confirm.all_timezones", { people, count: zones });
   } else {
     question = here ? t("confirm.here", { people }) : t("confirm.all", { people });

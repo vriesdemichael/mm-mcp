@@ -117,7 +117,7 @@ func TestAMessageThatAlertsAWholeChannelStatesWhomItNotifies(t *testing.T) {
 	noQuestions(t, questions)
 
 	posted := createPost(t, session, map[string]any{"channel_id": big.Id, "message": "@channel the release is out", "reaches": count, "notifies": count - 1})
-	mustContain(t, "question", questions.only(t).Message, "@channel notifies everyone in the channel")
+	mustContain(t, "question", questions.only(t).Message, "@channel notifies everyone else in the channel: "+peopleIn(count-1))
 
 	// Not in a channel of 5 or fewer, and never for an edit, which notifies nobody.
 	createPost(t, session, map[string]any{"channel_id": small.Id, "message": "@here quick sync?"})

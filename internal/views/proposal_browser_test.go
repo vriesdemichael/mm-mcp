@@ -79,7 +79,7 @@ func has(list []string, want string) bool {
 func TestAProposalIsShownAsItWillBePostedHidingNothing(t *testing.T) {
 	h := openHost(t)
 	message := "The plan is [here](https://files.example.net/plan) and at https://chat.example.com/team/pl/p1 \u202Eevil\u202C"
-	i := h.mount(showProposal(proposal(message, map[string]any{"notes": []string{"@here notifies everyone in the channel who is online: 12 people in ~Town Square."}}), nil))
+	i := h.mount(showProposal(proposal(message, map[string]any{"notes": []string{"@here notifies everyone else in the channel who is online: up to 12 people in ~Town Square."}}), nil))
 	var drawn struct {
 		Label, Title, Team, Status, Warning string
 		Targets                             []string
@@ -187,8 +187,18 @@ func TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks(t *testing.T
 	}}}))
 	h.press(here, "Post")
 	h.untilIn(here, "d.querySelector('.confirm')")
-	if got := h.text(here, ".confirm-question"); got != "@here in this message notifies at least 7 other people. Post it anyway?" {
+	if got := h.text(here, ".confirm-question"); got != "@here in this message notifies up to 7 other people. Post it anyway?" {
 		t.Errorf("the confirmation for @here asks %q", got)
+	}
+
+	// One time zone is no news, and is left out.
+	oneZone := h.mount(showProposal(proposal("@channel lunch", nil), map[string]any{"tools": map[string]any{"view_change": []any{
+		answered(map[string]any{"status": "confirm", "notifies": map[string]any{"people": 7, "timezones": 1, "mentions": []string{"@channel"}}}),
+	}}}))
+	h.press(oneZone, "Post")
+	h.untilIn(oneZone, "d.querySelector('.confirm')")
+	if got := h.text(oneZone, ".confirm-question"); got != "@all or @channel in this message notifies 7 people. Post it anyway?" {
+		t.Errorf("the confirmation in one time zone asks %q", got)
 	}
 }
 

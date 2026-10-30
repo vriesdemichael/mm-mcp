@@ -1,7 +1,7 @@
 {
   "input": {
     "message": "Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).",
-    "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r"
+    "root_id": "xr57xiy6wf8tmygfgqf39uk38o"
   },
   "result": {
     "content": [
@@ -11,21 +11,21 @@
       }
     ],
     "structuredContent": {
-      "address": "mattermost://chat.example.com/acme/channels/release-planning/bp6tuzfr3tf1xpjjihcbm47m3r",
+      "address": "mattermost://chat.example.com/acme/channels/release-planning/xr57xiy6wf8tmygfgqf39uk38o",
       "channel": "Release planning",
-      "channel_id": "ui4n6t936igybr76ofq1i9anho",
+      "channel_id": "fw9gey4ssib8pjo7tqxrtakszc",
       "channel_url": "https://chat.example.com/acme/channels/release-planning",
       "length": 132,
       "message": "Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).",
-      "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+      "root_id": "xr57xiy6wf8tmygfgqf39uk38o",
       "saved": true,
       "team": "Acme",
-      "updated_at": "2026-10-20T21:51:33Z",
-      "url": "https://chat.example.com/acme/pl/bp6tuzfr3tf1xpjjihcbm47m3r"
+      "updated_at": "2026-10-30T11:37:21Z",
+      "url": "https://chat.example.com/acme/pl/xr57xiy6wf8tmygfgqf39uk38o"
     }
   },
   "resources": {
-    "mattermost://chat.example.com/users/n7ejzsmsc7r13g67k4ccg4z8bo/image": {
+    "mattermost://chat.example.com/users/byjpwu5oztgp5jocwcfjmug7da/image": {
       "blob": "iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAACCElEQVR42uzcUXEcMRCE4WQqJIIiAAIqDPJgbgZgFKbhKiNwlXXq1ulrBKv+Z3qk29X9+vPv7QflNCwAAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAACAAAC4FOvL7+Pfv6fZ32e/kW7//5/B6CizPtJtANYkjDNGOaGfG+eE3PJdK1l0BhBDzWrLY7mtm1lWys4iAGwvTyrmmDuPNP2MJhrf1EoYWAGAJArxoYm0AEAAHBn/pSkkA4QQQAQAADQnQAajkLZZwgDaHg9kn0GEWQGAEAAAEDXAshuQuLbMB0gggC4NoUajoE6AIBQMZZ8JFrUATsd6flEtyuC9vhS9YG0GQDA3vJsux/Qe0ds+XuSzptivRG01q/ae3rVM2CVa823JN0TBuABJNyU34rkILufEIBzAAEAAAEAAAEAAAEAAAEAAAEAAAEAwAb57+hql72S7KrrQh5dALblSQ+JFgCRKG/AkAcQn6JZDEkAVRuYFIYMgNq9434MuwEcsW3fiWG4n33O4X72aXdE0NG/Fjw6job72ecf7mdXMdzPrmW4n13RcD+7Lm/Ewhrln13dcD+7xuF+dqVmwLPMgHvKf+16h/vZVYug8yPozvJftXYd8HQHMdoK4Ob8WeKADji5A5T/933QAYYwAHQkAANgiRs6QAQBQEF9BAAA//8rRbPuY3xqDwAAAABJRU5ErkJggg==",
       "mimeType": "image/png"
     }
@@ -35,28 +35,28 @@
       {
         "content": [
           {
-            "text": "{\"post\":{\"address\":\"mattermost://chat.example.com/acme/channels/release-planning/8jet9urmx3nx9nni6zok9unr1w\",\"ai_generated\":true,\"author\":\"riley\",\"author_id\":\"n7ejzsmsc7r13g67k4ccg4z8bo\",\"author_name\":\"Riley Chen\",\"channel\":\"Release planning\",\"channel_address\":\"mattermost://chat.example.com/acme/channels/release-planning\",\"channel_id\":\"ui4n6t936igybr76ofq1i9anho\",\"channel_url\":\"https://chat.example.com/acme/channels/release-planning\",\"created_at\":\"2026-10-20T21:51:33Z\",\"id\":\"8jet9urmx3nx9nni6zok9unr1w\",\"message\":\"Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).\",\"reply_count\":5,\"root_id\":\"bp6tuzfr3tf1xpjjihcbm47m3r\",\"team\":\"Acme\",\"url\":\"https://chat.example.com/acme/pl/8jet9urmx3nx9nni6zok9unr1w\"},\"status\":\"posted\"}",
+            "text": "{\"post\":{\"address\":\"mattermost://chat.example.com/acme/channels/release-planning/mi1um7m8h3gcigwwyiobawtbyw\",\"ai_generated\":true,\"author\":\"riley\",\"author_id\":\"byjpwu5oztgp5jocwcfjmug7da\",\"author_name\":\"Riley Chen\",\"channel\":\"Release planning\",\"channel_address\":\"mattermost://chat.example.com/acme/channels/release-planning\",\"channel_id\":\"fw9gey4ssib8pjo7tqxrtakszc\",\"channel_url\":\"https://chat.example.com/acme/channels/release-planning\",\"created_at\":\"2026-10-30T11:37:21Z\",\"id\":\"mi1um7m8h3gcigwwyiobawtbyw\",\"message\":\"Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).\",\"reply_count\":5,\"root_id\":\"xr57xiy6wf8tmygfgqf39uk38o\",\"team\":\"Acme\",\"url\":\"https://chat.example.com/acme/pl/mi1um7m8h3gcigwwyiobawtbyw\"},\"status\":\"posted\"}",
             "type": "text"
           }
         ],
         "structuredContent": {
           "post": {
-            "address": "mattermost://chat.example.com/acme/channels/release-planning/8jet9urmx3nx9nni6zok9unr1w",
+            "address": "mattermost://chat.example.com/acme/channels/release-planning/mi1um7m8h3gcigwwyiobawtbyw",
             "ai_generated": true,
             "author": "riley",
-            "author_id": "n7ejzsmsc7r13g67k4ccg4z8bo",
+            "author_id": "byjpwu5oztgp5jocwcfjmug7da",
             "author_name": "Riley Chen",
             "channel": "Release planning",
             "channel_address": "mattermost://chat.example.com/acme/channels/release-planning",
-            "channel_id": "ui4n6t936igybr76ofq1i9anho",
+            "channel_id": "fw9gey4ssib8pjo7tqxrtakszc",
             "channel_url": "https://chat.example.com/acme/channels/release-planning",
-            "created_at": "2026-10-20T21:51:33Z",
-            "id": "8jet9urmx3nx9nni6zok9unr1w",
+            "created_at": "2026-10-30T11:37:21Z",
+            "id": "mi1um7m8h3gcigwwyiobawtbyw",
             "message": "Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).",
             "reply_count": 5,
-            "root_id": "bp6tuzfr3tf1xpjjihcbm47m3r",
+            "root_id": "xr57xiy6wf8tmygfgqf39uk38o",
             "team": "Acme",
-            "url": "https://chat.example.com/acme/pl/8jet9urmx3nx9nni6zok9unr1w"
+            "url": "https://chat.example.com/acme/pl/mi1um7m8h3gcigwwyiobawtbyw"
           },
           "status": "posted"
         }

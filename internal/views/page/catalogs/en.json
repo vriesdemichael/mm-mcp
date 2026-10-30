@@ -17,18 +17,12 @@
   "call.started": "Call in progress",
   "call.started_by": "Started at {time} by {name}",
   "confirm.all": "@all or @channel in this message notifies {people} people. Post it anyway?",
-  "confirm.all_timezones": {
-    "one": "@all or @channel in this message notifies {people} people, in {count} time zone. Post it anyway?",
-    "other": "@all or @channel in this message notifies {people} people, across {count} time zones. Post it anyway?"
-  },
+  "confirm.all_timezones": "@all or @channel in this message notifies {people} people, across {count} time zones. Post it anyway?",
   "confirm.cancel": "Cancel",
   "confirm.confirm": "Post anyway",
   "confirm.group": "{mention} in this message notifies at least {people} people. Post it anyway?",
-  "confirm.here": "@here in this message notifies at least {people} other people. Post it anyway?",
-  "confirm.here_timezones": {
-    "one": "@here in this message notifies at least {people} other people, in {count} time zone. Post it anyway?",
-    "other": "@here in this message notifies at least {people} other people, across {count} time zones. Post it anyway?"
-  },
+  "confirm.here": "@here in this message notifies up to {people} other people. Post it anyway?",
+  "confirm.here_timezones": "@here in this message notifies up to {people} other people, across {count} time zones. Post it anyway?",
   "confirm.title": "Notify the whole channel?",
   "confirm.title_groups": "Notify these groups?",
   "file.dimensions": "{width} × {height} pixels",

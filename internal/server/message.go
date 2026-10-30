@@ -22,11 +22,12 @@ import (
 // of a database whose message column was never widened.
 const fallbackMaxPostSize = 4000
 
-// specialMentions notify everyone in a channel, or everyone online in it.
+// specialMentions notify everyone else in a channel, or those of them who are
+// online, which no count here tells, so that count is how many it may be.
 var specialMentions = map[string]string{
-	"channel": "everyone in the channel",
-	"all":     "everyone in the channel",
-	"here":    "everyone in the channel who is online",
+	"channel": "everyone else in the channel:",
+	"all":     "everyone else in the channel:",
+	"here":    "everyone else in the channel who is online: up to",
 }
 
 // checkedMessage is what a message will do once posted, for the question.
@@ -97,7 +98,7 @@ func checkMessage(ctx context.Context, client *mattermost.Client, message, where
 			if err != nil {
 				return checkedMessage{}, err
 			}
-			checked.notes = append(checked.notes, fmt.Sprintf("@%s notifies %s: %s in %s.", special, specialMentions[special], peopleCount(count), where))
+			checked.notes = append(checked.notes, fmt.Sprintf("@%s notifies %s %s in %s.", special, specialMentions[special], peopleCount(max(count-1, 0)), where))
 			continue
 		}
 		people = append(people, m)
