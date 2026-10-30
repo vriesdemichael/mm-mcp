@@ -129,7 +129,10 @@ following.
   previews and images are MCP resources the view asks the application for, and
   mm-mcp reads them from Mattermost with its own credential, since the view has
   none. Only a PNG, JPEG, GIF or WebP picture is passed on, and a view reads at
-  most 60 of them. No answer a view draws carries a picture's bytes.
+  most 60 of them. No answer a view draws carries a picture's bytes, with one
+  exception: Claude Code passes on no read, so a thread shown there carries up
+  to 1 MiB of its pictures in the result's `_meta`, which Claude Code gives the
+  view and keeps from its model.
 - **No network of its own.** The page declares no network domains, carries
   everything it needs inline, and runs in the application's sandbox under the
   policy MCP Apps sets for such a page. Its pictures and presses go through the
@@ -137,7 +140,8 @@ following.
 - **What stays behind.** The application keeps the view's data in its
   conversation history, as it keeps a tool's text answer: who wrote what, who
   reacted with what, and a proposal's text. Pictures are read again when a
-  view is drawn again. An application may log every message it exchanges with
+  view is drawn again, except those carried to Claude Code, which it keeps in
+  its transcript on your machine. An application may log every message it exchanges with
   mm-mcp, as Claude Desktop's MCP logs do.
 
 ### How a view draws what others wrote

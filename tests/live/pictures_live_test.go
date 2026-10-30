@@ -5,9 +5,12 @@ package live
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
@@ -101,5 +104,60 @@ func TestPicturesAreReadAsResourcesAndAPostNamesItsImagesPreview(t *testing.T) {
 	}
 	if _, err := readResource(t, session, "emoji", liveResource("/emoji/tada")); err == nil {
 		t.Error("an emoji that comes with Mattermost read as a picture")
+	}
+}
+
+// Claude Code draws views but passes on no read of a resource, so a thread it
+// shows carries its pictures, in _meta, which it keeps from its model. No other
+// client gets them.
+func TestAThreadCarriesItsPicturesToClaudeCodeAndNoOtherClient(t *testing.T) {
+	t.Parallel()
+	admin := admin(t)
+	user, other := seedUser(t, admin), seedUser(t, admin)
+	team := seedTeam(t, admin, user, other)
+	channel := seedChannel(t, admin, team, user, other)
+	author := clientAs(t, other)
+	_, err := author.SetProfileImage(t.Context(), other.Id, picture(t))
+	check(t, err)
+	me, _, err := admin.GetMe(t.Context(), "")
+	check(t, err)
+	emoji, _, err := admin.CreateEmoji(t.Context(), &model.Emoji{Name: uniqueName("emoji"), CreatorId: me.Id}, picture(t), "emoji.png")
+	check(t, err)
+	t.Cleanup(func() { _, _ = admin.DeleteEmoji(context.Background(), emoji.Id) })
+	post, pictureID := attachAs(t, author, channel.Id, "chart.png", picture(t))
+	postAs(t, author, channel.Id, post.Id, "look :"+emoji.Name+": at 12:30:45")
+	token := personalAccessToken(t, admin, user.Id).Token
+	// A call's params are its own: the client writes its name in them.
+	show := func() *mcp.CallToolParams {
+		return &mcp.CallToolParams{Name: "show", Arguments: map[string]any{"kind": "thread", "post_id": post.Id}}
+	}
+
+	// Mattermost makes a preview some time after the upload.
+	session := viewsSessionNamed(t, "claude-code", token)
+	wanted := []string{liveResource("/users/" + other.Id + "/image"), liveResource("/emoji/" + emoji.Name), liveFile(pictureID) + "/preview"}
+	var result *mcp.CallToolResult
+	eventually(t, 30*time.Second, func() (bool, string) {
+		result = callTool(t, session, show())
+		carried, _ := result.Meta["mm-mcp/pictures"].(map[string]any)
+		for _, uri := range wanted {
+			if picture, _ := carried[uri].(string); !strings.HasPrefix(picture, "data:image/png;base64,iVBOR") {
+				return false, uri + " is not carried, of " + fmt.Sprint(len(carried))
+			}
+		}
+		if len(carried) != len(wanted) {
+			return false, fmt.Sprint(len(carried), " are carried where ", len(wanted), " were wanted")
+		}
+		return true, ""
+	})
+	// The rest of the answer, which a model may read, is what it always is.
+	text := result.Content[0].(*mcp.TextContent).Text
+	answer, err := json.Marshal(result.StructuredContent)
+	check(t, err)
+	if strings.Contains(text, "base64") || strings.Contains(string(answer), "base64") {
+		t.Errorf("a picture's bytes reached what a model may read: %q", text)
+	}
+
+	if meta := callTool(t, viewsSession(t, token), show()).Meta; meta["mm-mcp/pictures"] != nil {
+		t.Errorf("a client that reads resources was carried %d bytes of pictures", len(fmt.Sprint(meta["mm-mcp/pictures"])))
 	}
 }

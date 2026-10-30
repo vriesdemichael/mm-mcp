@@ -13,8 +13,18 @@ const RASTER = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
 
 const pictures = new Map();
 
+// carriedPicture is the picture at uri that the result carried, for a host
+// that passes on no read, as a data address, or null.
+function carriedPicture(uri) {
+  const carried = view.carried;
+  if (!isObject(carried) || !Object.hasOwn(carried, uri)) return null;
+  return typeof carried[uri] === "string" && EMBEDDED_IMAGE.test(carried[uri]) ? carried[uri] : null;
+}
+
 // readPicture is the picture at uri as a data address, or null.
 function readPicture(uri) {
+  const carried = carriedPicture(uri);
+  if (carried) return Promise.resolve(carried);
   if (!view.readsResources || typeof uri !== "string" || uri === "") return Promise.resolve(null);
   if (pictures.has(uri)) return pictures.get(uri);
   if (pictures.size >= MAX_PICTURES) return Promise.resolve(null);

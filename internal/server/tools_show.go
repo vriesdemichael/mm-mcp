@@ -117,7 +117,7 @@ func eitherOutput(types ...reflect.Type) *jsonschema.Schema {
 func showUses() []Use {
 	every := Fixed("each of the user's teams", "the unread view lists what is unread in every team the user belongs to")
 	return uses(readPostUses(), userChannelsUses(), []Use{mentionSearchUse(mentionSearchParams(Coverage{}))},
-		followedThreadUses(every), describeUses(true))
+		followedThreadUses(every), describeUses(true), carriedPicturesUses())
 }
 
 func showSpec() Spec {
@@ -159,7 +159,11 @@ func showSpec() Spec {
 				if err != nil {
 					return nil, nil, err
 				}
-				return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: shown(out)}}}, out, nil
+				result := &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: shown(out)}}}
+				if carriesPictures(request) {
+					result.Meta = mcp.Meta{picturesMetaKey: carriedPictures(ctx, threadPictures(client, out))}
+				}
+				return result, out, nil
 			}
 		},
 	), showShapes)

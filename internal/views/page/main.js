@@ -26,6 +26,8 @@ const view = {
   result: null,
   // The results a quote was opened from, latest last, for the way back.
   trail: [],
+  // The pictures the result carried, for a host that passes on no read.
+  carried: null,
   error: "",
   waited: false,
   standalone: false,
@@ -43,6 +45,7 @@ bridge.on("ui/notifications/tool-result", (result) => {
   view.trail = [];
   view.lightbox = null;
   view.error = "";
+  view.carried = result && result._meta ? result._meta["mm-mcp/pictures"] : null;
   if (!result || typeof result !== "object") {
     view.error = t("view.nothing");
   } else if (result.isError) {

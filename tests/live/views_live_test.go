@@ -24,9 +24,15 @@ import (
 // views.
 func viewsSession(t *testing.T, token string) *mcp.ClientSession {
 	t.Helper()
+	return viewsSessionNamed(t, "live", token)
+}
+
+// viewsSessionNamed is viewsSession from a client that gives name as its own.
+func viewsSessionNamed(t *testing.T, name, token string) *mcp.ClientSession {
+	t.Helper()
 	capabilities := &mcp.ClientCapabilities{}
 	capabilities.AddExtension(views.Extension, map[string]any{"mimeTypes": []string{views.MIMEType}})
-	return mcpWith(t, config.Config{URL: liveURL, Token: token}, &mcp.ClientOptions{Capabilities: capabilities})
+	return mcpNamed(t, name, config.Config{URL: liveURL, Token: token}, &mcp.ClientOptions{Capabilities: capabilities})
 }
 
 // sameAnswer fails the test when two answers differ.

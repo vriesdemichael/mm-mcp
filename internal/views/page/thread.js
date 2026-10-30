@@ -595,7 +595,8 @@ function showImageWhole(file) {
   box.addEventListener("keydown", (event) => {
     if (event.key === "Escape") done();
   });
-  readPicture(file.uri).then((url) => {
+  // Where the whole image cannot be read, its preview is what there is.
+  readPicture(file.uri).then((url) => url || readPicture(file.preview_uri)).then((url) => {
     const img = url ? el("img", { alt: name, src: url }) : null;
     holder.replaceChildren(img && img.hasAttribute("src") ? img : el("span", { class: "muted" }, t("image.unavailable")));
   });
