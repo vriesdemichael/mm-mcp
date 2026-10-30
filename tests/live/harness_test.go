@@ -203,6 +203,12 @@ func mcpWriting(t *testing.T, token string, answer func(*mcp.ElicitParams) *mcp.
 
 func mcpWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {
 	t.Helper()
+	return mcpNamed(t, "live", cfg, options)
+}
+
+// mcpNamed is a session from a client that gives name as its own.
+func mcpNamed(t *testing.T, name string, cfg config.Config, options *mcp.ClientOptions) *mcp.ClientSession {
+	t.Helper()
 	rec := &recorder{inner: network.NewSafeTransport()}
 	client := mattermost.New(cfg.URL, cfg.Token, rec)
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
@@ -211,7 +217,7 @@ func mcpWith(t *testing.T, cfg config.Config, options *mcp.ClientOptions) *mcp.C
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = serverSession.Close() })
-	session, err := mcp.NewClient(&mcp.Implementation{Name: "live", Version: "0"}, options).Connect(t.Context(), clientTransport, nil)
+	session, err := mcp.NewClient(&mcp.Implementation{Name: name, Version: "0"}, options).Connect(t.Context(), clientTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
