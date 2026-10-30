@@ -1413,10 +1413,11 @@ chat that show a thread or what you missed as Mattermost shows it, and a post
 your agent drafts with Post, Edit and Discard (<a href="../views/">Views</a>). There is
 nothing to set up in mm-mcp; whether you see them depends on your app:</p>
 <ul>
-<li><strong>Goose's desktop app</strong> shows them as it is.</li>
 <li><strong>VS Code</strong> shows them once <code>chat.mcp.apps.enabled</code> is on: open the
   settings, search for "mcp apps", and tick it.</li>
-<li><strong>Claude Code</strong> in a terminal shows text.</li>
+<li><strong>Claude Code</strong> shows them in the Claude desktop app, to read, and text in a
+  terminal (<a href="../views/#which-apps-show-views">what it shows</a>).</li>
+<li><strong>Goose's desktop app</strong> shows them as it is.</li>
 <li><strong>In another app,</strong> ask your agent to run <code>diagnose</code>: it says whether
   your app shows views.</li>
 </ul>
@@ -1469,8 +1470,8 @@ the <a href="../tools/">tools</a> it reaches for:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>mm-mcp<span class="w"> </span>serve<span class="w"> </span>--transport<span class="w"> </span>http
 </code></pre></div>
 <p>The server listens on <code>http://127.0.0.1:8765/mcp</code>, and says so when it starts.
-It authenticates no client yet, so it refuses to listen anywhere but a
-loopback address
+It authenticates no client, so it refuses to listen anywhere but a loopback
+address
 (<a href="../adr/020-stdio-and-streamable-http-single-tenant-first/">ADR-020</a>), and
 refuses a request a browser marks as sent from a web page of another origin,
 so a page you open cannot use it.</p>

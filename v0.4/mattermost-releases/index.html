@@ -884,6 +884,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#differences-in-what-a-release-shows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Differences in what a release shows
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1071,6 +1082,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#differences-in-what-a-release-shows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Differences in what a release shows
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1175,6 +1197,32 @@ release's own route table and specification
 <td><code>SearchPostsInAllTeams</code></td>
 <td><code>search_posts</code></td>
 <td>Served, as 11.7's router shows, but missing from its specification. Nothing differs in use.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="differences-in-what-a-release-shows">Differences in what a release shows<a class="headerlink" href="#differences-in-what-a-release-shows" title="Permanent link">&para;</a></h2>
+<p>Some releases show more of a post with the same operations. A post carries
+what the release it was read on shows of it, and mm-mcp reads which from the
+client configuration Mattermost gives every logged-in client, as Mattermost's
+own apps do.</p>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Setting</th>
+<th>On the Extended Support Release</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blocks and cards integrations post, in Mattermost's own blocks, Slack's Block Kit or Adaptive Cards</td>
+<td>The feature flag <code>MmBlocksEnabled</code>, on by default from 11.11</td>
+<td>Not shown: 11.7 has no such flag, and a post shows its message and message attachments alone, as Mattermost shows it there. Where the flag is on, a post's blocks take the place of its message attachments and of the preview of its link, as they do in Mattermost.</td>
+</tr>
+<tr>
+<td>The color of a message attachment's bar</td>
+<td>The feature flag <code>MmBlocksEnabled</code>, which draws attachments as blocks</td>
+<td>Only <code>good</code>, <code>warning</code>, <code>danger</code> or a hex color: 11.7 draws no bar in any other, and mm-mcp leaves it out. Where the flag is on, a CSS color such as <code>red</code> or <code>rgb(220, 0, 0)</code> is kept as the integration wrote it.</td>
 </tr>
 </tbody>
 </table>

@@ -1,6 +1,6 @@
 {
   "input": {
-    "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+    "channel_id": "qo9xf11arbdp3y3qwi9itas9pc",
     "message": "Here is the signed invoice, invoice_\u202efdp.exe\u202c, and the [payment page](https://pay.example.net/acme-invoices)."
   },
   "result": {
@@ -13,13 +13,13 @@
     "structuredContent": {
       "address": "mattermost://chat.example.com/acme/channels/design",
       "channel": "Design",
-      "channel_id": "hgjkti7c6pdebja738zxw54o9c",
+      "channel_id": "qo9xf11arbdp3y3qwi9itas9pc",
       "channel_url": "https://chat.example.com/acme/channels/design",
       "length": 109,
       "message": "Here is the signed invoice, invoice_\u202efdp.exe\u202c, and the [payment page](https://pay.example.net/acme-invoices).",
       "saved": true,
       "team": "Acme",
-      "updated_at": "2026-10-20T21:51:33Z",
+      "updated_at": "2026-10-30T11:37:21Z",
       "url": "https://chat.example.com/acme/channels/design"
     }
   }

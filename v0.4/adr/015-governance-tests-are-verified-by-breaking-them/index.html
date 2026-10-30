@@ -1042,6 +1042,7 @@
 <li><code>TestEveryToolDeclaresTheOperationsItCalls</code>: every tool declares the operations it calls, each in the newest specification and served by the newest router.</li>
 <li><code>TestAReadOnlyToolCallsOnlyOperationsThatRead</code>: a tool annotated read-only calls only operations that read: GET, HEAD, or a search or lookup that takes a POST.</li>
 <li><code>TestALocalToolOnlyReadsMattermost</code>: a tool that writes this machine's files calls only operations that read.</li>
+<li><code>TestNoToolRevealsOrBurnsAPost</code>: no tool or resource calls RevealPost or BurnPost, each of which ends a burn-on-read post for a person who never saw it.</li>
 <li><code>TestEveryParameterOfACalledOperationIsAccountedFor</code>: every parameter and body field of a called operation is set, fixed or omitted with a reason.</li>
 <li><code>TestEveryToolArgumentSetsAParameterItCalls</code>: every argument a tool takes sets a parameter it declares, shapes the answer, or is checked against a count mm-mcp makes, saying how, and every declared argument is taken.</li>
 <li><code>TestEveryDifferenceBetweenSupportedReleasesIsHandled</code>: an operation that differs on the oldest supported release is handled, said so, and listed on the releases page.</li>

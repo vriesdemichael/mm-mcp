@@ -1028,7 +1028,7 @@
 <p>Write handlers with typed input and output structs, so the SDK derives and validates both schemas. Use the model types for what mm-mcp sends to and reads from Mattermost, and a struct of mm-mcp's own for what a tool returns, holding only what the model needs. Do not add a second MCP library or a second Mattermost client.</p>
 <h2 id="not-chosen">Not chosen<a class="headerlink" href="#not-chosen" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Python on FastMCP, with a client generated from the OpenAPI specification</strong>: Built and measured first. The specification needed seven repairs before a generator would accept it and still lacked fields the server sends, and every repair was a belief to keep current. FastMCP's ready-made HTTP authentication is the real loss; it is written here when hosted operation needs it (ADR-020).</li>
+<li><strong>Python on FastMCP, with a client generated from the OpenAPI specification</strong>: Built and measured first. The specification needed seven repairs before a generator would accept it and still lacked fields the server sends, and every repair was a belief to keep current. FastMCP's ready-made HTTP authentication would have been the real loss had mm-mcp been hosted, which it is not (ADR-020).</li>
 <li><strong>TypeScript</strong>: Mattermost's web client is TypeScript, but the server's own Go types and client are what its API tests exercise.</li>
 </ul>
 

@@ -1449,6 +1449,13 @@ disclosure only to what the agent asks to read.</p>
   channels it belongs to. mm-mcp offers no list of channels or teams to restrict
   it to. To restrict it, give it a bot account that belongs only to the channels
   it needs.</li>
+<li><strong>Never open a burn-on-read post.</strong> Opening one in Mattermost reveals it and
+  starts the timer after which it is gone for the person, and revealing is a
+  read, a GET. No tool reveals or burns a post, which
+  <code>TestNoToolRevealsOrBurnsAPost</code> holds, and a post concealed from the person
+  reaches the agent as <code>concealed</code>, with nothing of what it holds, though
+  Mattermost leaves some of it in the answer. The person opens it in
+  Mattermost when they choose.</li>
 <li><strong>Write nothing until writes are allowed.</strong> The tools that post or change
   anything are not offered while <code>MM_MCP_ALLOW_WRITES</code> is false, its default.</li>
 <li><strong>Check every change others see, and leave approving it to the AI
@@ -1521,7 +1528,10 @@ following.</p>
   previews and images are MCP resources the view asks the application for, and
   mm-mcp reads them from Mattermost with its own credential, since the view has
   none. Only a PNG, JPEG, GIF or WebP picture is passed on, and a view reads at
-  most 60 of them. No answer a view draws carries a picture's bytes.</li>
+  most 60 of them. No answer a view draws carries a picture's bytes, with one
+  exception: Claude Code passes on no read, so a thread shown there carries up
+  to 1 MiB of its pictures in the result's <code>_meta</code>, which Claude Code gives the
+  view and keeps from its model.</li>
 <li><strong>No network of its own.</strong> The page declares no network domains, carries
   everything it needs inline, and runs in the application's sandbox under the
   policy MCP Apps sets for such a page. Its pictures and presses go through the
@@ -1529,7 +1539,8 @@ following.</p>
 <li><strong>What stays behind.</strong> The application keeps the view's data in its
   conversation history, as it keeps a tool's text answer: who wrote what, who
   reacted with what, and a proposal's text. Pictures are read again when a
-  view is drawn again. An application may log every message it exchanges with
+  view is drawn again, except those carried to Claude Code, which it keeps in
+  its transcript on your machine. An application may log every message it exchanges with
   mm-mcp, as Claude Desktop's MCP logs do.</li>
 </ul>
 <h3 id="how-a-view-draws-what-others-wrote">How a view draws what others wrote<a class="headerlink" href="#how-a-view-draws-what-others-wrote" title="Permanent link">&para;</a></h3>
@@ -1579,11 +1590,12 @@ without the application asking again
   that text and nothing they added in Mattermost; words the person wrote there
   are theirs to send. It checks the message again as it posts. A message that
   alerts as many people as Mattermost has its sender confirm is posted only on
-  a second press, after the view asks Mattermost's own question with counts
-  read at the press. A post is bound to the draft it came from, so presses on
-  one draft at once post it once, and posting deletes the draft, so a later
-  press posts nothing; a Post that got no answer is not offered again. A post
-  from a view is marked as written with AI. A proposal that starts with <code>/</code> is
+  a second press, after the view asks, as Mattermost would, with counts
+  read at the press. Presses on one draft take turns, and posting deletes the
+  draft, so a press after the first posts nothing; a new proposal waits its
+  turn too, so it is not deleted with the draft a press posts. A Post that got
+  no answer is not offered again. A post from a view is marked as written with
+  AI. A proposal that starts with <code>/</code> is
   refused, since Mattermost would run it as a slash command when the person
   sent it.</li>
 <li><strong>What it cannot guarantee.</strong> mm-mcp cannot tell a click from a script. An
@@ -1610,6 +1622,16 @@ without the application asking again
 <td>A post's text running as script in the view</td>
 <td>Elements only, built through the DOM; Markdown parsed into elements, never HTML from strings</td>
 <td><code>TestThePageBuildsNoHTMLFromStrings</code>, <code>TestTextFromMattermostIsNeverParsedAsHTML</code></td>
+</tr>
+<tr>
+<td>An integration posting under a colleague's name</td>
+<td>Only an integration's post shows a name of its own, where the server allows it, tagged BOT, with the account it posted under in its title; the post names that account to the model</td>
+<td><code>TestAnIntegrationsPostIsHeadedAsMattermostHeadsIt</code>, <code>TestOnlyAnIntegrationsPostShowsANameOrIconOfItsOwn</code></td>
+</tr>
+<tr>
+<td>A burn-on-read post revealed, or shown, for a person who did not open it</td>
+<td>A concealed post is drawn as a placeholder that opens it in Mattermost, with nothing it holds; the view calls no tool for it</td>
+<td><code>TestAConcealedPostIsDrawnAsAPlaceholderThatOpensMattermost</code>, <code>TestAConcealedPostSaysSoAndNothingOfWhatItHolds</code>, <code>TestNoToolRevealsOrBurnsAPost</code></td>
 </tr>
 <tr>
 <td>A link that runs script, or takes the view elsewhere</td>
@@ -1663,11 +1685,11 @@ without the application asking again
 </tr>
 <tr>
 <td>A press posting twice</td>
-<td>A post is bound to its draft, so presses at once post once; posting deletes the draft; a Post that got no answer is not offered again</td>
-<td><code>TestPressesOnOneDraftAtOncePostItOnce</code>, <code>TestAProposalIsShownAndPostedOnThePersonsPress</code>, <code>TestAPostThatGetsNoAnswerIsNotOfferedAgain</code></td>
+<td>Presses on one draft take turns, and posting deletes the draft; a Post that got no answer is not offered again</td>
+<td><code>TestPressesOnOneDraftAtOncePostItOnce</code>, <code>TestAProposalDuringAPressIsNotDeletedWithTheDraftItPosts</code>, <code>TestAProposalIsShownAndPostedOnThePersonsPress</code>, <code>TestAPostThatGetsNoAnswerIsNotOfferedAgain</code></td>
 </tr>
 <tr>
-<td>A whole channel alerted without Mattermost's question</td>
+<td>A whole channel alerted without being asked</td>
 <td>The first press answers with Mattermost's counts; only a confirmed press posts</td>
 <td><code>TestAPostThatAlertsAWholeChannelIsConfirmedAtThePress</code>, <code>TestAMessageThatAlertsAWholeChannelIsConfirmedAsMattermostAsks</code></td>
 </tr>
@@ -1785,8 +1807,8 @@ never by one built from an id; and how Mattermost formats mentions and Markdown.
 <p><code>mm-mcp serve --transport http</code> listens only on a loopback address. It refuses a
 request whose <code>Host</code> header does not name a loopback address, which prevents
 DNS rebinding, and a request a browser marks as sent from a web page of another
-origin (<a href="../installation/#over-http">Installation</a>). It does not yet
-authenticate clients: any process on the machine that can reach the port acts
+origin (<a href="../installation/#over-http">Installation</a>). It authenticates no
+client: any process on the machine that can reach the port acts
 as the account mm-mcp runs with, including processes of other users on a shared
 machine. Over stdio, the default, only the application that started mm-mcp can
 communicate with it.</p>

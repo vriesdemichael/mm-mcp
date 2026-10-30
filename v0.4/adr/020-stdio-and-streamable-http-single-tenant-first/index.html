@@ -23,7 +23,7 @@
     
     
       
-        <title>ADR-020: stdio and Streamable HTTP from one server, single-tenant first - mm-mcp</title>
+        <title>ADR-020: stdio and loopback Streamable HTTP from one server, for one person - mm-mcp</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#adr-020-stdio-and-streamable-http-from-one-server-single-tenant-first" class="md-skip">
+        <a href="#adr-020-stdio-and-loopback-streamable-http-from-one-server-for-one-person" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ADR-020: stdio and Streamable HTTP from one server, single-tenant first
+              ADR-020: stdio and loopback Streamable HTTP from one server, for one person
             
           </span>
         </div>
@@ -1022,15 +1022,18 @@
   
 
 
-<h1 id="adr-020-stdio-and-streamable-http-from-one-server-single-tenant-first">ADR-020: stdio and Streamable HTTP from one server, single-tenant first<a class="headerlink" href="#adr-020-stdio-and-streamable-http-from-one-server-single-tenant-first" title="Permanent link">&para;</a></h1>
-<p><code>mm-mcp serve</code> runs the same server over stdio, for a client that starts it as a local process, or over Streamable HTTP with <code>--transport http</code>. Both serve one Mattermost server as one identity (ADR-019). Over HTTP the server authenticates no client yet, so anyone who reaches the port acts as that identity: it binds 127.0.0.1 by default and refuses an address that is not a loopback address.</p>
-<p>Hosted, multi-user operation is the direction, and the code is kept ready for it in one way: every tool reaches Mattermost through the <code>server.ClientFor</code> it was registered with, the one place that decides which identity a call acts as. A single-tenant server passes <code>server.Single</code>, which answers with its one client; a multi-tenant deployment passes a lookup keyed by the authenticated MCP client, and adds client authentication to the HTTP handler; no tool changes. Until then, a feature that would hold state across calls belongs to the identity, not to the process.</p>
-<p>Reach Mattermost from a tool only through its ClientFor, never through a client held in a package variable or captured from elsewhere. Do not lift the loopback restriction without adding client authentication in the same change, and a record of how it works.</p>
-<p>stdio is how desktop and IDE clients start a local server; HTTP is how a remote client, or a team, reaches a shared one. An unauthenticated HTTP server bound to a network address hands the configured identity to the network.</p>
+<h1 id="adr-020-stdio-and-loopback-streamable-http-from-one-server-for-one-person">ADR-020: stdio and loopback Streamable HTTP from one server, for one person<a class="headerlink" href="#adr-020-stdio-and-loopback-streamable-http-from-one-server-for-one-person" title="Permanent link">&para;</a></h1>
+<p><code>mm-mcp serve</code> runs the same server over stdio, for a client that starts it as a local process, or over Streamable HTTP with <code>--transport http</code>. Both serve one Mattermost server as one identity (ADR-019). Over HTTP the server authenticates no client, so anyone who reaches the port acts as that identity: it binds 127.0.0.1 by default and refuses an address that is not a loopback address.</p>
+<p>mm-mcp is not run as a hosted, multi-user service, and its HTTP transport does not grow client authentication for one. The clients only a remote server reaches, those that cannot start a process, such as claude.ai and ChatGPT's connectors, speak the MCP authorization specification: the server is an OAuth 2.1 resource server whose metadata names an authorization server, and it accepts no token that was not issued for it. Every way to give mm-mcp one gives up what it is for, a server that needs no plugin and no administrator. Mattermost as the authorization server needs an administrator to turn on its OAuth service and let clients register, and the token it issues is Mattermost's, not bound to mm-mcp, so the remote client would hold a credential for the whole API. An authorization server of mm-mcp's own makes it a store of every user's Mattermost session, run in public by an operator. An organisation's OIDC provider leaves mm-mcp needing a system administrator's token to act as each user, since Mattermost exchanges no token and impersonates no one. An organisation that wants a central, administered server is better served by one that runs inside Mattermost.</p>
+<p>Every tool reaches Mattermost through the <code>server.ClientFor</code> it was registered with, the one place that decides which identity a call acts as; the server passes <code>server.Single</code>, which answers with its one client. Reach Mattermost from a tool only through its ClientFor, never through a client held in a package variable or captured from elsewhere, and keep a feature that would hold state across calls with the identity, not the process. Do not lift the loopback restriction without client authentication in the same change, and a record that answers the paragraph above.</p>
+<p>stdio is how desktop and IDE clients start a local server, and every client with a terminal or a desktop takes it; HTTP on a loopback address is for a client on the same machine that speaks only HTTP. An unauthenticated HTTP server bound to a network address hands the configured identity to the network.</p>
 <h2 id="not-chosen">Not chosen<a class="headerlink" href="#not-chosen" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Multi-tenant from the start</strong>: It needs client authentication, a credential store per user and an operator to run it, before the tools exist that make it worth running.</li>
-<li><strong>stdio only</strong>: The hosted future needs HTTP, and the SDK serves it from the same server with no second code path.</li>
+<li><strong>Hosted, multi-user operation</strong>: Once the direction. Each way to authenticate a remote client needs an administrator, or a store of everyone's credentials and an operator to run it, and the clients it would reach are few; the people who use them can run mm-mcp on their own machine.</li>
+<li><strong>A single-user remote server</strong>: One person runs mm-mcp where their phone's AI app can reach it, behind a minimal authorization server of mm-mcp's own whose login proves they are the configured identity. It needs no administrator, but it is security-critical code, run in public, for few people; it waits for someone to ask for it.</li>
+<li><strong>Mattermost's own OAuth, its token passed through</strong>: The cheapest route, since Mattermost already registers clients and issues tokens with PKCE; but it needs the administrator mm-mcp exists to do without, and the MCP specification forbids a server accepting a token not issued for it.</li>
+<li><strong>A secret in the URL instead of authentication</strong>: claude.ai and ChatGPT take any address, but a secret in a URL lands in logs and in the client vendor's configuration, and it would stand for a token that acts as a person.</li>
+<li><strong>stdio only</strong>: A client on the same machine that speaks only HTTP would be left out, and the SDK serves HTTP from the same server with no second code path.</li>
 <li><strong>Bind any address and warn</strong>: A warning in a log nobody reads is no protection for a token that acts as a person.</li>
 </ul>
 

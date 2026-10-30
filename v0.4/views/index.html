@@ -1291,9 +1291,10 @@ anything: nothing is sent from this page, and <strong>Start over</strong> puts a
 as it was.</p>
 <div class="admonition tip">
 <p class="admonition-title">Does my app show views, and what do I need?</p>
-<p>Goose's desktop app shows them. VS Code does once <code>chat.mcp.apps.enabled</code>
-is on in its settings. Ask your agent to run <code>diagnose</code> and it tells you
-whether yours does (<a href="../installation/">Installation</a>).</p>
+<p>VS Code shows them once <code>chat.mcp.apps.enabled</code> is on in its settings.
+Claude Code shows them in the Claude desktop app, to read. Ask your agent
+to run <code>diagnose</code> and it tells you whether yours does
+(<a href="../installation/">Installation</a>).</p>
 <p>Seeing a thread, or what you missed, works as soon as mm-mcp is set up.
 Drafting a post, and <strong>Post</strong>, <strong>Edit</strong>, <strong>Discard</strong> and <strong>Mark read</strong> in
 a view, need writes allowed, with <code>MM_MCP_ALLOW_WRITES=true</code>
@@ -1330,12 +1331,12 @@ notices, and leaves the draft to you there instead of sending the old text. If
 your agent proposes again, your next press shows you the new text first.</p>
 <h3 id="a-message-to-the-whole-channel">A message to the whole channel<a class="headerlink" href="#a-message-to-the-whole-channel" title="Permanent link">&para;</a></h3>
 <p>Mattermost asks before a message with <code>@channel</code>, <code>@all</code> or <code>@here</code> notifies
-more than five people. The view asks the same question, in Mattermost's own
-words, with the number of people it will notify.</p>
+more than five people. The view asks too, with the number of people it will
+notify, counted as Mattermost counts them.</p>
 <div class="mm-view" data-view="confirm" data-title="A draft that notifies the whole channel"></div>
 
 <p class="mm-try">Try it: press <strong>Post</strong>, then
-<strong>Cancel</strong> or <strong>Confirm</strong>.</p>
+<strong>Cancel</strong> or <strong>Post anyway</strong>.</p>
 
 <h2 id="when-you-already-started-a-message-there">When you already started a message there<a class="headerlink" href="#when-you-already-started-a-message-there" title="Permanent link">&para;</a></h2>
 <p>Mattermost keeps one unsent draft in each channel and in each thread. If
@@ -1354,8 +1355,20 @@ yours is already there, your agent never writes over it:</p>
 <h2 id="see-a-thread">See a thread<a class="headerlink" href="#see-a-thread" title="Permanent link">&para;</a></h2>
 <p>Ask to see a thread and your agent shows it with
 <a href="../tools/#show"><code>show</code></a>. You get pictures, formatting, reactions, custom
-emoji, and images you can open full size. A long thread loads more as you
-ask.</p>
+emoji, images that open full size in their post, and the cards a webhook or bot posts,
+such as an alert with its red or green bar, and the blocks an integration
+posts on Mattermost 11.11 and later, with their columns and the sections you
+unfold. A link to another post shows that post quoted below it, a long one cut
+short with <strong>Show more</strong> for the rest: press the quote to read the post, in the
+view where your app allows it and otherwise in Mattermost. A link to a web page shows the page's card. A picture a link or a
+card leads to is named, and opens in your browser: the view itself reaches
+nothing outside Mattermost. A post marked Important or
+Urgent carries its label, and one that asks to be acknowledged says how many
+did, with who when you point at it. A burn-on-read message you have not
+opened stays concealed, as in Mattermost: <strong>View message in Mattermost</strong>
+takes you there to open it. A call shows when it started and by whom, or
+when it ended, how long it lasted and who was in it. A long thread loads more
+as you ask.</p>
 <div class="mm-view" data-view="thread" data-title="A thread"></div>
 
 <p class="mm-try">Try it: press <strong>2 more replies</strong>, or the chart
@@ -1386,7 +1399,7 @@ places cannot do so out of your sight.</p>
 <p>Every app still works. A post your agent drafts waits in Mattermost's message
 box in every Mattermost app you use, and your agent's answer links to
 the place where it waits. Send it, change it or clear it there.</p>
-<div class="mm-box" role="img" aria-label="Mattermost's message box in ~release-planning, with the drafted reply waiting in it, under Sam's post it replies to.">
+<div class="mm-box" role="img" aria-label="A sketch of the message box in Mattermost, in ~release-planning, with the drafted reply waiting in it, under Sam's post it replies to.">
 <div class="mm-box__head">~release-planning</div>
 <div class="mm-box__post"><strong>Sam Okafor</strong> The 2.4 release moves to Thursday. Anything blocking, say so here.</div>
 <div class="mm-box__input">Thanks @jordan, the migration finished at 09:40. The steps are in [the runbook](https://docs.example.com/runbook-2.4).<span class="mm-box__send">Send</span></div>
@@ -1404,14 +1417,24 @@ the place where it waits. Send it, change it or clear it there.</p>
 </thead>
 <tbody>
 <tr>
-<td>Goose, the desktop app</td>
-<td>Yes</td>
-<td>In its "approve" and "smart approve" modes, Goose blocks every button in a view. The view then says so and offers to open Mattermost instead.</td>
-</tr>
-<tr>
 <td>VS Code</td>
 <td>Yes, with <code>chat.mcp.apps.enabled</code> on</td>
 <td>VS Code asks you before your agent drafts a post, as it does before anything that writes. Your own press in a view is not asked about again.</td>
+</tr>
+<tr>
+<td>Claude Code, in the Claude desktop app</td>
+<td>Yes, to read</td>
+<td>Threads and what you missed show, and on an <code>https</code> server a link opens after a confirmation. The button beside a view opens it in a pane of its own, where an open image fills the pane. As of Claude Code 2.1.309 it passes nothing from a view on to mm-mcp, so a thread brings its pictures along, up to 1 MiB, and only an image's preview opens large. In the other views people show as initials, and a draft waits in Mattermost for you to send, with no Post, Edit or Discard. In a terminal, Claude Code shows text.</td>
+</tr>
+<tr>
+<td>Codex</td>
+<td>Not checked</td>
+<td>Nobody has tried it yet. In an app that shows no views, everything still works in words.</td>
+</tr>
+<tr>
+<td>Goose, the desktop app</td>
+<td>Yes</td>
+<td>In its "approve" and "smart approve" modes, Goose blocks every button in a view. The view then says so and offers to open Mattermost instead.</td>
 </tr>
 <tr>
 <td>Claude desktop, Claude on the web</td>
@@ -1425,7 +1448,7 @@ the place where it waits. Send it, change it or clear it there.</p>
 </tr>
 </tbody>
 </table>
-<p>Goose and VS Code are tested with every change to mm-mcp.</p>
+<p>VS Code and Goose are tested with every change to mm-mcp, because a machine can drive them.</p>
 <h2 id="questions-people-ask">Questions people ask<a class="headerlink" href="#questions-people-ask" title="Permanent link">&para;</a></h2>
 <dl>
 <dt><strong>Can my agent press Post for me?</strong></dt>

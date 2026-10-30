@@ -1759,7 +1759,11 @@ most recent matches at most, and the answer says <code>capped</code> when it rea
 them: <code>before</code> reaches older ones. <code>in</code> takes a channel you belong to, the
 only ones Mattermost searches, and <code>from</code> a username, refused with the
 closest when nobody has it. The days <code>before</code>, <code>after</code> and <code>on</code> name are
-your own, in the timezone you set in Mattermost, as in its search box.</dd>
+your own, in the timezone you set in Mattermost, as in its search box.
+Without Elasticsearch, as on Team Edition, Mattermost searches a post's
+message alone, so a post whose words are only in its attachments or
+blocks, as an alert's often are, is not found: <code>read_channel</code> with <code>since</code>
+reads a channel of alerts instead.</dd>
 <dt id="search_files"><code>search_files</code>: Search files</dt>
 <dd>Files attached to posts you can read, by name, by type with <code>ext:pdf</code>, and by
 <code>from</code>, <code>in</code>, <code>before</code>, <code>after</code> and <code>on</code>, each with the post and channel it
@@ -1806,10 +1810,17 @@ Give any post in the thread; <code>include_thread</code> false reads the post al
 Mattermost lays it out.</p>
 <ul>
 <li>Kind <code>thread</code> shows a thread: who wrote each post, with their profile
-  picture, when, the Markdown drawn, <code>@mentions</code> and <code>~channels</code>,
-  reactions with who reacted, images you can open whole and file cards,
-  and the edited and pinned marks. It shows the first 30 posts, says how
-  many more the thread has, and loads more as you ask.</li>
+  picture, when, the Markdown drawn, <code>@mentions</code> and <code>~channels</code>, the
+  cards a webhook or bot posted beside their colored bars, the blocks
+  an integration posted with their columns and folded sections, the post a
+  link quotes and the card of a page it leads to, reactions with
+  who reacted, the Important and Urgent labels and how many acknowledged
+  a post that asks for it, images you can open whole and file cards, the
+  edited and pinned marks, a burn-on-read post you have not opened as a
+  placeholder that opens it in Mattermost, a call with when it started or
+  how long it lasted, and a placeholder for files an access policy
+  withholds. It shows the first 30 posts, says how many more the thread
+  has, and loads more as you ask.</li>
 <li>Kind <code>unreads</code> shows what is waiting for you: up to 20 channels with
   something unread, grouped by team, with their unread and mention
   counts; up to 10 posts that mention you; and up to 10 threads you follow
@@ -1996,8 +2007,8 @@ Discard (<a href="#views">Views</a>). Each acts on the text the view shows, and 
 while your draft still holds it as the view put it there: a draft you typed
 on in Mattermost is yours to send from there, and a newer proposal is drawn
 again as it is now. Post marks the post as written with AI, and asks
-first, in Mattermost's own words, where Mattermost would ask before an
-<code>@channel</code> or <code>@here</code> reaches more than five people. A link shows where it
+first where Mattermost would ask: before an <code>@channel</code> or <code>@here</code>
+reaches more than five people. A link shows where it
 leads, a character you cannot see or that turns the text's direction is
 flagged, and the text as written is a click away. Where a draft of yours is
 in the way, the view shows yours beside the proposal, or the proposal as a
@@ -2092,8 +2103,79 @@ failed one what to do. It never returns the credential
   reacted, <code>responses</code>, how many reactions and replies it has, whether it is
   pinned or marked as written with AI, its thread, and when it was edited. An
   answer whose posts are all in one channel names the channel and team once.</li>
-<li><strong>A list cuts a long message short.</strong> A message longer than 4,000 characters
-  is cut, with its whole length said; <code>read_post</code> reads it whole.</li>
+<li><strong>A post from a webhook or a bot carries its cards.</strong> Integrations such as
+  Alertmanager, Grafana, Jira or a CI server post their content as message
+  attachments, often with no message beside them. Each post gives them as
+  <code>message_attachments</code>, as Mattermost shows them: the pretext, author and
+  its link, title and its link, text, fields, footer and fallback, the color
+  the integration chose for the bar beside them, and the addresses of their
+  pictures, <code>image_url</code>, such as a chart Grafana drew, and <code>thumb_url</code>. Their
+  buttons and menus are left out: pressing one is a change, and it calls the
+  integration. The color is kept where Mattermost draws a bar in it
+  (<a href="../mattermost-releases/#differences-in-what-a-release-shows">Supported releases</a>).</li>
+<li><strong>A post from an integration carries its blocks.</strong> From Mattermost 11.11 on,
+  integrations can post their content as blocks, in Mattermost's own format,
+  Slack's Block Kit or Microsoft's Adaptive Cards, often with no message
+  beside them. Where your server shows them, each post gives them as <code>blocks</code>,
+  in one shape whichever format they came in, as Mattermost draws them: text,
+  images by address, dividers, containers with the color of their bar,
+  collapsible sections and columns, as an outline in which a block holds the
+  deeper blocks after it. Mattermost draws a post's blocks in place of its
+  message attachments, and so does mm-mcp. Buttons and menus are left out,
+  as they are of message attachments. A server on an older release does not
+  show blocks, and neither does mm-mcp
+  (<a href="../mattermost-releases/#differences-in-what-a-release-shows">Supported releases</a>).</li>
+<li><strong>A post carries what its first link leads to, as Mattermost shows it below
+  the message.</strong> A link to another post gives <code>quoted_post</code>: its author,
+  channel, time, link, message, label and files, so "is this still true?"
+  followed by a link reads whole. Mattermost leaves the quote out for you
+  when you cannot read the post it quotes. A link to a web page gives
+  <code>link_preview</code> with the page's title, description and site, and a link to a
+  picture <code>link_preview</code> with <code>image</code> and its size. As in Mattermost, a post
+  with message attachments shows no preview, and the page's text is its
+  owner's.</li>
+<li><strong>A post from an integration says so, under the name Mattermost shows.</strong>
+  An integration posts under an account, a person's or a bot's, through an
+  incoming webhook or as a slash command's answer. Such a post has
+  <code>from_integration</code>, and a bot's post has <code>author_is_bot</code>: Mattermost tags
+  both BOT. Where your server lets integrations choose their name, <code>shown_as</code>
+  is the name Mattermost shows in place of the account's, and <code>author</code> still
+  names the account. Anyone who can call the integration can choose any name,
+  so the account is the one to trust.
+  <a href="#show"><code>show</code></a> draws such a post as Mattermost does: the name, the BOT tag,
+  and no run with the posts around it.</li>
+<li><strong>A post marked Important or Urgent says so.</strong> Its <code>priority</code> is
+  <code>important</code> or <code>urgent</code>, the label Mattermost shows beside its author's
+  name, and <code>persistent_notifications</code> says Mattermost keeps notifying the
+  people it mentions until they read it. On a licensed server a post can ask
+  everyone to acknowledge it: it has <code>requested_ack</code>, <code>acknowledgements</code> says
+  who did and when, and <code>acknowledged</code> that you did. Each is there only where
+  your server shows it, as Mattermost's settings for message priority and
+  acknowledgements say.</li>
+<li><strong>A burn-on-read post stays concealed.</strong> On a server with an Enterprise
+  Advanced license, someone can send a post of <code>type</code> <code>burn_on_read</code>, which
+  Mattermost conceals from you until you open it there; a while after, it is
+  gone for you. Until you open it, the post has <code>concealed</code> and nothing of
+  what it holds. No tool opens one: your agent can tell you it waits, and its
+  <code>url</code> takes you to it. <code>expire_at</code> is when it is gone for you: once opened,
+  when its timer runs out, and until then, the latest it is kept.</li>
+<li><strong>A call's post carries the call.</strong> The Calls plugin, on by default, starts
+  a call with a post of <code>type</code> <code>custom_calls</code>, and draws its own card in place
+  of the message. Such a post has <code>call</code>: its title, <code>started_at</code>, and once it
+  ended, <code>ended_at</code> and the usernames of its <code>participants</code>. The attachment
+  the plugin adds for clients without the plugin, which repeats the message,
+  is left out. Joining a call is for you to do in Mattermost.</li>
+<li><strong>A <code>/me</code> post</strong> has <code>type</code> <code>me</code>; its <code>message</code> keeps the asterisks
+  Mattermost stores around it and does not show.</li>
+<li><strong>A reminder</strong> from the system bot links to its post with a full URL, even
+  on a server without a site URL, where Mattermost stores only a path.</li>
+<li><strong>Withheld files are counted.</strong> Where an attribute-based access policy
+  (Enterprise Advanced) withholds a post's files from you, <code>withheld_files</code>
+  says how many.</li>
+<li><strong>A list cuts a long post short.</strong> A list shows at most 4,000 characters of
+  a post: its message first, then the text of its message attachments or
+  blocks. What is cut says its whole length, <code>message_length</code>,
+  <code>message_attachments_length</code> or <code>blocks_length</code>; <code>read_post</code> reads it whole.</li>
 <li><strong>Times are your own.</strong> A time in an answer is in the timezone you set in
   Mattermost, with its offset, such as <code>2026-10-09T09:30:00+02:00</code>, and a time
   you give without an offset is read in it too. With no timezone set, UTC.</li>
@@ -2136,11 +2218,12 @@ agent makes shows itself there as posted, and a post it proposes with
 page in mm-mcp itself, which reaches no network: the app reads what it shows
 from mm-mcp, and the pictures as <a href="#files-as-resources">resources</a>, with mm-mcp's
 credential. Where the app reads no pictures, people are their initials and a
-custom emoji its name. The page takes the app's light or dark theme and its
-language, where mm-mcp has words for it, and English otherwise. Goose's desktop
-app shows views, and so does VS Code with its <code>chat.mcp.apps.enabled</code> setting
-on; <code>diagnose</code> says whether yours does. <a href="../views/">Views</a> shows each of them,
-live.</p>
+custom emoji its name, except that a thread shown in Claude Code brings its
+pictures with it. The page takes the app's light or dark theme and its
+language, where mm-mcp has words for it, and English otherwise. VS Code shows
+views with its <code>chat.mcp.apps.enabled</code> setting on, and Claude Code in the Claude
+desktop app; <code>diagnose</code> says whether yours does. <a href="../views/">Views</a> shows each of
+them, live.</p>
 <h3 id="page-sizes">Page sizes<a class="headerlink" href="#page-sizes" title="Permanent link">&para;</a></h3>
 <p>What a page holds when <code>limit</code> is not given, and the most it can hold.</p>
 <table>
@@ -2217,7 +2300,11 @@ of someone nobody is is refused with the closest usernames. Where mm-mcp asks,
 the question says how many people <code>@here</code>, <code>@channel</code> and <code>@all</code> reach, who
 of those mentioned is deactivated, and, on a licensed server with user groups,
 how many a group's mention notifies, and puts what a post does, and every file
-it carries, before the message. Mentions are found as Mattermost finds them, so
+it carries, before the message. A question about a post quotes what Mattermost
+shows of it: its message, or for a post with none, such as an alert, the text
+of its blocks or cards, or else its files' names; never a burn-on-read post
+you have not opened. An integration's post is named as Mattermost shows it,
+with the account behind it. Mentions are found as Mattermost finds them, so
 code mentions nobody and <code>@here.</code> ending a sentence is <code>@here</code>.</p>
 <h4 id="how-far-a-message-goes">How far a message goes<a class="headerlink" href="#how-far-a-message-goes" title="Permanent link">&para;</a></h4>
 <p><code>create_post</code> states in its call how far the message goes, as two numbers
