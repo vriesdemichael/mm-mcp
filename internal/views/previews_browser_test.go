@@ -3,6 +3,7 @@
 package views_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -228,7 +229,8 @@ func TestAQuoteOpensTheQuotedPost(t *testing.T) {
 	}
 }
 
-// A long quote is cut to a height, and faded where it is cut; a short one is
+// A long quote is cut to a height, and faded where it is cut, with a button
+// that shows the rest, in place and without opening the post; a short one is
 // left as it is.
 func TestALongQuoteIsCutToAHeight(t *testing.T) {
 	h := openHost(t)
@@ -248,6 +250,37 @@ func TestALongQuoteIsCutToAHeight(t *testing.T) {
 		t.Errorf("a long quote is drawn %d high of %d", drawn.Height, drawn.Whole)
 	}
 
+	more := `[data-post="q1"] .quote-more`
+	shown := func(frame int, selector string) bool {
+		var visible bool
+		h.in(frame, fmt.Sprintf(`return w.getComputedStyle(d.querySelector(%q)).display !== 'none';`, selector), &visible)
+		return visible
+	}
+	if !shown(i, more) || h.text(i, more) != "Show more" {
+		t.Errorf("a long quote offers %q, shown %v", h.text(i, more), shown(i, more))
+	}
+	h.click(i, more)
+	h.untilIn(i, `d.querySelector('[data-post="q1"] .quote-text').clientHeight >= d.querySelector('[data-post="q1"] .quote-text').scrollHeight && d.querySelector('[data-post="q1"] .quote-text').clientHeight > 300`)
+	h.untilIn(i, `d.querySelector('[data-post="q1"] .quote-text').dataset.clamped === 'false'`)
+	if !shown(i, more) || h.text(i, more) != "Show less" {
+		t.Errorf("a long quote shown whole offers %q, shown %v", h.text(i, more), shown(i, more))
+	}
+	// Drawn again, as the view is when anything changes, it stays whole.
+	h.eval(fmt.Sprintf("mmHost.frames[%d].bridge.setHostContext({ theme: 'dark' })", i), nil)
+	h.untilIn(i, `d.documentElement.dataset.theme === 'dark'`)
+	h.untilIn(i, `d.querySelector('[data-post="q1"] .quote-text').dataset.whole === 'true' && d.querySelector('[data-post="q1"] .quote-more').textContent === 'Show less'`)
+	h.click(i, more)
+	h.untilIn(i, `d.querySelector('[data-post="q1"] .quote-text').dataset.clamped === 'true'`)
+	// Neither press opened the post, in the view or in Mattermost.
+	var opened struct{ Links, Calls int }
+	h.in(i, `return { Links: f.links.length, Calls: f.calls.length };`, &opened)
+	if opened.Links != 0 || opened.Calls != 0 {
+		t.Errorf("showing the rest of a quote opened it: %+v", opened)
+	}
+
 	short := h.mount(showPreviews(nil))
 	h.untilIn(short, `d.querySelector('[data-post="q1"] .quote-text').dataset.clamped === 'false'`)
+	if shown(short, more) {
+		t.Error("a short quote offers to show more")
+	}
 }

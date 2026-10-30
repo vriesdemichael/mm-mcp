@@ -366,9 +366,12 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 }
 .quote[data-opens="true"] { cursor: pointer; }
 .quote[data-opens="true"]:hover { border-color: var(--mm-border-strong); }
-/* A long quote is cut to a height, faded where it is cut; opening it reads the rest. */
+/* A long quote is cut to a height, faded where it is cut, with a button for the rest. */
 .quote-text { max-block-size: 12em; overflow: hidden; }
+.quote-text[data-whole="true"] { max-block-size: none; }
 .quote-text[data-clamped="true"] { mask-image: linear-gradient(to bottom, #000 70%, transparent); }
+.quote-more { display: none; justify-self: start; font-size: var(--mm-text-xs); }
+.quote-text[data-clamped="true"] + .quote-more, .quote-text[data-whole="true"] + .quote-more { display: inline; }
 .quote .post-header { gap: 2px 8px; }
 .quote-files { display: flex; align-items: center; gap: 4px; font-size: var(--mm-text-xs); }
 .quote-channel { font-size: var(--mm-text-xs); overflow-wrap: anywhere; }
@@ -415,7 +418,8 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .icon-button { display: inline-grid; place-items: center; }
 
 .lightbox {
-  margin-block-end: 10px;
+  flex: 1 1 100%;
+  min-width: 0;
   border: 1px solid var(--mm-border);
   border-radius: var(--mm-radius);
   background: var(--mm-bg);
@@ -430,7 +434,7 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 }
 .lightbox .close { margin-inline-start: auto; background: none; border: 0; font-size: 18px; cursor: pointer; }
 .lightbox-image { display: grid; place-items: center; padding: 10px; }
-.lightbox-image img { max-inline-size: 100%; max-block-size: 70vh; object-fit: contain; }
+.lightbox-image img { max-inline-size: 100%; block-size: auto; }
 
 /* Reactions and more. */
 

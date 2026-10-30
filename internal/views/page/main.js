@@ -39,6 +39,7 @@ bridge.on("ui/notifications/tool-input", (params) => {
 bridge.on("ui/notifications/tool-result", (result) => {
   view.result = null;
   view.trail = [];
+  view.lightbox = null;
   view.error = "";
   if (!result || typeof result !== "object") {
     view.error = t("view.nothing");
@@ -99,7 +100,6 @@ function content() {
       view.notice.url ? [" ", linkButton(view.notice.url, [t("notice.open")])] : null,
       el("button", { type: "button", class: "link dismiss", "aria-label": t("notice.dismiss"), onclick: () => { view.notice = null; render(); } }, "×")));
   }
-  if (view.lightbox) out.push(view.lightbox);
   if (view.error) {
     out.push(el("p", { class: "error", role: "alert" }, view.error));
   } else if (view.result) {
