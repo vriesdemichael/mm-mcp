@@ -100,12 +100,15 @@ func TestWhatALinkLeadsToIsDrawnAsMattermostDrawsIt(t *testing.T) {
 		t.Errorf("the alert's pictures and links are drawn as %+v", drawn)
 	}
 
-	// The quote's time opens the quoted post in Mattermost.
-	h.click(i, "[data-post=\"q1\"] .quote .time")
+	// A link inside the quote opens that link, and not the quoted post.
+	h.click(i, "[data-post=\"q1\"] .quote .link-title button")
 	var links []string
 	h.in(i, "return f.links;", &links)
-	if len(links) != 1 || links[0] != "https://chat.example.com/team/pl/r1" {
-		t.Errorf("the quote opened %v", links)
+	if len(links) != 1 || links[0] != "https://example.com/retries" {
+		t.Errorf("the link in the quote opened %v", links)
+	}
+	if calls := h.calls(i); len(calls) != 0 {
+		t.Errorf("the link in the quote also called %v", calls)
 	}
 }
 
@@ -135,4 +138,116 @@ func TestAQuoteOrAPreviewIsNeverParsedAsHTML(t *testing.T) {
 		!strings.HasPrefix(found.Author, "<img") || !strings.Contains(found.Channel, "<img") || !strings.HasPrefix(found.Title, "<img") {
 		t.Errorf("a hostile quote or preview was parsed, or its script link made a button: %+v", found)
 	}
+}
+
+// showPreviews mounts the thread above, with extra options for the host.
+func showPreviews(extra map[string]any) map[string]any {
+	options := map[string]any{
+		"input":     map[string]any{"kind": "thread", "post_id": "q1"},
+		"result":    map[string]any{"content": []any{map[string]any{"type": "text", "text": "Shown to the person"}}, "structuredContent": previews()},
+		"resources": pictures(),
+	}
+	for key, value := range extra {
+		options[key] = value
+	}
+	return options
+}
+
+// A press anywhere on a quote opens the quoted post: in the view's place where
+// the host lets the view call tools, with the way back, in Mattermost where it
+// does not, and with a word about it where it refuses.
+func TestAQuoteOpensTheQuotedPost(t *testing.T) {
+	h := openHost(t)
+	quoted := post("r1", "bob", "Bob Example", "u2", "2026-10-01T14:00:00+02:00", "The retry budget is 3 attempts", map[string]any{
+		"channel": "Architecture", "channel_url": "https://chat.example.com/team/channels/architecture", "team": "Team", "reply_count": 0,
+	})
+	i := h.mount(showPreviews(map[string]any{"tools": map[string]any{"view_action": []any{
+		answered(map[string]any{"post": quoted, "root_id": "r1", "thread": []any{quoted}}),
+	}}}))
+	h.click(i, `[data-post="q1"] .quote .quote-text`)
+	h.untilIn(i, `d.querySelector('[data-post="r1"]')`)
+	calls := h.calls(i)
+	arguments, _ := calls[len(calls)-1]["arguments"].(map[string]any)
+	if len(calls) != 1 || arguments["action"] != "thread" || arguments["post_id"] != "r1" {
+		t.Errorf("the quote called %v", calls)
+	}
+	var there struct {
+		Original, Focused bool
+		Links             []string
+	}
+	h.in(i, `return { Original: Boolean(d.querySelector('[data-post="q1"]')), Focused: d.activeElement === d.querySelector('.back'), Links: f.links };`, &there)
+	if there.Original || !there.Focused || len(there.Links) != 0 {
+		t.Errorf("the quoted post is drawn as %+v", there)
+	}
+	h.click(i, ".back")
+	h.untilIn(i, `d.querySelector('[data-post="q1"]') && !d.querySelector('.back')`)
+
+	// The time opens it too, for a keyboard. Where the host offers no tools, it
+	// opens in Mattermost, as does the box.
+	none := h.mount(showPreviews(map[string]any{"without": []string{"serverTools"}}))
+	h.click(none, `[data-post="q1"] .quote .time`)
+	h.click(none, `[data-post="q1"] .quote`)
+	var links []string
+	h.in(none, "return f.links;", &links)
+	if strings.Join(links, " ") != "https://chat.example.com/team/pl/r1 https://chat.example.com/team/pl/r1" {
+		t.Errorf("without tools, the quote opened %v", links)
+	}
+	if calls := h.calls(none); len(calls) != 0 {
+		t.Errorf("without tools, the quote called %v", calls)
+	}
+
+	// Selecting a quote's text to copy it opens nothing.
+	selecting := h.mount(showPreviews(map[string]any{"without": []string{"serverTools"}}))
+	var clicked bool
+	h.in(selecting, `w.getSelection().selectAllChildren(d.querySelector('[data-post="q1"] .quote-text')); d.querySelector('[data-post="q1"] .quote-text').click(); w.clickedAt = Date.now(); return true;`, &clicked)
+	// What opens reaches the host a moment later, so nothing having opened is
+	// read after that moment.
+	h.untilIn(selecting, `Date.now() - d.defaultView.clickedAt > 500`)
+	h.in(selecting, "return f.links;", &links)
+	if len(links) != 0 {
+		t.Errorf("selecting the quote's text opened %v", links)
+	}
+
+	// A host that refuses says so, and offers the post in Mattermost.
+	refused := h.mount(showPreviews(map[string]any{"tools": map[string]any{"view_action": []any{map[string]any{"isError": true, "content": []any{}}}}}))
+	h.click(refused, `[data-post="q1"] .quote`)
+	h.untilIn(refused, `d.querySelector('.notice')`)
+	if got := h.text(refused, ".notice"); !strings.Contains(got, "This app does not open the quoted post here.") {
+		t.Errorf("a refusal says %q", got)
+	}
+
+	// A quote whose address is no web address opens nothing, and does not look
+	// as if it would.
+	var hostile struct {
+		Opens string
+		Links []string
+	}
+	h.in(none, `const q = d.querySelector('[data-post="q5"] .quote'); q.click(); return { Opens: q.dataset.opens, Links: f.links };`, &hostile)
+	if hostile.Opens != "false" || len(hostile.Links) != 2 {
+		t.Errorf("a quote with a hostile address is drawn as %+v", hostile)
+	}
+}
+
+// A long quote is cut to a height, and faded where it is cut; a short one is
+// left as it is.
+func TestALongQuoteIsCutToAHeight(t *testing.T) {
+	h := openHost(t)
+	long := previews()
+	root, _ := long["post"].(map[string]any)
+	quote, _ := root["quoted_post"].(map[string]any)
+	quote["message"] = strings.Repeat("The retry budget is 3 attempts, and here is why.\n\n", 40)
+	i := h.mount(map[string]any{
+		"input":     map[string]any{"kind": "thread", "post_id": "q1"},
+		"result":    map[string]any{"content": []any{map[string]any{"type": "text", "text": "Shown to the person"}}, "structuredContent": long},
+		"resources": pictures(),
+	})
+	h.untilIn(i, `d.querySelector('[data-post="q1"] .quote-text').dataset.clamped === 'true'`)
+	var drawn struct{ Height, Whole int }
+	h.in(i, `const q = d.querySelector('[data-post="q1"] .quote-text'); return { Height: q.clientHeight, Whole: q.scrollHeight };`, &drawn)
+	if drawn.Height >= drawn.Whole || drawn.Height > 300 {
+		t.Errorf("a long quote is drawn %d high of %d", drawn.Height, drawn.Whole)
+	}
+
+	short := h.mount(showPreviews(nil))
+	h.untilIn(short, `d.querySelector('[data-post="q1"] .quote-text').dataset.clamped === 'false'`)
 }

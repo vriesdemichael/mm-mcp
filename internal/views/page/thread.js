@@ -39,6 +39,7 @@ function renderThread(data) {
 
   const shown = replies;
   return el("article", { class: "thread" },
+    view.trail.length > 0 ? backButton() : null,
     threadHeader(place, root, total),
     list,
     root && withThread && total > shown ? moreReplies(data, root, total - shown) : null,
@@ -199,24 +200,83 @@ function isObject(value) {
 // renderQuote is the post a post links to, quoted below its message as
 // Mattermost quotes it: its author, under the name an integration chose,
 // when, its label, its message, its own preview, and the channel it was
-// posted in. Its time opens it in Mattermost.
+// posted in. A long message is cut to a height, and all of it opens the post:
+// the box, for a pointer, and its time, for a keyboard. A link in it opens the
+// link, and selecting its text opens nothing.
 function renderQuote(quote, markdown) {
   const text = (value) => typeof value === "string" ? value : "";
   const at = text(quote.created_at);
   const files = Array.isArray(quote.files) ? quote.files.length : 0;
   const priority = priorityLabel(quote.priority);
-  return el("blockquote", { class: "quote" },
+  const label = at ? formatTime(at) : t("quote.open");
+  const opens = isWebURL(text(quote.url));
+  const box = el("blockquote", { class: "quote", dataset: { opens: opens ? "true" : "false" } },
     el("div", { class: "post-header" },
       el("span", { class: "author", title: text(quote.shown_as) && text(quote.author) ? "@" + quote.author : null },
         text(quote.shown_as) || text(quote.author_name) || text(quote.author)),
-      linkButton(text(quote.url), [at ? formatTime(at) : t("quote.open")], { class: "link time", "aria-label": t("quote.open") }),
+      opens
+        ? el("button", { type: "button", class: "link time", title: quote.url, "aria-label": t("quote.open"), onclick: () => openQuote(quote) }, label)
+        : el("span", { class: "link time", "aria-label": t("quote.open") }, label),
       priority ? el("span", { class: "priority-tag", dataset: { priority: quote.priority } }, priority) : null,
       quote.ai_generated === true ? el("span", { class: "mark muted" }, t("post.ai")) : null),
-    renderMarkdown(text(quote.message), markdown),
+    clampedToHeight(renderMarkdown(text(quote.message), markdown)),
     quote.message_length ? el("p", { class: "muted cut" }, t("post.cut", { count: quote.message_length }), " ", linkButton(text(quote.url), [t("post.read_whole")])) : null,
     files > 0 ? el("div", { class: "muted quote-files" }, icon("file"), t("quote.files", { count: files })) : null,
     isObject(quote.link_preview) ? renderLinkPreview(quote.link_preview, markdown) : null,
     text(quote.channel) ? el("div", { class: "muted quote-channel" }, t("quote.channel", { channel: quote.channel })) : null);
+  if (opens) {
+    box.addEventListener("click", (event) => {
+      if (event.target.closest("a, button, summary") || String(window.getSelection())) return;
+      openQuote(quote);
+    });
+  }
+  return box;
+}
+
+// clampedToHeight cuts a quote's text to a height, and fades what is cut where
+// it is, since only a laid out element knows how tall it is.
+function clampedToHeight(box) {
+  box.classList.add("quote-text");
+  new ResizeObserver(() => {
+    box.dataset.clamped = box.scrollHeight > box.clientHeight + 1 ? "true" : "false";
+  }).observe(box);
+  return box;
+}
+
+// openQuote opens the post a quote shows: in a thread, where the host lets the
+// view call tools, in the view's place, with the way back, and otherwise in
+// Mattermost. Where the host refuses the call, the view says so and offers it
+// in Mattermost.
+async function openQuote(quote) {
+  if (!view.callsTools || !view.input || view.input.kind !== "thread" || typeof quote.id !== "string" || quote.id === "") {
+    openLink(quote.url);
+    return;
+  }
+  try {
+    const result = await bridge.callTool("view_action", { action: "thread", post_id: quote.id });
+    const data = result && !result.isError ? result.structuredContent : null;
+    if (!data || typeof data !== "object") throw new Error("nothing came back");
+    view.trail.push(view.result);
+    view.result = data;
+    view.notice = null;
+    render();
+    const back = document.querySelector(".back");
+    if (back) back.focus();
+  } catch {
+    notice(t("quote.open_refused"), quote.url);
+  }
+}
+
+// backButton is the way back from a post opened from a quote.
+function backButton() {
+  return el("button", {
+    type: "button",
+    class: "more back",
+    onclick: () => {
+      view.result = view.trail.pop();
+      render();
+    },
+  }, icon("back"), t("thread.back"));
 }
 
 // renderLinkPreview is the page or picture a post's first link leads to, as
