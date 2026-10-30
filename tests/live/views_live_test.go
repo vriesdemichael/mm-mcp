@@ -142,7 +142,7 @@ func TestAClientWithoutViewsIsShownNothingAndMattermostIsNotRead(t *testing.T) {
 	session := sessionFor(t, admin, user)
 
 	result := callTool(t, session, &mcp.CallToolParams{Name: "show", Arguments: map[string]any{"kind": "thread", "post_id": root.Id}})
-	if result.IsError || !strings.Contains(result.Content[0].(*mcp.TextContent).Text, "renders no MCP Apps views") {
+	if !result.IsError || !strings.Contains(result.Content[0].(*mcp.TextContent).Text, "renders no MCP Apps views") {
 		t.Errorf("show answered %+v", result.Content)
 	}
 	if reached := lastReached(t, session); len(reached) != 0 {

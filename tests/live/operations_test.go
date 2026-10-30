@@ -138,8 +138,22 @@ func tryRawTool(t *testing.T, session *mcp.ClientSession, params *mcp.CallToolPa
 	rec.take()
 	result, err := session.CallTool(t.Context(), params)
 	account(t, rec, params.Name, declaredUses(params.Name))
+	// This SDK's client lets it through, and Claude Code refuses the answer.
+	if err == nil && !result.IsError && result.StructuredContent == nil && toolsWithOutput()[params.Name] {
+		t.Errorf("%s declares an output schema and answered without structured content", params.Name)
+	}
 	return result, err
 }
+
+// toolsWithOutput are the tools that declare what they answer, which an answer
+// that does not fail must then hold.
+var toolsWithOutput = sync.OnceValue(func() map[string]bool {
+	out := map[string]bool{}
+	for _, spec := range server.AllSpecs() {
+		out[spec.Tool.Name] = spec.Tool.OutputSchema != nil
+	}
+	return out
+})
 
 // addressedTools are the writes others see, which take their places by
 // address alone (ADR-030).

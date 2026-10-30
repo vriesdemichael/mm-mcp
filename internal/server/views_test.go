@@ -89,7 +89,7 @@ func TestAClientWithoutViewsIsShownNothingAndReadNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.IsError || len(result.Content) != 1 || !strings.Contains(result.Content[0].(*mcp.TextContent).Text, "renders no MCP Apps views") {
+	if !result.IsError || len(result.Content) != 1 || !strings.Contains(result.Content[0].(*mcp.TextContent).Text, "renders no MCP Apps views") {
 		t.Errorf("show answered a client without views with %+v", result.Content)
 	}
 	result, err = session.CallTool(t.Context(), &mcp.CallToolParams{Name: "view_action", Arguments: map[string]any{"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz"}})
