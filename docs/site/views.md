@@ -18,9 +18,10 @@ as it was.
 
 !!! tip "Does my app show views, and what do I need?"
 
-    Goose's desktop app shows them. VS Code does once `chat.mcp.apps.enabled`
-    is on in its settings. Ask your agent to run `diagnose` and it tells you
-    whether yours does ([Installation](installation.md)).
+    VS Code shows them once `chat.mcp.apps.enabled` is on in its settings.
+    Claude Code shows them in the Claude desktop app, to read. Ask your agent
+    to run `diagnose` and it tells you whether yours does
+    ([Installation](installation.md)).
 
     Seeing a thread, or what you missed, works as soon as mm-mcp is set up.
     Drafting a post, and **Post**, **Edit**, **Discard** and **Mark read** in
@@ -95,10 +96,11 @@ Ask to see a thread and your agent shows it with
 emoji, images you can open full size, and the cards a webhook or bot posts,
 such as an alert with its red or green bar, and the blocks an integration
 posts on Mattermost 11.11 and later, with their columns and the sections you
-unfold. A link to another post shows that
-post quoted below it, and a link to a web page the page's card. A picture a
-link or a card leads to is named, and opens in your browser: the view itself
-reaches nothing outside Mattermost. A post marked Important or
+unfold. A link to another post shows that post quoted below it: press the quote
+to read the post, in the view where your app allows it and otherwise in
+Mattermost. A link to a web page shows the page's card. A picture a link or a
+card leads to is named, and opens in your browser: the view itself reaches
+nothing outside Mattermost. A post marked Important or
 Urgent carries its label, and one that asks to be acknowledged says how many
 did, with who when you point at it. A burn-on-read message you have not
 opened stays concealed, as in Mattermost: **View message in Mattermost**
@@ -153,12 +155,14 @@ the place where it waits. Send it, change it or clear it there.
 
 | App | Views | Good to know |
 |---|---|---|
-| Goose, the desktop app | Yes | In its "approve" and "smart approve" modes, Goose blocks every button in a view. The view then says so and offers to open Mattermost instead. |
 | VS Code | Yes, with `chat.mcp.apps.enabled` on | VS Code asks you before your agent drafts a post, as it does before anything that writes. Your own press in a view is not asked about again. |
+| Claude Code, in the Claude desktop app | Yes, to read | Threads and what you missed show, and on an `https` server a link opens after a confirmation. As of Claude Code 2.1.309 it passes nothing from a view on to mm-mcp, so people show as initials and pictures as their names, and a draft waits in Mattermost for you to send, with no Post, Edit or Discard. In a terminal, Claude Code shows text. |
+| Codex | Not checked | Nobody has tried it yet. In an app that shows no views, everything still works in words. |
+| Goose, the desktop app | Yes | In its "approve" and "smart approve" modes, Goose blocks every button in a view. The view then says so and offers to open Mattermost instead. |
 | Claude desktop, Claude on the web | Not confirmed | These apps cannot be tested by machine. A check by hand is recorded on [mm-mcp#37](https://github.com/vriesdemichael/mm-mcp/issues/37). |
 | An app without views | No | Your agent answers in words, and drafts wait in Mattermost. |
 
-Goose and VS Code are tested with every change to mm-mcp.
+VS Code and Goose are tested with every change to mm-mcp, because a machine can drive them.
 
 ## Questions people ask
 
