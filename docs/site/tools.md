@@ -685,10 +685,10 @@ page in mm-mcp itself, which reaches no network: the app reads what it shows
 from mm-mcp, and the pictures as [resources](#files-as-resources), with mm-mcp's
 credential. Where the app reads no pictures, people are their initials and a
 custom emoji its name. The page takes the app's light or dark theme and its
-language, where mm-mcp has words for it, and English otherwise. Goose's desktop
-app shows views, and so does VS Code with its `chat.mcp.apps.enabled` setting
-on; `diagnose` says whether yours does. [Views](views.md) shows each of them,
-live.
+language, where mm-mcp has words for it, and English otherwise. VS Code shows
+views with its `chat.mcp.apps.enabled` setting on, and Claude Code in the Claude
+desktop app; `diagnose` says whether yours does. [Views](views.md) shows each of
+them, live.
 
 ### Page sizes
 

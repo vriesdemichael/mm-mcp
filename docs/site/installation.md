@@ -177,10 +177,11 @@ chat that show a thread or what you missed as Mattermost shows it, and a post
 your agent drafts with Post, Edit and Discard ([Views](views.md)). There is
 nothing to set up in mm-mcp; whether you see them depends on your app:
 
-- **Goose's desktop app** shows them as it is.
 - **VS Code** shows them once `chat.mcp.apps.enabled` is on: open the
   settings, search for "mcp apps", and tick it.
-- **Claude Code** in a terminal shows text.
+- **Claude Code** shows them in the Claude desktop app, to read, and text in a
+  terminal ([what it shows](views.md#which-apps-show-views)).
+- **Goose's desktop app** shows them as it is.
 - **In another app,** ask your agent to run `diagnose`: it says whether
   your app shows views.
 
