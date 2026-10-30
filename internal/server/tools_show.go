@@ -136,7 +136,10 @@ func showSpec() Spec {
 		func(clientFor ClientFor) mcp.ToolHandlerFor[showInput, any] {
 			return func(ctx context.Context, request *mcp.CallToolRequest, input showInput) (*mcp.CallToolResult, any, error) {
 				if !rendersViews(request) {
-					return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: noViewsHere}}}, nil, nil
+					// An error, since the tool declares what it answers and a
+					// client refuses an answer that does not hold it: Claude
+					// Code would tell the model only that, and not this.
+					return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: noViewsHere}}}, nil, nil
 				}
 				if input.Kind == "thread" && input.PostID == "" {
 					return nil, nil, fmt.Errorf("give post_id, the post whose thread to show")
