@@ -100,7 +100,7 @@ function createBridge(appInfo) {
     async connect(timeout) {
       const result = await request("ui/initialize", {
         appInfo,
-        appCapabilities: { availableDisplayModes: ["inline"] },
+        appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
         protocolVersion: APPS_PROTOCOL_VERSION,
       }, timeout);
       notify("ui/notifications/initialized", {});

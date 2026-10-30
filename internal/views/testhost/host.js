@@ -77,7 +77,7 @@ function mount(page, options) {
     locale: settings.locale || "en-US",
     timeZone: "Europe/Amsterdam",
     displayMode: "inline",
-    availableDisplayModes: ["inline"],
+    availableDisplayModes: ["inline", "fullscreen"],
     platform: "desktop",
     styles: { variables: themes[theme] },
   };
@@ -146,9 +146,19 @@ function setTheme(index, theme) {
   frame.bridge.setHostContext(frame.context);
 }
 
+// setDisplayMode shows a frame in a display mode, as a host does when its person
+// presses a button of the host's own beside the view.
+function setDisplayMode(index, mode) {
+  const frame = frames[index];
+  if (mode === "fullscreen") frame.inlineHeight = frame.iframe.style.height;
+  frame.iframe.style.height = mode === "fullscreen" ? "600px" : frame.inlineHeight;
+  frame.context = Object.assign({}, frame.context, { displayMode: mode });
+  frame.bridge.setHostContext(frame.context);
+}
+
 // teardown asks the view to tear down, as a host does before it removes it.
 async function teardown(index) {
   await frames[index].bridge.teardownResource({});
 }
 
-window.mmHost = { frames, mount, setTheme, teardown };
+window.mmHost = { frames, mount, setTheme, setDisplayMode, teardown };

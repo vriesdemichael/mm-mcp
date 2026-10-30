@@ -19,6 +19,8 @@ const view = {
   callsTools: false,
   opensLinks: true,
   tellsModel: false,
+  // Whether the host shows the view fullscreen.
+  fullscreen: false,
   // What the view draws: the call's arguments, and its result.
   input: null,
   result: null,
@@ -77,6 +79,12 @@ function applyHostContext(context) {
     document.getElementById("host-fonts").textContent = styles.css.fonts;
   }
   if (typeof context.locale === "string") setLanguage(context.locale);
+  // Fullscreen is the host's to give and take, by a way of its own beside the
+  // view; the view fills what it is given.
+  if (context.displayMode === "inline" || context.displayMode === "fullscreen") {
+    view.fullscreen = context.displayMode === "fullscreen";
+    root.dataset.display = context.displayMode;
+  }
   render();
 }
 
@@ -89,10 +97,14 @@ function notice(text, url) {
 
 function render() {
   const app = document.getElementById("app");
+  // An opened image is drawn again as itself, and keeps the focus Escape needs.
+  const focused = document.activeElement;
   app.replaceChildren(...content());
+  if (focused && focused.isConnected) focused.focus({ preventScroll: true });
 }
 
 function content() {
+  if (view.fullscreen && view.lightbox) return [view.lightbox.box];
   const out = [];
   if (view.notice) {
     out.push(el("p", { class: "notice", role: "status" },
@@ -134,11 +146,12 @@ function renderKind(data) {
   }
 }
 
-// The host sizes an inline view to what it reports.
+// The host sizes an inline view to what it reports, and a fullscreen one itself.
 function watchSize() {
   let queued = false;
   const report = () => {
     queued = false;
+    if (view.fullscreen) return;
     const box = document.getElementById("app").getBoundingClientRect();
     bridge.reportSize(Math.ceil(document.documentElement.clientWidth), Math.ceil(box.height));
   };

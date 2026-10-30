@@ -435,6 +435,9 @@ button:focus-visible { outline: 2px solid var(--mm-link); outline-offset: 2px; b
 .lightbox .close { margin-inline-start: auto; background: none; border: 0; font-size: 18px; cursor: pointer; }
 .lightbox-image { display: grid; place-items: center; padding: 10px; }
 .lightbox-image img { max-inline-size: 100%; block-size: auto; }
+/* Fullscreen is the opened image alone, fitted to the frame the host gives it. */
+:root[data-display="fullscreen"] .lightbox { border: 0; }
+:root[data-display="fullscreen"] .lightbox-image img { max-block-size: calc(100vh - 90px); }
 
 /* Reactions and more. */
 
