@@ -106,6 +106,8 @@
     "one": "{count} file",
     "other": "{count} files"
   },
+  "quote.less": "Show less",
+  "quote.more": "Show more",
   "quote.open": "Open the quoted post",
   "quote.open_refused": "This app does not open the quoted post here.",
   "reactions.label": "Reactions",

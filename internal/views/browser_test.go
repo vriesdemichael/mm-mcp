@@ -3,9 +3,13 @@
 package views_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -465,6 +469,42 @@ func TestAnImageOpensWholeInTheView(t *testing.T) {
 	}
 	h.click(i, ".lightbox .close")
 	h.untilIn(i, "!d.querySelector('.lightbox')")
+}
+
+// An image opens where it is, among the posts around it, as wide as its column
+// lets it be and in its own shape, however short the view was.
+func TestAnImageOpensWhereItIsAsWideAsItsColumn(t *testing.T) {
+	h := openHost(t)
+	var large bytes.Buffer
+	if err := png.Encode(&large, image.NewRGBA(image.Rect(0, 0, 1000, 3000))); err != nil {
+		t.Fatal(err)
+	}
+	resources := pictures()
+	resources[base+"/files/f1"] = map[string]any{"mimeType": "image/png", "blob": base64.StdEncoding.EncodeToString(large.Bytes())}
+	i := h.mount(showThread(map[string]any{"resources": resources}))
+	h.untilIn(i, "d.querySelector('.image-card img')")
+	h.click(i, ".image-card")
+	h.untilIn(i, "d.querySelector('.lightbox-image img') && d.querySelector('.lightbox-image img').clientWidth > 0")
+	var drawn struct {
+		Post                         string
+		Width, Height, Column, Posts int
+	}
+	h.in(i, `const box = d.querySelector('.lightbox'), img = box.querySelector('img'), post = box.closest('[data-post]');
+		return {
+			Post: post ? post.dataset.post : '',
+			Width: img.clientWidth,
+			Height: img.clientHeight,
+			Column: box.parentElement.clientWidth,
+			Posts: d.querySelectorAll('.post').length,
+		};`, &drawn)
+	if drawn.Post != "p2" || drawn.Posts != 4 {
+		t.Errorf("the image opened in post %q, among %d posts", drawn.Post, drawn.Posts)
+	}
+	if drawn.Width < drawn.Column-30 || drawn.Width > drawn.Column || drawn.Height < drawn.Width*3-3 || drawn.Height > drawn.Width*3+3 {
+		t.Errorf("a 1000 by 3000 image opened %d by %d in a column of %d", drawn.Width, drawn.Height, drawn.Column)
+	}
+	// The host learns how tall that made the view.
+	h.untilIn(i, fmt.Sprintf("f.sizes.length > 0 && f.sizes[f.sizes.length - 1].height >= %d", drawn.Height))
 }
 
 func TestAHostThatPassesNoPicturesOnShowsInitialsAndNames(t *testing.T) {

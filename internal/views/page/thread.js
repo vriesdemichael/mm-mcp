@@ -200,9 +200,10 @@ function isObject(value) {
 // renderQuote is the post a post links to, quoted below its message as
 // Mattermost quotes it: its author, under the name an integration chose,
 // when, its label, its message, its own preview, and the channel it was
-// posted in. A long message is cut to a height, and all of it opens the post:
-// the box, for a pointer, and its time, for a keyboard. A link in it opens the
-// link, and selecting its text opens nothing.
+// posted in. A long message is cut to a height, with a button that shows the
+// rest, and all of it opens the post: the box, for a pointer, and its time, for
+// a keyboard. A link or a button in it does its own thing, and selecting its
+// text opens nothing.
 function renderQuote(quote, markdown) {
   const text = (value) => typeof value === "string" ? value : "";
   const at = text(quote.created_at);
@@ -219,7 +220,7 @@ function renderQuote(quote, markdown) {
         : el("span", { class: "link time", "aria-label": t("quote.open") }, label),
       priority ? el("span", { class: "priority-tag", dataset: { priority: quote.priority } }, priority) : null,
       quote.ai_generated === true ? el("span", { class: "mark muted" }, t("post.ai")) : null),
-    clampedToHeight(renderMarkdown(text(quote.message), markdown)),
+    clampedToHeight(renderMarkdown(text(quote.message), markdown), quote.id),
     quote.message_length ? el("p", { class: "muted cut" }, t("post.cut", { count: quote.message_length }), " ", linkButton(text(quote.url), [t("post.read_whole")])) : null,
     files > 0 ? el("div", { class: "muted quote-files" }, icon("file"), t("quote.files", { count: files })) : null,
     isObject(quote.link_preview) ? renderLinkPreview(quote.link_preview, markdown) : null,
@@ -233,14 +234,31 @@ function renderQuote(quote, markdown) {
   return box;
 }
 
+// wholeQuotes are the quotes the person asked to see all of, by the post each
+// quotes, which outlast the view being drawn again.
+const wholeQuotes = new Set();
+
 // clampedToHeight cuts a quote's text to a height, and fades what is cut where
-// it is, since only a laid out element knows how tall it is.
-function clampedToHeight(box) {
+// it is, since only a laid out element knows how tall it is. The button that
+// shows the rest needs no call: the quote already holds all of it.
+function clampedToHeight(box, id) {
   box.classList.add("quote-text");
+  const more = el("button", { type: "button", class: "link quote-more" });
+  const show = () => {
+    const whole = wholeQuotes.has(id);
+    box.dataset.whole = whole ? "true" : "false";
+    more.textContent = whole ? t("quote.less") : t("quote.more");
+    more.setAttribute("aria-expanded", whole ? "true" : "false");
+  };
+  more.addEventListener("click", () => {
+    if (!wholeQuotes.delete(id)) wholeQuotes.add(id);
+    show();
+  });
+  show();
   new ResizeObserver(() => {
     box.dataset.clamped = box.scrollHeight > box.clientHeight + 1 ? "true" : "false";
   }).observe(box);
-  return box;
+  return [box, more];
 }
 
 // openQuote opens the post a quote shows: in a thread, where the host lets the
@@ -529,7 +547,10 @@ function barOf(color) {
 }
 
 function renderFiles(post) {
-  return el("div", { class: "files" }, post.files.map((file) => file.preview_uri ? imageCard(file) : fileCard(file, post)));
+  return el("div", { class: "files" }, post.files.map((file) => {
+    if (!file.preview_uri) return fileCard(file, post);
+    return view.lightbox && view.lightbox.uri === file.preview_uri ? view.lightbox.box : imageCard(file);
+  }));
 }
 
 // imageCard is an image as its post shows it: its preview, and the whole
@@ -557,11 +578,13 @@ function imageCard(file) {
   return frame;
 }
 
+// showImageWhole opens an image where its card is, as wide as the post's column
+// lets it be, so that it opens where the person is looking in a long thread.
 function showImageWhole(file) {
   const name = file.name || t("file.unnamed");
   const close = el("button", { type: "button", class: "close", "aria-label": t("image.close") }, "×");
   const holder = el("div", { class: "lightbox-image" }, el("span", { class: "muted", role: "status" }, t("image.loading")));
-  const box = el("div", { class: "lightbox", role: "dialog", "aria-modal": "true", "aria-label": name, tabindex: "-1" },
+  const box = el("div", { class: "lightbox", role: "dialog", "aria-label": name, tabindex: "-1" },
     el("div", { class: "lightbox-bar" }, el("span", { class: "ellipsis" }, name), close),
     holder);
   const done = () => {
@@ -576,7 +599,7 @@ function showImageWhole(file) {
     const img = url ? el("img", { alt: name, src: url }) : null;
     holder.replaceChildren(img && img.hasAttribute("src") ? img : el("span", { class: "muted" }, t("image.unavailable")));
   });
-  view.lightbox = box;
+  view.lightbox = { uri: file.preview_uri, box };
   render();
   close.focus();
 }
