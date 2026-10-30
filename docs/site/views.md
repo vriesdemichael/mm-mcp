@@ -156,7 +156,7 @@ the place where it waits. Send it, change it or clear it there.
 | App | Views | Good to know |
 |---|---|---|
 | VS Code | Yes, with `chat.mcp.apps.enabled` on | VS Code asks you before your agent drafts a post, as it does before anything that writes. Your own press in a view is not asked about again. |
-| Claude Code, in the Claude desktop app | Yes, to read | Threads and what you missed show, and on an `https` server a link opens after a confirmation. The button beside a view shows it fullscreen, where an open image fills the window. As of Claude Code 2.1.309 it passes nothing from a view on to mm-mcp, so people show as initials and pictures as their names, and a draft waits in Mattermost for you to send, with no Post, Edit or Discard. In a terminal, Claude Code shows text. |
+| Claude Code, in the Claude desktop app | Yes, to read | Threads and what you missed show, and on an `https` server a link opens after a confirmation. The button beside a view opens it in a pane of its own, where an open image fills the pane. As of Claude Code 2.1.309 it passes nothing from a view on to mm-mcp, so people show as initials and pictures as their names, and a draft waits in Mattermost for you to send, with no Post, Edit or Discard. In a terminal, Claude Code shows text. |
 | Codex | Not checked | Nobody has tried it yet. In an app that shows no views, everything still works in words. |
 | Goose, the desktop app | Yes | In its "approve" and "smart approve" modes, Goose blocks every button in a view. The view then says so and offers to open Mattermost instead. |
 | Claude desktop, Claude on the web | Not confirmed | These apps cannot be tested by machine. A check by hand is recorded on [mm-mcp#37](https://github.com/vriesdemichael/mm-mcp/issues/37). |

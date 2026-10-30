@@ -143,3 +143,36 @@ func TestAViewNeverAsksForADisplayMode(t *testing.T) {
 		t.Errorf("the view asked for a display mode %d times", asked)
 	}
 }
+
+// An image opened again after fullscreen opens as it did the first time, and
+// neither leaves a scrollbar: one that appears while the host catches up narrows
+// the view, and stays, since the narrowed view then fits.
+func TestAnImageOpensTheSameAfterFullscreen(t *testing.T) {
+	h := openHost(t)
+	i := h.mount(showThread(map[string]any{"resources": tallImage(t), "width": 732}))
+	h.untilIn(i, "d.querySelector('.image-card img')")
+	type size struct{ Width, Height, Frame, Scrollbar int }
+	measure := `const img = d.querySelector('.lightbox-image img'); return { Width: img.clientWidth, Height: img.clientHeight, Frame: f.iframe.clientHeight, Scrollbar: w.innerWidth - d.documentElement.clientWidth };`
+	open := func() size {
+		h.t.Helper()
+		h.click(i, ".image-card")
+		h.untilIn(i, "d.querySelector('.lightbox-image img') && d.querySelector('.lightbox-image img').clientHeight > 0")
+		h.untilIn(i, frameFits)
+		var got size
+		h.in(i, measure, &got)
+		return got
+	}
+	first := open()
+	h.goTo(i, "fullscreen")
+	h.untilIn(i, "d.querySelectorAll('.post').length === 0")
+	h.goTo(i, "inline")
+	h.untilIn(i, "d.querySelectorAll('.post').length === 4")
+	h.untilIn(i, frameFits)
+	h.click(i, ".lightbox .close")
+	h.untilIn(i, "!d.querySelector('.lightbox')")
+	h.untilIn(i, frameFits)
+	second := open()
+	if first != second || first.Scrollbar != 0 {
+		t.Errorf("the image opened %+v the first time and %+v after fullscreen", first, second)
+	}
+}
