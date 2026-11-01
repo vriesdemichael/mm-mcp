@@ -126,8 +126,8 @@ function createBridge(appInfo) {
       return request("resources/read", { uri }, timeout);
     },
 
-    // Only the client check asks for a display mode, to see what the host
-    // answers. The views leave it to the host's own button (ADR-022).
+    // A display mode, which the host may refuse: an opened image asks for the
+    // room the host has, and the client check to see what it answers (ADR-022).
     requestDisplayMode(mode, timeout) {
       return request("ui/request-display-mode", { mode }, timeout);
     },

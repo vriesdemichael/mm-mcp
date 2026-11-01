@@ -374,7 +374,7 @@ func TestThePersonSaysWhetherAPlainLinkOrAWindowOpened(t *testing.T) {
 
 func TestAPressReportsWhatTheHostAnswersToAMode(t *testing.T) {
 	h := openHost(t)
-	i := h.mountCheck(map[string]any{"refuseDisplayModes": true})
+	i := h.mountCheck(nil)
 	h.reported(i)
 	// Asking to leave fullscreen waits until the view is in it.
 	var disabled bool
@@ -410,7 +410,7 @@ func TestAPressReportsWhatTheHostAnswersToAMode(t *testing.T) {
 
 func TestAHostThatGrantsAModeIsReportedAsWorking(t *testing.T) {
 	h := openHost(t)
-	i := h.mountCheck(nil)
+	i := h.mountCheck(map[string]any{"grantDisplayModes": true})
 	h.reported(i)
 	h.click(i, "[data-check='display_fullscreen'] .check-press")
 	h.untilIn(i, "f.contexts.some((context) => context.content[0].text.includes('asked for fullscreen'))")

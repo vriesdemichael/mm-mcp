@@ -579,8 +579,10 @@ function imageCard(file) {
 }
 
 // showImageWhole opens an image where its card is, as wide as the post's column
-// lets it be, so that it opens where the person is looking in a long thread.
+// lets it be, so that it opens where the person is looking in a long thread,
+// and asks the host for the room it has.
 function showImageWhole(file) {
+  askFullscreen();
   const name = file.name || t("file.unnamed");
   const close = el("button", { type: "button", class: "close", "aria-label": t("image.close") }, "×");
   const holder = el("div", { class: "lightbox-image" }, el("span", { class: "muted", role: "status" }, t("image.loading")));
@@ -590,6 +592,7 @@ function showImageWhole(file) {
   const done = () => {
     view.lightbox = null;
     render();
+    if (view.enlarged) leaveFullscreen();
   };
   close.addEventListener("click", done);
   box.addEventListener("keydown", (event) => {

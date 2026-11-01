@@ -10,6 +10,7 @@
 
 const CONNECT_TIMEOUT_MS = 10000;
 const NO_RESULT_MS = 60000;
+const MODE_ANSWER_MS = 10000;
 
 const bridge = createBridge({ name: "mm-mcp", version: "1" });
 
@@ -19,8 +20,14 @@ const view = {
   callsTools: false,
   opensLinks: true,
   tellsModel: false,
-  // Whether the host shows the view fullscreen.
+  // Whether the host shows the view fullscreen, the modes it lists, whether to
+  // ask it again, whether it is answering now, and whether an opened image is
+  // what took the view there.
   fullscreen: false,
+  modes: [],
+  asksFullscreen: true,
+  asking: false,
+  enlarged: false,
   // What the view draws: the call's arguments, and its result.
   input: null,
   result: null,
@@ -82,13 +89,51 @@ function applyHostContext(context) {
     document.getElementById("host-fonts").textContent = styles.css.fonts;
   }
   if (typeof context.locale === "string") setLanguage(context.locale);
-  // Fullscreen is the host's to give and take, by a way of its own beside the
-  // view; the view fills what it is given.
+  if (Array.isArray(context.availableDisplayModes)) view.modes = context.availableDisplayModes;
+  // Fullscreen is the host's to give and take, and it says here which it did;
+  // the view fills what it is given.
   if (context.displayMode === "inline" || context.displayMode === "fullscreen") {
     view.fullscreen = context.displayMode === "fullscreen";
     root.dataset.display = context.displayMode;
+    // Taken back by the host's own way out, an image that went there on its
+    // own opening closes with it: leaving is how the person closes it there.
+    if (!view.fullscreen && view.enlarged) {
+      view.enlarged = false;
+      view.lightbox = null;
+    }
   }
   render();
+}
+
+// askFullscreen gives an opened image the room the host has. An image is what
+// asks, since it cannot wrap to use the room inline. It asks in the person's
+// click, before anything is waited for, since a host may hold a request to one.
+// An answer of anything else, or none, leaves the image open in its post, and
+// the host is not asked again.
+function askFullscreen() {
+  if (view.fullscreen || view.asking || !view.asksFullscreen || !view.modes.includes("fullscreen")) return;
+  view.asking = true;
+  bridge.requestDisplayMode("fullscreen", MODE_ANSWER_MS).then((answer) => {
+    if (!answer || answer.mode !== "fullscreen") {
+      view.asksFullscreen = false;
+      return;
+    }
+    view.enlarged = true;
+    // Closed while the host was answering, there is nothing left to enlarge.
+    if (!view.lightbox) leaveFullscreen();
+  }).catch(() => {
+    view.asksFullscreen = false;
+  }).finally(() => {
+    view.asking = false;
+  });
+}
+
+// leaveFullscreen goes back from where an opened image took the view.
+function leaveFullscreen() {
+  view.enlarged = false;
+  bridge.requestDisplayMode("inline", MODE_ANSWER_MS).catch(() => {
+    // The host's own way out is still there.
+  });
 }
 
 // notice is a line the view shows of what it could not do here, with where

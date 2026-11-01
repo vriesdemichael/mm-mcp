@@ -52,8 +52,11 @@ const ISOLATED_POLICY = "default-src 'none'; script-src 'unsafe-inline'; style-s
 //   refuseLinks  refuse to open links
 //   openLink   a function told each link the view opens
 //   csp        what the host says it approved of the page's network
-//   refuseDisplayModes  answer inline to whatever mode the view asks for, as a
-//              host does that lists fullscreen and keeps it for its own button
+//   modes      the display modes the host lists, inline and fullscreen when not
+//              given. It answers inline to whatever the view asks for, unless
+//   grantDisplayModes  it goes to the mode the view asks for, after
+//   displayModeDelay  this many milliseconds, or
+//   holdDisplayModes  it never answers, as a host that lost the request
 //   prelude    a script run before the page's own
 //   maxHeight  the height the host holds a view to, in pixels
 function mount(page, options) {
@@ -71,7 +74,7 @@ function mount(page, options) {
 
   const themes = Object.assign({}, THEMES, settings.themes || {});
   const theme = settings.theme || "light";
-  const frame = { iframe, calls: [], reads: [], links: [], contexts: [], messages: [], sizes: [], ready: false, themes };
+  const frame = { iframe, calls: [], reads: [], links: [], contexts: [], messages: [], sizes: [], asked: [], ready: false, themes };
   frames.push(frame);
   const index = frames.length - 1;
 
@@ -83,7 +86,7 @@ function mount(page, options) {
     locale: settings.locale || "en-US",
     timeZone: "Europe/Amsterdam",
     displayMode: "inline",
-    availableDisplayModes: ["inline", "fullscreen"],
+    availableDisplayModes: settings.modes || ["inline", "fullscreen"],
     platform: "desktop",
     styles: { variables: themes[theme] },
   };
@@ -131,7 +134,10 @@ function mount(page, options) {
     }
   };
   bridge.onrequestdisplaymode = async (params) => {
-    if (settings.refuseDisplayModes) return { mode: "inline" };
+    frame.asked.push(params.mode);
+    if (settings.holdDisplayModes) return new Promise(() => {});
+    if (!settings.grantDisplayModes) return { mode: "inline" };
+    if (settings.displayModeDelay) await new Promise((resolve) => setTimeout(resolve, settings.displayModeDelay));
     setDisplayMode(index, params.mode);
     return { mode: params.mode };
   };
