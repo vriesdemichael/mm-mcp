@@ -105,8 +105,11 @@ func callers(t *testing.T) []caller {
 func TestEveryToolDeclaresTheOperationsItCalls(t *testing.T) {
 	t.Parallel()
 	s := loadSurface(t)
+	// view_check only shows that a view's call reached the server, and reaches
+	// no further.
+	reachesNoFurther := map[string]bool{"view_check": true}
 	for _, spec := range callers(t) {
-		if len(spec.uses) == 0 {
+		if len(spec.uses) == 0 && !reachesNoFurther[spec.name] {
 			t.Errorf("%s declares no operation it calls", spec.name)
 		}
 		for _, use := range spec.uses {

@@ -126,6 +126,12 @@ function createBridge(appInfo) {
       return request("resources/read", { uri }, timeout);
     },
 
+    // Only the client check asks for a display mode, to see what the host
+    // answers. The views leave it to the host's own button (ADR-022).
+    requestDisplayMode(mode, timeout) {
+      return request("ui/request-display-mode", { mode }, timeout);
+    },
+
     // The context the model reads on its next turn, in mm-mcp's words. Each
     // call replaces the last, and not every host passes it on.
     updateModelContext(text) {

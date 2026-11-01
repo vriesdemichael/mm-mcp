@@ -138,6 +138,19 @@ places cannot do so out of your sight.
 
 <div class="mm-view" data-view="posted" data-title="A post your agent made"></div>
 
+## See what your app lets a view do
+
+Apps differ in what they let a view do. Ask your agent what yours can do, or why
+a view shows no pictures, buttons or links, and it shows a check with
+[`check_views`](tools.md#check_views). The check tries each thing from inside a
+view: reading pictures and files, calling tools, reaching the network. It lists
+what worked and what that means for mm-mcp's views. Opening a link, copying and
+going fullscreen wait for your press.
+
+The report on the check holds no credential, post or person, and not your
+server's address, so you can paste it into an issue. Where your app lets it,
+your agent can read the report too.
+
 ## If your app shows no views
 
 Every app still works. A post your agent drafts waits in Mattermost's message
@@ -203,7 +216,9 @@ VS Code and Goose are tested with every change to mm-mcp, because a machine can 
 **Does the view send my data anywhere?**
 : No. The view reaches no network. What it shows comes from mm-mcp through
   your app, pictures included, and mm-mcp talks to nothing but your Mattermost
-  ([Security](security.md)).
+  ([Security](security.md)). The one page that tries the network is the
+  [check of your app](#see-what-your-app-lets-a-view-do), which you ask for: it
+  tries your own Mattermost, not logged in, to see whether your app lets it.
 
 ??? info "For the technically curious: what happens when you press Post"
 

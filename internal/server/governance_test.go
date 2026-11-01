@@ -582,9 +582,10 @@ func TestTheToolsPageLinksAndMarksEveryTool(t *testing.T) {
 // The tools that put a view in front of the person (ADR-022): those whose
 // every call the person should see, show, every tool that posts, which shows
 // the post as posted, and propose_post, which shows the proposal for the
-// person to post (ADR-035). A view on a tool the model reads with would take
-// space in the conversation on every read.
-var toolsWithAView = map[string]bool{"show": true, "create_post": true, "dm": true, "group_message": true, "propose_post": true}
+// person to post (ADR-035), and check_views, which is the person's to ask for.
+// A view on a tool the model reads with would take space in the conversation on
+// every read.
+var toolsWithAView = map[string]bool{"show": true, "create_post": true, "dm": true, "group_message": true, "propose_post": true, "check_views": true}
 
 func TestOnlyAToolWhoseEveryCallThePersonSeesCarriesAView(t *testing.T) {
 	t.Parallel()
@@ -624,6 +625,10 @@ var viewData = map[string][]map[string]string{
 	"dm":            {{"": "dm"}},
 	"group_message": {{"": "group_message"}},
 	"propose_post":  {{"": "propose_post"}},
+	// The client check draws no data of Mattermost's: what it answers with is
+	// its own.
+	"check_views": {{"": "check_views"}},
+	"view_check":  {{"": "view_check"}},
 }
 
 func TestAViewDrawsItsDataToolsOutputUnchanged(t *testing.T) {
@@ -717,6 +722,7 @@ func isForViews(tool *mcp.Tool) bool {
 var viewCalls = map[string]map[string]any{
 	"view_action": {"action": "more", "post_id": "abcdefghijklmnopqrstuvwxyz"},
 	"view_change": {"action": "mark_read", "channel_id": "abcdefghijklmnopqrstuvwxyz"},
+	"view_check":  {},
 }
 
 func TestEveryToolOnlyViewsCallIsForViewsAlone(t *testing.T) {

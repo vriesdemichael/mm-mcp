@@ -137,6 +137,11 @@ following.
   everything it needs inline, and runs in the application's sandbox under the
   policy MCP Apps sets for such a page. Its pictures and presses go through the
   application, and it takes messages from the application's window alone.
+- **A check you ask for, which tries the network.** `check_views` shows a page
+  of its own, which draws nothing from Mattermost. It declares your server's
+  address and tries to reach it, not logged in, with no cookie, to see whether
+  the application lets it, and it tries an address that never resolves. Its
+  report holds no credential, post or person, and not your server's address.
 - **What stays behind.** The application keeps the view's data in its
   conversation history, as it keeps a tool's text answer: who wrote what, who
   reacted with what, and a proposal's text. Pictures are read again when a

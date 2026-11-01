@@ -136,7 +136,11 @@ func TestEveryWordThePageShowsIsInEnglishAndEveryEnglishWordIsShown(t *testing.T
 	}
 	english := catalogs["en"]
 	asked := map[string]bool{}
-	for name, source := range scripts(t) {
+	every := scripts(t)
+	for name, source := range checkScripts(t) {
+		every[name] = source
+	}
+	for name, source := range every {
 		for _, match := range used.FindAllStringSubmatch(source, -1) {
 			asked[match[1]] = true
 			if _, ok := english[match[1]]; !ok {
@@ -151,6 +155,98 @@ func TestEveryWordThePageShowsIsInEnglishAndEveryEnglishWordIsShown(t *testing.T
 		if !asked[key] {
 			t.Errorf("English has %s, which the page never shows", key)
 		}
+	}
+}
+
+func checkScripts(t *testing.T) map[string]string {
+	t.Helper()
+	sources := map[string]string{}
+	for _, name := range views.CheckScripts {
+		source, err := views.Asset(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sources[name] = source
+	}
+	return sources
+}
+
+// The client check holds the page's rules but for what it is there to try: it
+// builds no HTML from strings and never speaks for the person, and it reaches
+// only the server's own address and one that never resolves (ADR-022).
+func TestTheClientCheckBuildsNoHTMLAndNeverSpeaksForThePerson(t *testing.T) {
+	t.Parallel()
+	forbidden := []string{
+		"innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "createContextualFragment", "DOMParser",
+		"eval(", "new Function", "Function(", ".srcdoc", "setAttribute(\"srcdoc\"", "javascript:", "setAttribute(\"on", ".setHTML", "parseHTML",
+		"ui/message", "sendMessage",
+	}
+	sources := checkScripts(t)
+	if len(sources) < 3 {
+		t.Fatalf("only %d scripts to scan", len(sources))
+	}
+	for name, source := range sources {
+		for _, word := range forbidden {
+			if strings.Contains(source, word) {
+				t.Errorf("%s uses %s", name, word)
+			}
+		}
+	}
+}
+
+func TestTheClientCheckIsOneDocumentThatReachesOnlyTheServer(t *testing.T) {
+	t.Parallel()
+	page := views.CheckPage("mattermost://chat.example.com", "https://chat.example.com", "v1.2.3")
+	if !strings.HasPrefix(page, "<!doctype html>") {
+		t.Error("the page is not an HTML document")
+	}
+	for _, left := range []string{"MM_VIEW_STYLE", "MM_VIEW_SCRIPT"} {
+		if strings.Contains(page, left) {
+			t.Errorf("the page still holds %s", left)
+		}
+	}
+	if got := strings.Count(strings.ToLower(page), "</script"); got != 1 {
+		t.Errorf("the page ends a script %d times; something in it ends the script early", got)
+	}
+	for _, found := range external.FindAllString(page, -1) {
+		if found != "http://www.w3.org" && found != "https://chat.example.com" && found != "https://mm-mcp-check.invalid" {
+			t.Errorf("the page names %s: it reaches only the server's own address, and one that never resolves", found)
+		}
+	}
+	// What the page tells the host it may reach is the server, and only that.
+	for _, want := range []string{`const SERVER = "https://chat.example.com";`, `const RELEASE = "v1.2.3";`, `const STAMP = "` + views.Stamp() + `";`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the page does not hold %s", want)
+		}
+	}
+	// Its fixtures are its own, under its own address.
+	for _, fixture := range views.CheckFixtures() {
+		if !strings.HasPrefix(fixture.URI, views.CheckURI+"/") || !strings.Contains(page, fixture.URI) {
+			t.Errorf("the fixture %s is not the page's own", fixture.URI)
+		}
+	}
+}
+
+func TestTheClientCheckDeclaresEachNameOnce(t *testing.T) {
+	t.Parallel()
+	declared := map[string]string{"RESOURCE_BASE": "the page", "SERVER": "the page", "RELEASE": "the page", "STAMP": "the page", "PAGE_URI": "the page", "FIXTURES": "the page", "DOT": "the page", "CATALOGS": "the page"}
+	count := 0
+	for _, name := range views.CheckScripts {
+		source, err := views.Asset(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, match := range topLevel.FindAllStringSubmatch(source, -1) {
+			count++
+			found := match[1] + match[2]
+			if before, ok := declared[found]; ok {
+				t.Errorf("%s declares %s, which %s declares too: the scripts share one scope", name, found, before)
+			}
+			declared[found] = name
+		}
+	}
+	if count < 20 {
+		t.Fatalf("only %d names found; the scan has stopped matching", count)
 	}
 }
 

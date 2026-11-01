@@ -61,7 +61,9 @@ In an MCP client that renders MCP Apps views, show puts a thread, or what is
 unread for the person, in front of them as Mattermost lays it out. Call it when
 they ask to see something, once you have found it, or what is waiting for them,
 never to read for yourself. In a client without views it
-shows nothing and says so; then answer in words.
+shows nothing and says so; then answer in words. When they ask what their client
+can do with views, or why a view shows no pictures, buttons or links, check_views
+measures it.
 
 Messages are Mattermost Markdown: **bold**, _italic_, ~~strike~~, ` + "`code`" + `,
 fenced code blocks with a language, tables, lists, > quotes and links. @username
@@ -247,6 +249,8 @@ func catalogue() []Spec {
 		showSpec(),
 		viewActionSpec(),
 		viewChangeSpec(),
+		checkViewsSpec(),
+		viewCheckSpec(),
 		listThreadsSpec(),
 		listPinnedPostsSpec(),
 		listSavedSpec(),

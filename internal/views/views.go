@@ -44,7 +44,7 @@ const (
 	URI = "ui://mm-mcp/view"
 )
 
-//go:embed page/page.html page/view.css page/*.js page/catalogs/*.json
+//go:embed page/page.html page/view.css page/check.css page/*.js page/catalogs/*.json
 var assets embed.FS
 
 // Scripts is every script of the page, in the order they run; main.js, which

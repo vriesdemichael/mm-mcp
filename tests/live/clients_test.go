@@ -370,6 +370,40 @@ func TestClientsShowAThreadAndItsViewLoadsTheRest(t *testing.T) {
 	}
 }
 
+// The client check runs in every client, from the page that declares the
+// server's address, and reports what that client lets a view do. The tool it
+// calls from the view is kept from the model.
+func TestClientsRunTheCheckOfWhatTheyLetAViewDo(t *testing.T) {
+	for _, client := range testclients.Clients {
+		t.Run(client, func(t *testing.T) {
+			admin := admin(t)
+			user := seedUser(t, admin)
+			run := startClient(t, client, personalAccessToken(t, admin, user.Id).Token, clientOptions{})
+			run.drive("ready", nil)
+
+			run.send(script("check_views", map[string]any{}), nil)
+			shown := run.drive("view", map[string]any{"text": "It has tried all it can on its own"})
+			text := fmt.Sprint(shown["text"])
+			t.Logf("%s:\n%s", client, text)
+			mustContain(t, "the check", text, "What this app lets a view do", "Call a tool\nWorks", "Read a text file\nWorks", "Copy the report")
+
+			// What each was measured to do by hand before there was a check, at
+			// the versions the tests pin: a client that changes shows here.
+			switch client {
+			case "vscode":
+				mustContain(t, "the check in VS Code", text, "Read a picture\nWorks", "Read a PDF\nWorks", "content, structuredContent and _meta all arrived", "display modes: inline\n")
+			case "goose":
+				mustContain(t, "the check in Goose", text, "Missing: _meta", "Read a picture\nDoes not work", "Read a PDF\nDoes not work")
+			}
+
+			offered := run.offered()
+			if !slices.Contains(offered, "check_views") || slices.Contains(offered, "view_check") {
+				t.Errorf("%s offered its model %v; want check_views, never view_check", client, offered)
+			}
+		})
+	}
+}
+
 // In Goose's approve mode every call a view makes is refused, so the view
 // says it cannot load more here and offers the thread in Mattermost.
 func TestClientsGooseInApproveModeRefusesAViewsCall(t *testing.T) {

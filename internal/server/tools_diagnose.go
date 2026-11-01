@@ -40,8 +40,8 @@ func diagnoseSpec() Spec {
 		&mcp.Tool{
 			Name: "diagnose",
 			Description: "Check why mm-mcp does not work as expected: the configuration the MCP client started it with, the login it stored, " +
-				"the way to the Mattermost server, the credential, the teams of the user it acts as, and this MCP client: who decides on a " +
-				"write, and whether it can show the question mm-mcp asks where it is set to. Each check says what was found, and a failed one what to do. Call it when a tool " +
+				"the way to the Mattermost server, the credential, the teams of the user it acts as, and this MCP client: what it declares, who decides on a " +
+				"write, whether it can show the question mm-mcp asks where it is set to, and what has reached this server of a view's reads and calls. Each check says what was found, and a failed one what to do. Call it when a tool " +
 				"fails in a way its error does not explain, or when the person asks why something does not work. It never returns the credential.",
 			Annotations: readOnly("Diagnose mm-mcp"),
 		},
@@ -82,6 +82,9 @@ func diagnoseSpec() Spec {
 					report.Add(doctor.Teams(ctx, client, connection.User))
 				}
 				report.Add(clientChecks(request, cfg, input.AskTestQuestion)...)
+				if rendersViews(request) {
+					report.Add(viewCheckCheck(ctx))
+				}
 				if probe != nil {
 					report.Add(*probe)
 				}
@@ -103,7 +106,7 @@ func clientChecks(request *mcp.CallToolRequest, cfg config.Config, asked bool) [
 	checks := []doctor.Check{{
 		Name: "MCP client", Status: doctor.OK,
 		Detail: fmt.Sprintf("%s, speaking MCP %s", client, request.ProtocolVersion()),
-	}, viewsCheck(request)}
+	}, capabilitiesCheck(request), viewsCheck(request)}
 	const name = "confirmations"
 	switch {
 	case !cfg.AllowWrites:
@@ -153,7 +156,8 @@ func viewsCheck(request *mcp.CallToolRequest) doctor.Check {
 	types := declaredViewTypes(request)
 	switch {
 	case rendersViews(request):
-		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client renders MCP Apps views, so show puts a thread, or what is unread for the person, in front of them laid out as Mattermost lays it out"}
+		return doctor.Check{Name: name, Status: doctor.OK, Detail: "this client declares that it renders MCP Apps views, so show puts a thread, or what is unread for the person, in front of them laid out as Mattermost lays it out. " +
+			"What a view may do there, such as reading pictures or calling tools, is the client's to allow: check_views measures it"}
 	case types != nil:
 		return doctor.Check{Name: name, Status: doctor.OK, Detail: fmt.Sprintf(
 			"this client renders MCP Apps views of %s, not of %s, mm-mcp's, so show shows nothing and the model answers in words",

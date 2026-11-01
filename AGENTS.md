@@ -72,7 +72,7 @@ and `openapi:refresh` after a stack's image tag changes.
 | `internal/server` | the MCP server, the tool catalogue (`AllSpecs`), and the tools |
 | `internal/mattermost` | the wrapper around Client4 every tool goes through |
 | `internal/fileview` | turns an attached file into text or an image a model can use |
-| `internal/views` | the MCP Apps view page, its catalogs, and the official bridge its browser tests run it in |
+| `internal/views` | the MCP Apps view page, the client check's page, their catalogs, and the official bridge their browser tests run them in |
 | `internal/network` | the one HTTP transport, with the unit-test network block |
 | `internal/apisurface` | reads the vendored specifications and route tables: matching, parameters, release differences |
 | `internal/adr` | reads the decision records and renders their index |

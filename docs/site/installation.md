@@ -183,7 +183,7 @@ nothing to set up in mm-mcp; whether you see them depends on your app:
   terminal ([what it shows](views.md#which-apps-show-views)).
 - **Goose's desktop app** shows them as it is.
 - **In another app,** ask your agent to run `diagnose`: it says whether
-  your app shows views.
+  your app shows views, and `check_views` measures what it lets one do.
 
 An app that shows none still does everything: your agent answers in words,
 and a post it drafts waits in Mattermost for you to send.

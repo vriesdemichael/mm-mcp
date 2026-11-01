@@ -9,12 +9,12 @@ hide:
 your own words; it picks the tool. Writing is off until you allow it.</p>
 
 <div class="mm-stats">
-<a class="mm-stat" href="#every-tool"><strong>48</strong> tools</a>
-<span class="mm-stat mm-stat--read"><strong>26</strong> only read</span>
+<a class="mm-stat" href="#every-tool"><strong>50</strong> tools</a>
+<span class="mm-stat mm-stat--read"><strong>28</strong> only read</span>
 <span class="mm-stat mm-stat--checked"><strong>14</strong> checked writes</span>
 <span class="mm-stat mm-stat--yours"><strong>7</strong> yours alone</span>
 <span class="mm-stat mm-stat--disk"><strong>1</strong> saves to your disk</span>
-<a class="mm-stat mm-stat--view" href="../views/"><strong>5</strong> show you a view</a>
+<a class="mm-stat mm-stat--view" href="../views/"><strong>6</strong> show you a view</a>
 </div>
 
 <div class="grid cards mm-jobs" markdown>
@@ -65,7 +65,7 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
     “Show me the thread about last night's outage.”
     { .mm-example }
 
-    [`show`](#show){ .mm-chip } [`view_action`](#view_action){ .mm-chip } [`view_change`](#view_change){ .mm-chip .mm-chip--yours }
+    [`show`](#show){ .mm-chip } [`view_action`](#view_action){ .mm-chip } [`view_change`](#view_change){ .mm-chip .mm-chip--yours } [`view_check`](#view_check){ .mm-chip }
 
 -   :material-file-document-outline:{ .lg .middle } **Open the attachments**
 
@@ -126,7 +126,7 @@ your own words; it picks the tool. Writing is off until you allow it.</p>
     “Why can't you post?”
     { .mm-example }
 
-    [`diagnose`](#diagnose){ .mm-chip }
+    [`diagnose`](#diagnose){ .mm-chip } [`check_views`](#check_views){ .mm-chip }
 
 </div>
 
@@ -281,6 +281,13 @@ The tools that write are offered only once you allow writes, with
     ([`propose_post`](#propose_post)). Only a view calls it, on your press: an
     app that shows views keeps it from your agent, and mm-mcp offers it only to
     an app that says it shows views, once you allow writes.
+
+`view_check`: Report a view's check { #view_check }
+:   What [`check_views`](#check_views) does from its view goes through this
+    tool: it shows that a call from a view reaches mm-mcp, and hands over the
+    report for `diagnose` to give your agent. It reaches nothing in Mattermost.
+    Only a view calls it: an app that shows views keeps it from your agent, and
+    mm-mcp offers it only to an app that says it shows views.
 
 ### Open the attachments
 
@@ -512,14 +519,24 @@ states before it acts ([below](#how-a-write-is-checked)).
     which credential it acts with, a login `mm-mcp login` stored and whether
     `MM_TOKEN` hides it, the proxy, whether the server answers as a supported
     Mattermost, whose credential it is and whether that user belongs to a team.
-    It adds what only the client shows: its name and protocol version, who
-    decides on a write, and, where mm-mcp is set to ask, whether the client can
-    show its question. With `ask_test_question`, it shows you a
+    It adds what only the client shows: its name and protocol version, what it
+    declares, who decides on a write, and, where mm-mcp is set to ask, whether
+    the client can show its question. In an app that says it shows views, it
+    says what has reached mm-mcp of a view's reads and calls. With
+    `ask_test_question`, it shows you a
     test question and reports how it was answered: an answer within a few
     seconds came from the client itself, which then answers every question
     before a write without showing it. Each check says what it found, and a
     failed one what to do. It never returns the credential
     ([Configuration](configuration.md#command-line)).
+
+`check_views`: Check this client's views [view](views.md#see-what-your-app-lets-a-view-do){ .mm-view-badge } { #check_views }
+:   Measures what your app lets a view do, which `diagnose` cannot see from the
+    server: it shows you a check, as a view, that tries reading pictures and
+    files, calling tools, reaching the network, opening links and going
+    fullscreen, and says what each means for mm-mcp. Your agent calls it when you
+    ask what your app can do, or why a view shows no pictures, buttons or links.
+    In an app that shows no views it shows nothing, and says so.
 
 ## Good to know
 
@@ -688,8 +705,9 @@ custom emoji its name, except that a thread shown in Claude Code brings its
 pictures with it. The page takes the app's light or dark theme and its
 language, where mm-mcp has words for it, and English otherwise. VS Code shows
 views with its `chat.mcp.apps.enabled` setting on, and Claude Code in the Claude
-desktop app; `diagnose` says whether yours does. [Views](views.md) shows each of
-them, live.
+desktop app; `diagnose` says whether yours does, and
+[`check_views`](#check_views) what it lets a view do. [Views](views.md) shows
+each of them, live.
 
 ### Page sizes
 

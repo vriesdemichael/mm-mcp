@@ -60,6 +60,18 @@ body:
       required: true
 
   - type: textarea
+    id: check-views
+    attributes:
+      label: What check_views reports
+      description: >
+        Ask the app what it can do with views, so it runs `check_views`. Press
+        what the check offers, and paste its report, which holds no credential,
+        post or person.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
     id: drawn
     attributes:
       label: 1. Are the views drawn, and how much room do they take?
@@ -98,8 +110,8 @@ body:
     attributes:
       label: 4. Are the tools only views call kept from the model?
       description: >
-        Are `view_action` and `view_change` missing from the tools the model
-        is offered, and do their results stay out of the conversation?
+        Are `view_action`, `view_change` and `view_check` missing from the tools
+        the model is offered, and do their results stay out of the conversation?
     validations:
       required: true
 

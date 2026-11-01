@@ -51,6 +51,11 @@ const ISOLATED_POLICY = "default-src 'none'; script-src 'unsafe-inline'; style-s
 //   locale     the host's language
 //   refuseLinks  refuse to open links
 //   openLink   a function told each link the view opens
+//   csp        what the host says it approved of the page's network
+//   refuseDisplayModes  answer inline to whatever mode the view asks for, as a
+//              host does that lists fullscreen and keeps it for its own button
+//   prelude    a script run before the page's own
+//   maxHeight  the height the host holds a view to, in pixels
 function mount(page, options) {
   const settings = options || {};
   const iframe = document.createElement("iframe");
@@ -72,6 +77,7 @@ function mount(page, options) {
 
   const capabilities = Object.assign({}, ALL_CAPABILITIES);
   for (const name of settings.without || []) delete capabilities[name];
+  if (settings.csp) capabilities.sandbox = { csp: settings.csp };
   frame.context = {
     theme,
     locale: settings.locale || "en-US",
@@ -119,7 +125,15 @@ function mount(page, options) {
   };
   bridge.onsizechange = (params) => {
     frame.sizes.push(params);
-    if (params && params.height > 0) iframe.style.height = Math.ceil(params.height) + "px";
+    if (params && params.height > 0) {
+      const height = settings.maxHeight ? Math.min(params.height, settings.maxHeight) : params.height;
+      iframe.style.height = Math.ceil(height) + "px";
+    }
+  };
+  bridge.onrequestdisplaymode = async (params) => {
+    if (settings.refuseDisplayModes) return { mode: "inline" };
+    setDisplayMode(index, params.mode);
+    return { mode: params.mode };
   };
   bridge.oninitialized = async () => {
     await bridge.sendToolInput({ arguments: settings.input || {} });
@@ -128,7 +142,8 @@ function mount(page, options) {
   };
   frame.bridge = bridge;
   const connected = bridge.connect(new PostMessageTransport(iframe.contentWindow, iframe.contentWindow));
-  iframe.srcdoc = settings.isolated ? isolate(page) : page;
+  const prelude = settings.prelude ? page.replace(/<head>/i, () => "<head><script>" + settings.prelude + "</script>") : page;
+  iframe.srcdoc = settings.isolated ? isolate(prelude) : prelude;
   return connected.then(() => index);
 }
 

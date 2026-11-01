@@ -106,7 +106,13 @@ func (h *host) eval(expression string, out any) {
 // until waits for expression to hold in the host page.
 func (h *host) until(expression string) {
 	h.t.Helper()
-	deadline := time.Now().Add(15 * time.Second)
+	h.within(15*time.Second, expression)
+}
+
+// within waits as long as a page takes that does slow things first.
+func (h *host) within(wait time.Duration, expression string) {
+	h.t.Helper()
+	deadline := time.Now().Add(wait)
 	for {
 		var held bool
 		h.eval("Boolean("+expression+")", &held)

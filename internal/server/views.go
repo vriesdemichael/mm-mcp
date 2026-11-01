@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
+	"net/url"
 	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/vriesdemichael/mm-mcp/internal/config"
+	"github.com/vriesdemichael/mm-mcp/internal/version"
 	"github.com/vriesdemichael/mm-mcp/internal/views"
 )
 
@@ -97,7 +99,9 @@ func pageMeta() mcp.Meta {
 // read by a host that renders the view; it is left out of the resources a
 // client lists, where it would be offered as something to attach.
 func registerView(server *mcp.Server, cfg config.Config) {
-	page := views.Page(resourceBase(serverAddress(cfg)), views.Settings{Changes: cfg.AllowWrites, Posts: cfg.PostFromViews})
+	log := &checkLog{}
+	address := serverAddress(cfg)
+	page := views.Page(resourceBase(address), views.Settings{Changes: cfg.AllowWrites, Posts: cfg.PostFromViews})
 	server.AddResource(&mcp.Resource{
 		URI:         views.URI,
 		Name:        "view",
@@ -106,11 +110,47 @@ func registerView(server *mcp.Server, cfg config.Config) {
 		MIMEType:    views.MIMEType,
 		Meta:        pageMeta(),
 	}, func(_ context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		log.pageRead(views.URI)
 		return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{{
 			URI: request.Params.URI, MIMEType: views.MIMEType, Text: page, Meta: pageMeta(),
 		}}}, nil
 	})
-	server.AddReceivingMiddleware(viewsMiddleware)
+	registerCheck(server, log, address)
+	server.AddReceivingMiddleware(viewsMiddleware, log.middleware)
+}
+
+// registerCheck adds the client check's page and what it reads, all of it
+// unlisted as the view page is, and counts each read of what it reads.
+func registerCheck(server *mcp.Server, log *checkLog, address *url.URL) {
+	page := views.CheckPage(resourceBase(address), address.String(), version.Version)
+	meta := checkPageMeta(address)
+	server.AddResource(&mcp.Resource{
+		URI:         views.CheckURI,
+		Name:        "check",
+		Title:       "mm-mcp client check",
+		Description: "The page that measures what an MCP client lets a view do.",
+		MIMEType:    views.MIMEType,
+		Meta:        meta,
+	}, func(_ context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		log.pageRead(views.CheckURI)
+		return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{{
+			URI: request.Params.URI, MIMEType: views.MIMEType, Text: page, Meta: meta,
+		}}}, nil
+	})
+	for _, fixture := range views.CheckFixtures() {
+		server.AddResource(&mcp.Resource{
+			URI:         fixture.URI,
+			Name:        "check-" + fixture.Name,
+			Title:       "mm-mcp client check: " + fixture.Name,
+			Description: "What mm-mcp's client check reads, to see whether a view can.",
+			MIMEType:    fixture.MIMEType,
+		}, func(_ context.Context, request *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+			log.fixtureRead()
+			return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{{
+				URI: request.Params.URI, MIMEType: fixture.MIMEType, Text: fixture.Text, Blob: fixture.Blob,
+			}}}, nil
+		})
+	}
 }
 
 // viewsMiddleware keeps what is for views alone from what a client lists: the

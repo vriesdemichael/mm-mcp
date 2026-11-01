@@ -35,6 +35,9 @@ A governance test asserts an invariant over everything of one kind the repositor
 - `TestThePageNeverSpeaksForThePerson`: the view page sends no message in the person's name.
 - `TestThePageIsOneSelfContainedDocument`: the view page is one document with one script, names no other host and loads nothing.
 - `TestThePageDeclaresEachNameOnce`: no two of the view page's scripts, which share one scope, declare the same name.
+- `TestTheClientCheckBuildsNoHTMLAndNeverSpeaksForThePerson`: the client check's scripts build no HTML from a string and send no message in the person's name.
+- `TestTheClientCheckIsOneDocumentThatReachesOnlyTheServer`: the client check is one document that names no host but the server's and one that never resolves.
+- `TestTheClientCheckDeclaresEachNameOnce`: no two of the client check's scripts, which share one scope, declare the same name.
 - `TestEveryWordThePageShowsIsInEnglishAndEveryEnglishWordIsShown`: the view page's words and the English catalog agree.
 - `TestEveryCatalogHasTheEnglishWords`: every catalog of the view page has exactly English's words, with their placeholders and plural forms.
 - `TestTheRepositorysRecordsLoad`: every decision record parses, and no two share a number.
