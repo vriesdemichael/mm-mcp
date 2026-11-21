@@ -150,5 +150,8 @@ only they have, such as scheduled posts, and those are not tested.
 The login is the exception. Single sign-on through SAML, Entra ID or OpenID
 Connect is a licensed feature, and mm-mcp logs in through it. The test suite
 covers the login against Team Edition's own login page in every browser it
-uses, on every system it ships for; single sign-on through a real identity
-provider has so far been tested by hand, on Windows.
+uses, on every system it ships for. It also covers the trip a single sign-on
+makes, with two sites of its own in place of the server and the provider: away
+to another site and back by redirects, in a posted form, in a popup, and after
+a stay there. Single sign-on through a real identity provider has so far been
+tested by hand, on Windows.
